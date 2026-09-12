@@ -18,7 +18,7 @@
 :root{
   --paper:#E9EEE8; --surface:#F7F9F5; --ink:#15201A; --muted:#5A675F; --line:#D1DAD2;
   --pine:#1E5540; --on-pine:#FFFFFF; --pine-soft:#DAE7DE;
-  --amber:#9C6116; --amber-soft:#F2E4CB; --red:#A6423A;
+  --amber:#9C6116; --amber-soft:#F2E4CB; --red:#A6423A; --red-soft:#F6DCD8;
   --c-livrets:#9DC1A7; --c-bourse:#1E5540; --c-av:#4F8B6D; --c-retraite:#B38B3F; --c-salariale:#5E7F8C;
   --num: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
   --txt: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
@@ -29,7 +29,7 @@
   :root{
     --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E;
     --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24;
-    --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72;
+    --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220;
     --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0;
   }
 }
@@ -50,6 +50,13 @@ button{cursor:pointer}
 .lock-form{display:grid;gap:14px}
 .lock-links{display:grid;gap:4px;margin-top:22px;justify-items:start}
 .err{color:var(--red);margin:0;font-size:15px}
+.codebar{padding:calc(12px + var(--safe-t)) 18px 14px;background:var(--amber-soft);font-size:14px;line-height:1.4}
+.codebar.bad{background:var(--red-soft)}
+.codebar p{margin:0 0 10px}
+.codebar .row{display:flex;gap:8px;flex-wrap:wrap}
+.codebar .btn{min-height:38px;font-size:15px;background:var(--surface)}
+.codebar .btn.primary{background:var(--pine);color:var(--on-pine)}
+.fp{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;letter-spacing:.04em}
 .or{text-align:center;color:var(--muted);margin:14px 0;font-size:14px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .note{margin-top:28px;padding:12px 14px;border-radius:12px;background:var(--amber-soft);color:var(--ink);font-size:14px}
@@ -173,6 +180,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 </style>
 </head>
 <body>
+<div id="codebar"></div>
 <div id="app"></div>
 <div id="layer"></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -357,6 +365,73 @@ async function pkCreate() {
 async function pkStore(slot, secret) {
   slots = { ...slots, pk: { ...slot, ...(await aesEnc(await prfKek(secret), dekRaw)), createdAt: Date.now() } };
   await save();
+}
+
+/* ---------- Vérification du code de l'app ----------
+   Le service worker sert toujours la version mise en cache : le code ne change
+   jamais tout seul. À chaque démarrage, l'app calcule l'empreinte du code servi,
+   la compare à celle que tu as approuvée, et te signale toute différence. */
+const CACHE_NAME = 'patrimoine-v3';
+const SHELL = ['./', './index.html', './sw.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
+const CODE_FILES = ['./index.html', './sw.js'];
+let code = { status: 'unknown', served: null, approved: null, net: null, at: null };
+const hex = u8 => [...u8].map(b => b.toString(16).padStart(2, '0')).join('');
+const fpLabel = h => h ? hex(unb64(h).slice(0, 8)).toUpperCase().match(/.{4}/g).join(' ') : '—';
+async function fpOf(fresh) {
+  const parts = [];
+  for (const f of CODE_FILES) {
+    const r = await fetch(fresh ? f + '?fresh=1' : f, { cache: 'no-store' });
+    if (!r.ok) throw new Error('http');
+    parts.push(await r.text());
+  }
+  return b64(await crypto.subtle.digest('SHA-256', enc.encode(parts.join('\u0000'))));
+}
+async function checkCode() {
+  if (!window.isSecureContext) return;
+  try { code.served = await fpOf(false); } catch { return; }
+  const saved = await store.get('code');
+  if (!saved) { await store.set('code', { fp: code.served, at: Date.now() }); code.approved = code.served; code.at = Date.now(); code.status = 'ok'; return; }
+  code.approved = saved.fp; code.at = saved.at;
+  code.status = saved.fp === code.served ? 'ok' : 'changed';
+  paintCode();
+  if (code.status === 'ok') checkNetwork();
+}
+async function checkNetwork() {
+  if (navigator.onLine === false) return;
+  try { code.net = await fpOf(true); } catch { return; }
+  if (code.net !== code.approved) { code.status = 'update'; paintCode(); }
+}
+function paintCode() {
+  const el = $('#codebar'); if (!el) return;
+  if (code.status === 'update') el.innerHTML = `<div class="codebar"><p>Une nouvelle version du code de l’app est disponible en ligne. Si tu n’en es pas à l’origine, ne l’installe pas.</p>
+    <div class="row"><button class="btn primary" data-act="codeupdate">Installer la mise à jour</button><button class="btn" data-act="codeinfo">Détails</button><button class="btn" data-act="codelater">Plus tard</button></div></div>`;
+  else if (code.status === 'changed') el.innerHTML = `<div class="codebar bad"><p><strong>Le code de l’app a changé</strong> sans que tu l’aies approuvé. Ne saisis pas ton mot de passe avant d’avoir vérifié.</p>
+    <div class="row"><button class="btn" data-act="codeinfo">Que faire ?</button></div></div>`;
+  else el.innerHTML = '';
+}
+async function applyCodeUpdate() {
+  try {
+    if (!confirm('Installer cette version du code ? À ne faire que si tu viens de mettre les fichiers à jour toi-même.')) return;
+    const c = await caches.open(CACHE_NAME);
+    for (const f of SHELL) {
+      const r = await fetch(f + '?fresh=1', { cache: 'no-store' });
+      if (r.ok) await c.put(new Request(new URL(f, location.href).href), r);
+    }
+    await store.set('code', { fp: code.net, at: Date.now() });
+    const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update();
+    location.reload();
+  } catch { toast('Mise à jour impossible, réessaie avec du réseau'); }
+}
+function sheetCode() {
+  const changed = code.status === 'changed';
+  openSheet(`<h2>${changed ? 'Code modifié' : 'Vérification du code'}</h2>
+    <p class="small" style="margin:0 0 14px">L’empreinte est un condensé du code de l’app. Elle ne change que si le code change.</p>
+    <p>Approuvée${code.at ? ' le ' + new Date(code.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}<br><span class="fp">${fpLabel(code.approved)}</span></p>
+    <p>${changed ? 'Code actuellement servi' : 'Version en ligne'}<br><span class="fp">${fpLabel(changed ? code.served : code.net)}</span></p>
+    ${changed ? `<p>Si tu viens de modifier les fichiers chez ton hébergeur, c’est normal. Sinon, quelqu’un a peut-être pris le contrôle de ton compte : change son mot de passe et vérifie l’historique du dépôt avant d’ouvrir l’app.</p>
+      <button class="btn wide" data-act="codeapprove">Approuver cette version</button>`
+      : '<p>N’installe cette version que si tu viens de mettre les fichiers à jour toi-même.</p><button class="btn primary wide" data-act="codeupdate">Installer la mise à jour</button>'}
+    <button class="btn wide" style="margin-top:10px" data-act="close">Fermer</button>`);
 }
 
 /* ---------- État ---------- */
@@ -789,6 +864,9 @@ function sheetSettings() {
       <button class="btn ghost wide" data-act="chpw">Changer le mot de passe</button>
       <button class="btn ghost wide" data-act="lock">${mode === 'demo' ? 'Quitter la démo' : 'Verrouiller maintenant'}</button>
       <button class="btn danger wide" data-act="wipe">Effacer toutes les données de cet iPhone</button></div>
+    <h3>Code de l’app</h3>
+    <p class="small" style="margin:0 0 10px">Empreinte approuvée : <span class="fp">${fpLabel(code.approved)}</span>${code.at ? `, le ${new Date(code.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}. ${code.status === 'ok' ? 'Le code servi correspond.' : code.status === 'unknown' ? 'Vérification indisponible ici.' : 'Une différence a été détectée.'}</p>
+    <button class="btn ghost wide" data-act="codeinfo">Vérifier le code</button>
     <p class="small" style="margin-top:18px">L’app ne transmet aucune donnée : elle charge uniquement son propre code, et tout le reste est chiffré sur cet appareil.</p>
     <button class="btn wide" style="margin-top:14px" data-act="close">Fermer</button>`);
 }
@@ -841,6 +919,14 @@ const pkDone = after => { if (after === 'close') { closeSheet(); render(); } els
 const ACT = {
   go: t => go(t.dataset.view),
   chpw: () => sheetChangePw(),
+  codeinfo: () => sheetCode(),
+  codeupdate: () => applyCodeUpdate(),
+  codelater: () => { code.status = 'ok'; paintCode(); closeSheet(); },
+  codeapprove: async () => {
+    if (!confirm('Approuver le code actuellement installé ? Ne le fais que si tu es à l’origine du changement.')) return;
+    await store.set('code', { fp: code.served, at: Date.now() });
+    code.approved = code.served; code.at = Date.now(); code.status = 'ok'; paintCode(); closeSheet(); toast('Version approuvée');
+  },
   pkenable: async t => {
     if (mode !== 'app') return toast('Crée ton coffre pour activer Face ID');
     const after = t.dataset.after;
@@ -1075,11 +1161,12 @@ async function boot() {
   wipeKeys(); view = 'home';
   if (!window.crypto?.subtle) { app.innerHTML = '<main class="lock"><h1 class="lock-title">Patrimoine</h1><p class="lock-text">Le chiffrement n’est pas disponible ici. Ouvre l’app depuis son adresse https.</p></main>'; return; }
   store ||= await openStore();
+  checkCode();
   const vault = await store.get('vault');
   lockHasPk = !!vault?.slots?.pk;
   renderLock(vault ? 'unlock' : 'setup');
 }
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('sw.js').catch(() => {});
 boot();
 </script>
 </body>
