@@ -63,6 +63,7 @@ button{cursor:pointer}
 
 /* Champs */
 label{display:grid;gap:6px;font-size:14px;color:var(--muted)}
+textarea{width:100%;padding:10px 12px;font:16px/1.4 var(--txt);border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);-webkit-appearance:none;resize:vertical}
 input[type=text],input[type=password],input[type=month],input:not([type]),select{width:100%;min-height:46px;padding:10px 12px;font-size:17px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);-webkit-appearance:none;appearance:none}
 input[type=month]{display:block}
 input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
@@ -185,6 +186,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 <div id="layer"></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <input type="file" id="importfile" accept="application/json,.json" hidden>
+<input type="file" id="stmtfile" accept=".csv,.txt,.tsv,text/plain,text/csv" hidden>
 <script>
 'use strict';
 
@@ -460,6 +462,12 @@ async function save() {
 const active = () => S.accounts.filter(a => !a.closed);
 const months = () => Object.keys(S.entries).filter(k => Object.keys(S.entries[k]).length).sort();
 const entry = (m, a) => S.entries[m]?.[a.id];
+// Versement net du mois : somme des mouvements datés, ou le champ simple si aucun détail
+const moveSum = e => e?.moves?.length ? e.moves.reduce((t, m) => t + m.a, 0) : (e?.deposit || 0);
+const movesIn = e => (e?.moves || []).filter(m => m.a > 0).reduce((t, m) => t + m.a, 0);
+const movesOut = e => (e?.moves || []).filter(m => m.a < 0).reduce((t, m) => t - m.a, 0);
+const dep = (m, a) => moveSum(entry(m, a));
+const dayLabel = (mk, d) => `${d} ${monthName(mk)}`;
 function firstMonthOf(a) { for (const k of months()) if (S.entries[k][a.id]?.value != null) return k; return null; }
 function lastUpdate(a) { const ms = months(); for (let i = ms.length - 1; i >= 0; i--) if (S.entries[ms[i]][a.id]?.value != null) return ms[i]; return null; }
 function valueAt(a, m) {
@@ -478,7 +486,7 @@ const totalAt = (m, f = () => true) => S.accounts.filter(f).reduce((s, a) => s +
 function accBreak(a, m) {
   const prevM = addMonths(m, -1);
   const v = valueAt(a, m), p = valueAt(a, prevM);
-  const dep = entry(m, a)?.deposit || 0;
+  const dep = moveSum(entry(m, a));
   if (a.closed && m === addMonths(a.closed, 1)) return { v: 0, p, dep: 0, added: -p, perf: 0 };
   const first = firstMonthOf(a);
   if (!first || first > m) return { v: 0, p: 0, dep: 0, added: 0, perf: 0 };
@@ -503,7 +511,7 @@ function avgDep(upto, n, f = () => true) {
   const ms = months(); if (!ms.length || upto < ms[0]) return { avg: 0, n: 0 };
   let from = addMonths(upto, -(n - 1)); if (from < ms[0]) from = ms[0];
   let sum = 0, c = 0;
-  for (let k = from; k <= upto; k = addMonths(k, 1)) { c++; for (const a of S.accounts.filter(f)) sum += entry(k, a)?.deposit || 0; }
+  for (let k = from; k <= upto; k = addMonths(k, 1)) { c++; for (const a of S.accounts.filter(f)) sum += dep(k, a); }
   return { avg: c ? sum / c : 0, n: c };
 }
 const focusMonth = () => { const ms = months(); return ms.length ? ms[ms.length - 1] : monthKey(); };
@@ -550,7 +558,7 @@ function alerts(F, forSummary = false) {
   }
   for (const a of acc.filter(a => a.type === 'pea')) {
     let versed = 0; const first = firstMonthOf(a);
-    for (const k of months()) { if (k > F) break; const e = entry(k, a); if (!e) continue; versed += (k === first ? e.value : (e.deposit || 0)); }
+    for (const k of months()) { if (k > F) break; const e = entry(k, a); if (!e) continue; versed += (k === first ? e.value : moveSum(e)); }
     if (versed > 0.8 * 150000) out.push({ l: 'info', t: `${forSummary ? 'PEA' : a.name} : environ ${eur(versed)} versés sur 150 000 € autorisés (estimation depuis le début du suivi).` });
   }
   for (const a of acc) {
@@ -562,7 +570,7 @@ function alerts(F, forSummary = false) {
   const pers = acc.filter(a => a.type === 'per');
   if (pers.length && mm >= 9) {
     const y = String(yy);
-    const verse = months().filter(k => k.startsWith(y) && k <= F).reduce((s, k) => s + pers.reduce((t, a) => t + (entry(k, a)?.deposit || 0), 0), 0);
+    const verse = months().filter(k => k.startsWith(y) && k <= F).reduce((s, k) => s + pers.reduce((t, a) => t + dep(k, a), 0), 0);
     if (S.settings.perPlafond) {
       const reste = S.settings.perPlafond - verse;
       if (reste > 0) out.push({ l: 'info', t: `PER : environ ${E(reste)} de plafond de déduction encore utilisable avant le 31 décembre (${E(verse)} versés cette année).` });
@@ -573,6 +581,18 @@ function alerts(F, forSummary = false) {
     if (n < 3) out.push({ l: 'warn', t: `Épargne de précaution : ${n.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} mois de dépenses sur les livrets, sous les 3 à 6 mois généralement recommandés.` });
     else if (n > 12) out.push({ l: 'info', t: `${Math.round(n)} mois de dépenses dorment sur les livrets, à rendement faible : vérifie que c’est voulu (apport à court terme, par exemple).` });
   }
+  // Reprises d'épargne en cours de mois
+  for (const a of acc) {
+    const e = entry(F, a); if (!e?.moves?.length) continue;
+    const out_ = movesOut(e); if (!out_) continue;
+    const in_ = movesIn(e), last = e.moves.filter(m => m.a < 0).sort((x, y) => y.d - x.d)[0];
+    const nm = forSummary ? TYPES[a.type].label : a.name;
+    if (in_ > 0) out.push({ l: 'warn', t: `${nm} : ${E(in_)} versés puis ${E(out_)} repris le ${dayLabel(F, last.d)}${!forSummary && last.n ? ` (${last.n})` : ''}. Épargne nette du mois : ${E(in_ - out_)}.` });
+    else out.push({ l: 'warn', t: `${nm} : retrait de ${E(out_)} le ${dayLabel(F, last.d)}${!forSummary && last.n ? ` (${last.n})` : ''}, sans versement ce mois-ci.` });
+  }
+  const withdrawMonths = [];
+  for (let k = addMonths(F, -5); k <= F; k = addMonths(k, 1)) if (acc.some(a => movesOut(entry(k, a)) > 0)) withdrawMonths.push(k);
+  if (withdrawMonths.length >= 3) out.push({ l: 'warn', t: `Reprises d’épargne sur ${withdrawMonths.length} des 6 derniers mois : le montant que tu mets de côté chaque mois est probablement trop ambitieux, ou l’épargne de précaution ne joue pas son rôle d’amortisseur.` });
   const ms = months();
   if (ms.length >= 3) {
     const b = breakdown(F), prev = avgDep(addMonths(F, -1), 6);
@@ -615,7 +635,8 @@ function summary(F) {
     if (a0 && a1) L.push(`${monthDiff(from, F) === 12 ? 'Sur 12 mois' : 'Depuis ' + monthLabel(from)} : ${SR(a1.t - a0.t)}, dont ${R(a1.inv - a0.inv)} versés.`);
   }
   const prev = avgDep(addMonths(F, -1), 6);
-  L.push(`Épargne du mois : ${R(b.dep)}${prev.n >= 2 ? ` (moyenne des ${prev.n} mois précédents : ${R(prev.avg)} par mois)` : ''}.`);
+  const gin = S.accounts.reduce((t, a) => t + movesIn(entry(F, a)), 0), gout = S.accounts.reduce((t, a) => t + movesOut(entry(F, a)), 0);
+  L.push(`Épargne du mois : ${R(b.dep)}${gout > 0 ? ` (${R(gin)} versés, ${R(gout)} repris en cours de mois)` : ''}${prev.n >= 2 ? ` — moyenne des ${prev.n} mois précédents : ${R(prev.avg)} par mois` : ''}.`);
   if (S.settings.revenus) L.push(`Taux d’épargne : ${pct(b.dep / S.settings.revenus)} des revenus nets mensuels.`);
   if (S.settings.depenses) L.push(`Épargne de précaution : ${(totalAt(F, a => TYPES[a.type].cat === 'livrets') / S.settings.depenses).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} mois de dépenses sur les livrets.`);
   L.push('', 'Répartition :');
@@ -781,11 +802,14 @@ function vSaisie() {
       return `<fieldset class="acc"><legend><span class="acc-name">${esc(a.name)}</span>${a.name.trim().toLowerCase() === T.label.toLowerCase() ? '' : `<span class="acc-type">${T.label}</span>`}</legend>
         <div class="acc-fields">
           <label>Solde<input inputmode="decimal" data-acc="${a.id}" data-f="value" value="${esc(numStr(e.value))}" placeholder="${hasPrev ? esc(numStr(prev)) : 'ex. 12500'}" autocomplete="off"></label>
-          <label>Versé ce mois<input inputmode="decimal" data-acc="${a.id}" data-f="deposit" value="${esc(numStr(e.deposit))}" placeholder="0" autocomplete="off"></label></div>
+          ${e.moves?.length ? `<label>Versé ce mois (net)<input value="${esc(eur(moveSum(e)))}" readonly data-acc="${a.id}" data-f="locked"></label>`
+            : `<label>Versé ce mois<input inputmode="decimal" data-acc="${a.id}" data-f="deposit" value="${esc(numStr(e.deposit))}" placeholder="0" autocomplete="off"></label>`}</div>
+        <button class="link" type="button" data-act="moves" data-id="${a.id}">${e.moves?.length ? `Détail : ${plural(e.moves.length, 'mouvement', 'mouvements')}${movesOut(e) ? `, dont ${eur(movesOut(e))} repris` : ''}` : 'Détailler les mouvements du mois'}</button>
         ${hasPrev ? `<p class="hint">Mois précédent : ${eur(prev)}${T.plafond ? `, plafond ${eur(T.plafond)}` : ''}</p>` : T.plafond ? `<p class="hint">Plafond ${eur(T.plafond)}</p>` : ''}</fieldset>`;
     }).join('')}</div>
     <div class="actions">
       <button class="btn primary wide" data-act="savesaisie">Enregistrer ${monthName(m)}</button>
+      <button class="btn ghost wide" data-act="importstmt">Importer un relevé</button>
       <button class="btn ghost wide" data-act="copyprev">Reprendre les soldes précédents</button>
       <button class="link" data-act="settings">Ajouter ou modifier un compte</button></div>`;
 }
@@ -915,10 +939,145 @@ async function finishImport(o) {
 }
 const pkDone = after => { if (after === 'close') { closeSheet(); render(); } else sheetSettings(); toast('Face ID activé'); };
 
+/* ---------- Mouvements du mois ---------- */
+function sheetMoves(id) {
+  const a = S.accounts.find(x => x.id === id), m = saisieMonth, e = entry(m, a) || {};
+  const list = (e.moves || []).slice().sort((x, y) => x.d - y.d);
+  const [, mo] = m.split('-').map(Number), lastDay = new Date(m.split('-')[0], mo, 0).getDate();
+  openSheet(`<h2>${esc(a.name)}</h2>
+    <p class="small" style="margin:0 0 14px">Mouvements de ${monthLabel(m)}. Un versement est positif, une reprise est négative. Les intérêts et plus-values ne sont pas des mouvements : ils apparaissent seuls dans le solde.</p>
+    ${list.length ? `<ul class="list">${list.map((mv, i) => `<li><button type="button" data-act="delmove" data-id="${a.id}" data-i="${i}"><span>${dayLabel(m, mv.d)}${mv.n ? `<br><span class="small">${esc(mv.n)}</span>` : ''}</span><span class="num ${mv.a < 0 ? 'down' : 'up'}">${signed(mv.a)}</span></button></li>`).join('')}</ul>
+      <p class="small" style="margin:10px 0 0">Versé ${eur(movesIn(e))}, repris ${eur(movesOut(e))}, net ${signed(moveSum(e))}. Touche une ligne pour la supprimer.</p>`
+      : '<p class="small" style="margin:0">Aucun mouvement enregistré pour ce mois.</p>'}
+    <h3>Ajouter un mouvement</h3>
+    <form id="f-move" class="stack-form" data-id="${a.id}">
+      <div class="row2"><label>Jour<input id="m-day" inputmode="numeric" value="${Math.min(new Date().getDate(), lastDay)}" required></label>
+        <label>Montant (€)<input id="m-amt" inputmode="decimal" placeholder="500 ou -150" required></label></div>
+      <label>Motif (facultatif)<input id="m-note" placeholder="ex. imprévu voiture" maxlength="40"></label>
+      <button class="btn primary wide" type="submit">Ajouter</button>
+      <button class="link" type="button" data-act="close">Fermer</button></form>`);
+}
+
+/* ---------- Import d'un relevé ----------
+   L'analyse se fait entièrement sur l'iPhone : le fichier n'est jamais envoyé. */
+const KEYS = ['valorisation', 'valeur', 'total', 'epargne', 'encours', 'montant', 'solde', 'rachat', 'atteinte', 'acquise', 'evaluation', 'contre-valeur', 'portefeuille', 'avoirs'];
+const norm = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+const NOISE = /(\bnombre\b|\bquantit|\bparts?\b|\bcours\b|valeur liquidative|\bvl\b|\bdevise\b|\btaux\b|%|latente|\+\/-|\bisin\b|\bcode\b|\bfrais\b|\bdate\b)/;
+function parseAmount(raw) {
+  let t = String(raw).replace(/\b(eur|euros?|usd|dollars?|chf)\b/gi, '').replace(/[\s\u00a0\u202f€$]/g, '');
+  if (!/\d/.test(t)) return null;
+  const neg = /^-/.test(t) || /^\(.+\)$/.test(t);
+  t = t.replace(/[()+\-]/g, '');
+  if (!/^[\d.,]+$/.test(t)) return null;
+  const lc = t.lastIndexOf(','), ld = t.lastIndexOf('.');
+  let cut = -1;
+  if (lc > -1 && ld > -1) cut = Math.max(lc, ld);
+  else { const l = Math.max(lc, ld); if (l > -1 && t.length - l - 1 <= 2) cut = l; }
+  const ip = (cut > -1 ? t.slice(0, cut) : t).replace(/[.,]/g, ''), fp = cut > -1 ? t.slice(cut + 1) : '';
+  if (!/^\d+$/.test(ip) || (fp && !/^\d+$/.test(fp))) return null;
+  const n = Number(ip + (fp ? '.' + fp : ''));
+  if (!Number.isFinite(n)) return null;
+  if (cut === -1 && /^(19|20)\d\d$/.test(ip)) return null; // millésime, pas un montant
+  return neg ? -n : n;
+}
+function splitCsv(line, d) {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q; }
+    else if (c === d && !q) { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out.map(c => c.trim());
+}
+const scoreOf = txt => KEYS.reduce((sc, w, i) => norm(txt).includes(w) ? sc + (KEYS.length - i) : sc, 0);
+function scanStatement(txt) {
+  const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(l => l && l.length < 400);
+  const d = [';', '\t', ',', '|'].map(c => [c, lines.reduce((n, l) => n + (l.split(c).length - 1), 0)]).sort((a, b) => b[1] - a[1])[0];
+  const delim = d && d[1] >= lines.length ? d[0] : null;
+  const seen = new Set(), out = [];
+  const add = (label, amount, score) => {
+    label = label.replace(/[.\u2026_]{3,}/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 70);
+    if (!label || amount == null || Math.abs(amount) < 1) return;
+    const k = norm(label) + '|' + amount; if (seen.has(k)) return; seen.add(k);
+    out.push({ label, amount, score });
+  };
+  if (delim) {
+    const rows = lines.map(l => splitCsv(l, delim));
+    const numeric = r => r.filter(c => parseAmount(c) != null).length;
+    const head = rows.length > 1 && numeric(rows[0]) === 0 ? rows.shift() : [];
+    for (const r of rows) {
+      const label = r.filter(c => c && parseAmount(c) == null).join(' ') || r[0];
+      for (let i = 0; i < r.length; i++) {
+        const v = parseAmount(r[i]); if (v == null || !r[i]) continue;
+        const col = head[i] || '';
+        if (col && NOISE.test(norm(col))) continue;
+        add(col ? `${label} · ${col}` : label, v, scoreOf(label) * 2 + scoreOf(col) * 3);
+      }
+    }
+  } else {
+    for (const line of lines) {
+      const m = line.match(/-?\(?\d[\d\s\u00a0\u202f.,]*\d\)?(?=\s*(?:€|eur|euros?)?\s*$)/i);
+      if (!m) continue;
+      const before = line[m.index - 1];
+      if (before && /[/\-\d]/.test(before)) continue;
+      const v = parseAmount(m[0]); if (v == null) continue;
+      const label = line.slice(0, m.index);
+      if (NOISE.test(norm(label))) continue;
+      add(label, v, scoreOf(label) * 2);
+    }
+  }
+  return out.sort((x, y) => y.score - x.score || Math.abs(y.amount) - Math.abs(x.amount)).slice(0, 60);
+}
+function guessFor(a, cands) {
+  if (a.imp) { const hit = cands.find(c => norm(c.label) === a.imp); if (hit) return cands.indexOf(hit); }
+  const t = norm(TYPES[a.type].label), n = norm(a.name);
+  const byName = cands.find(c => { const l = norm(c.label); return l.includes(n) || (t.length > 2 && l.includes(t)); });
+  if (byName) return cands.indexOf(byName);
+  return cands.length === 1 ? 0 : -1;
+}
+function sheetImport() {
+  openSheet(`<h2>Importer un relevé</h2>
+    <p class="small" style="margin:0 0 14px">Pour ${monthLabel(saisieMonth)}. Choisis un fichier CSV ou texte exporté par ta banque, ou colle le contenu d’un relevé. Tout est analysé sur cet iPhone, rien n’est envoyé.</p>
+    <button class="btn wide" data-act="pickstmt">Choisir un fichier</button>
+    <h3>Ou coller le texte</h3>
+    <form id="f-stmt" class="stack-form">
+      <textarea id="stmt" rows="6" placeholder="Colle ici le contenu du relevé"></textarea>
+      <button class="btn primary wide" type="submit">Analyser</button>
+      <button class="link" type="button" data-act="close">Annuler</button></form>
+    <p class="small">Pour un PDF : ouvre-le, sélectionne le texte, copie, puis colle-le ici.</p>`);
+}
+let cands = [];
+function sheetImportMap(list) {
+  cands = list;
+  if (!cands.length) return openSheet('<h2>Aucun montant trouvé</h2><p>Ce fichier ne contient pas de montants reconnaissables. Essaie un autre export, par exemple au format CSV.</p><button class="btn wide" data-act="importstmt">Réessayer</button>');
+  const accs = S.accounts.filter(a => !a.closed);
+  openSheet(`<h2>Associer les montants</h2>
+    <p class="small" style="margin:0 0 14px">${plural(cands.length, 'montant trouvé', 'montants trouvés')}. Vérifie chaque ligne, puis applique à ${monthLabel(saisieMonth)}.</p>
+    <form id="f-map" class="stack-form">
+      ${accs.map(a => { const g = guessFor(a, cands); return `<label>${esc(a.name)}<select data-map="${a.id}">
+        <option value="">— ne pas modifier —</option>
+        ${cands.map((c, i) => `<option value="${i}" ${i === g ? 'selected' : ''}>${eur(c.amount)} — ${esc(c.label)}</option>`).join('')}</select></label>`; }).join('')}
+      <button class="btn primary wide" type="submit">Appliquer</button>
+      <button class="link" type="button" data-act="close">Annuler</button></form>
+    <p class="small">L’app retiendra l’intitulé choisi pour préremplir les prochains imports.</p>`);
+}
+
 /* ---------- Actions ---------- */
 const ACT = {
   go: t => go(t.dataset.view),
   chpw: () => sheetChangePw(),
+  moves: t => sheetMoves(t.dataset.id),
+  importstmt: () => sheetImport(),
+  pickstmt: () => { const i = $('#stmtfile'); i.value = ''; i.click(); },
+  delmove: async t => {
+    const a = S.accounts.find(x => x.id === t.dataset.id), e = entry(saisieMonth, a);
+    const sorted = (e.moves || []).slice().sort((x, y) => x.d - y.d), mv = sorted[+t.dataset.i];
+    e.moves = e.moves.filter(x => x !== mv);
+    if (!e.moves.length) { delete e.moves; e.deposit = 0; }
+    await save(); sheetMoves(a.id); render();
+  },
   codeinfo: () => sheetCode(),
   codeupdate: () => applyCodeUpdate(),
   codelater: () => { code.status = 'ok'; paintCode(); closeSheet(); },
@@ -984,15 +1143,16 @@ const ACT = {
     const rows = {};
     $$('#saisie input').forEach(i => { i.classList.remove('bad'); (rows[i.dataset.acc] ||= {})[i.dataset.f] = i; });
     for (const [id, r] of Object.entries(rows)) {
-      const v = num(r.value.value), d = num(r.deposit.value);
+      const v = num(r.value.value), d = r.deposit ? num(r.deposit.value) : 0;
       if (Number.isNaN(v)) { r.value.classList.add('bad'); bad ||= r.value; continue; }
       if (Number.isNaN(d)) { r.deposit.classList.add('bad'); bad ||= r.deposit; continue; }
       if (v == null && d != null) { r.value.classList.add('bad'); bad ||= r.value; continue; }
-      if (v != null) out[id] = { value: v, deposit: d || 0 };
+      const old = entry(m, S.accounts.find(x => x.id === id));
+      if (v != null) out[id] = old?.moves?.length ? { value: v, moves: old.moves } : { value: v, deposit: d || 0 };
     }
     if (bad) { bad.focus(); toast('Vérifie les montants en rouge : un solde est requis pour chaque versement'); return; }
     if (Object.keys(out).length) S.entries[m] = out; else delete S.entries[m];
-    await save(); toast(`${cap(monthName(m))} enregistré`); go('home');
+    await save(); saisieMonth = monthKey(); toast(`${cap(monthName(m))} enregistré`); go('home');
   },
   copy: async () => {
     const txt = summary(resumeMonth);
@@ -1033,6 +1193,15 @@ document.addEventListener('change', async e => {
   else if (t.id === 'a-type') {
     const T = TYPES[t.value]; $('#a-open-wrap').hidden = !T.maturite;
     if (!$('#f-acc').dataset.id) { $('#a-apport').checked = DEFAULTS[t.value].apport; $('#a-retraite').checked = DEFAULTS[t.value].retraite; if (!$('#a-name').value) $('#a-name').placeholder = `ex. ${T.label}`; }
+  }
+  else if (t.id === 'stmtfile' && t.files[0]) {
+    const file = t.files[0];
+    if (file.size > 4e6) return toast('Fichier trop volumineux');
+    try {
+      let txt = await file.text();
+      if (/\uFFFD/.test(txt.slice(0, 4000))) txt = new TextDecoder('windows-1252').decode(await file.arrayBuffer());
+      sheetImportMap(scanStatement(txt));
+    } catch { toast('Fichier illisible'); }
   }
   else if (t.id === 'importfile' && t.files[0]) {
     try {
@@ -1090,6 +1259,35 @@ document.addEventListener('submit', async e => {
     try { await openPwSlot(slots.pw, cur); } catch { return fail('Mot de passe actuel incorrect.'); }
     slots = { ...slots, pw: await makePwSlot(dekRaw, p1) };
     S.settings.lastExport = null; await save(); sheetSettings(); render(); toast('Mot de passe modifié');
+  }
+  else if (f.id === 'f-move') {
+    const a = S.accounts.find(x => x.id === f.dataset.id), m = saisieMonth;
+    const d = Math.round(num($('#m-day').value)), amt = num($('#m-amt').value);
+    const [yy, mo] = m.split('-').map(Number), lastDay = new Date(yy, mo, 0).getDate();
+    if (!Number.isFinite(d) || d < 1 || d > lastDay) return toast(`Le jour doit être compris entre 1 et ${lastDay}`);
+    if (!Number.isFinite(amt) || amt === 0) return toast('Indique un montant, négatif pour une reprise');
+    const e = (S.entries[m] ||= {})[a.id] ||= { value: valueAt(a, addMonths(m, -1)) };
+    if (!e.moves) { e.moves = e.deposit ? [{ d: 1, a: e.deposit }] : []; delete e.deposit; }
+    e.moves.push({ d, a: amt, n: $('#m-note').value.trim() || undefined });
+    await save(); sheetMoves(a.id); render();
+  }
+  else if (f.id === 'f-stmt') {
+    const txt = $('#stmt').value.trim();
+    if (!txt) return toast('Colle le contenu du relevé');
+    sheetImportMap(scanStatement(txt));
+  }
+  else if (f.id === 'f-map') {
+    const m = saisieMonth; let n = 0;
+    for (const sel of $$('#f-map select')) {
+      if (sel.value === '') continue;
+      const c = cands[+sel.value], a = S.accounts.find(x => x.id === sel.dataset.map);
+      const e = (S.entries[m] ||= {})[a.id] ||= {};
+      e.value = c.amount; if (e.moves == null && e.deposit == null) e.deposit = 0;
+      a.imp = norm(c.label); n++;
+    }
+    if (!n) { closeSheet(); return; }
+    await save(); closeSheet(); render();
+    toast(`${plural(n, 'solde mis à jour', 'soldes mis à jour')}`);
   }
   else if (f.id === 'f-acc') {
     const name = $('#a-name').value.trim(); if (!name) return;
