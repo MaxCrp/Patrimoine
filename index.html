@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Patrimoine">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Patrimoine</title>
+<style>
+:root{
+  --paper:#E9EEE8; --surface:#F7F9F5; --ink:#15201A; --muted:#5A675F; --line:#D1DAD2;
+  --pine:#1E5540; --on-pine:#FFFFFF; --pine-soft:#DAE7DE;
+  --amber:#9C6116; --amber-soft:#F2E4CB; --red:#A6423A;
+  --c-livrets:#9DC1A7; --c-bourse:#1E5540; --c-av:#4F8B6D; --c-retraite:#B38B3F; --c-salariale:#5E7F8C;
+  --num: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
+  --txt: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E;
+    --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24;
+    --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72;
+    --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--txt);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--pine);outline-offset:2px;border-radius:8px}
+.muted{color:var(--muted)}
+.num{font-family:var(--num)}
+
+/* Verrou */
+.lock{min-height:100dvh;display:flex;flex-direction:column;justify-content:center;padding:calc(32px + var(--safe-t)) 28px calc(32px + var(--safe-b));max-width:440px;margin:0 auto}
+.lock-mark svg{width:56px;height:56px}
+.lock-title{font:700 34px/1.1 var(--num);letter-spacing:-.02em;margin:18px 0 10px}
+.lock-text{color:var(--muted);margin:0 0 26px;max-width:36ch}
+.lock-form{display:grid;gap:14px}
+.lock-links{display:grid;gap:4px;margin-top:22px;justify-items:start}
+.err{color:var(--red);margin:0;font-size:15px}
+.or{text-align:center;color:var(--muted);margin:14px 0;font-size:14px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.note{margin-top:28px;padding:12px 14px;border-radius:12px;background:var(--amber-soft);color:var(--ink);font-size:14px}
+
+/* Champs */
+label{display:grid;gap:6px;font-size:14px;color:var(--muted)}
+input[type=text],input[type=password],input[type=month],input:not([type]),select{width:100%;min-height:46px;padding:10px 12px;font-size:17px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);-webkit-appearance:none;appearance:none}
+input[type=month]{display:block}
+input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
+.check{display:flex;align-items:center;gap:12px;font-size:16px;color:var(--ink);padding:6px 0}
+.check input{width:22px;height:22px;accent-color:var(--pine);margin:0}
+
+/* Boutons */
+.btn{border:0;border-radius:14px;min-height:46px;padding:0 18px;font-weight:600;background:var(--pine-soft);color:var(--ink)}
+.btn.primary{background:var(--pine);color:var(--on-pine)}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--red);border:1px solid var(--line)}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.55}
+.link{background:none;border:0;padding:8px 0;color:var(--pine);font-weight:600;text-align:left}
+.icon-btn{width:40px;height:40px;border:0;border-radius:12px;background:transparent;display:grid;place-items:center;color:var(--ink)}
+.icon-btn svg{width:22px;height:22px}
+
+/* Structure */
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--safe-t)) 16px 8px 20px;background:color-mix(in srgb,var(--paper) 88%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.top h1{font:700 22px/1.2 var(--num);margin:0;letter-spacing:-.01em}
+.top-actions{display:flex;align-items:center;gap:2px}
+.pill{font-size:13px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--amber-soft);color:var(--amber);margin-right:4px}
+.view{padding:4px 20px calc(110px + var(--safe-b));max-width:560px;margin:0 auto}
+.view section{margin-top:30px}
+.view h2{font:650 18px/1.3 var(--num);margin:0 0 12px}
+.banner{margin:0 16px;padding:10px 14px;border-radius:12px;background:var(--amber-soft);font-size:14px}
+
+/* Accueil */
+.hero{margin-top:14px !important}
+.hero-month{margin:0;color:var(--muted);font-size:15px}
+.hero-total{margin:2px 0 4px;font:700 46px/1.05 var(--num);letter-spacing:-.025em}
+.hero-delta{margin:0;font-size:15px;font-weight:600}
+.up{color:var(--pine)} .down{color:var(--red)}
+.update{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 16px 16px 18px;border-radius:20px;background:var(--pine-soft)}
+.update.done{background:transparent;border:1px solid var(--line)}
+.update p{margin:0}
+.update .btn{white-space:nowrap;flex-shrink:0}
+.update-title{font-weight:650}
+.progress{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:8px;width:140px}
+.progress i{display:block;height:100%;background:var(--pine);border-radius:9px}
+.chart{width:100%;height:auto;display:block}
+.c-area{fill:var(--pine);opacity:.14}
+.c-line{fill:none;stroke:var(--pine);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.c-inv{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 4}
+.c-dot{fill:var(--pine)}
+.c-lbl{fill:var(--muted);font:12px var(--txt)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--ink);font-weight:600}
+.key{display:inline-block;width:14px;height:0;border-top:2.4px solid var(--pine);vertical-align:middle;margin-right:6px}
+.key.inv{border-top:1.5px dashed var(--muted)}
+.stack{display:flex;height:14px;border-radius:8px;overflow:hidden;gap:2px}
+.stack i{display:block;height:100%}
+.rep{list-style:none;padding:0;margin:14px 0 0}
+.rep li{display:grid;grid-template-columns:12px 1fr auto auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.rep li:last-child{border-bottom:0}
+.dot{width:10px;height:10px;border-radius:3px}
+.rep .p{color:var(--muted);min-width:44px;text-align:right}
+.alerts{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.alerts li{padding:12px 14px 12px 16px;border-radius:14px;background:var(--surface);border-left:4px solid var(--pine);font-size:15px}
+.alerts li.warn{border-left-color:var(--amber)}
+.alerts li.good{border-left-color:var(--c-av)}
+.empty{padding:26px 0}
+.empty p{max-width:34ch}
+
+/* Saisie */
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.month-nav strong{font:650 19px var(--num)}
+.month-nav button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:20px}
+.month-nav button:disabled{opacity:.35}
+.acc{border:0;margin:0;padding:16px 0;border-bottom:1px solid var(--line)}
+.acc legend{display:flex;justify-content:space-between;width:100%;padding:0;margin-bottom:10px}
+.acc-name{font-weight:650}
+.acc-type{color:var(--muted);font-size:14px}
+.acc-fields{display:grid;grid-template-columns:1.3fr 1fr;gap:10px}
+.hint{margin:8px 0 0;font-size:13px;color:var(--muted)}
+.actions{display:grid;gap:10px;margin-top:22px}
+.explain{font-size:14px;color:var(--muted);margin:12px 0 0}
+
+/* Objectifs */
+.goal{padding:18px;border-radius:22px;background:var(--surface)}
+.goal .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px 10px;align-items:end}
+.goal .fields .full{grid-column:1/-1}
+.result{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.result p{margin:0 0 6px}
+.big{font:700 28px/1.1 var(--num);letter-spacing:-.02em}
+.bar{height:10px;border-radius:9px;background:var(--line);overflow:hidden;margin:10px 0 12px}
+.bar i{display:block;height:100%;background:var(--pine)}
+.small{font-size:13px;color:var(--muted)}
+
+/* Résumé */
+.summary{white-space:pre-wrap;font:15px/1.55 var(--txt);background:var(--surface);border-radius:18px;padding:16px;margin:0;border:1px solid var(--line);user-select:text;-webkit-user-select:text}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Barre d'onglets */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(4,1fr);padding:6px 8px calc(6px + var(--safe-b));background:color-mix(in srgb,var(--surface) 90%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--line)}
+.tab{position:relative;border:0;background:none;display:grid;justify-items:center;gap:2px;padding:6px 0;font-size:11px;font-weight:600;color:var(--muted)}
+.tab svg{width:24px;height:24px}
+.tab.on{color:var(--pine)}
+.badge{position:absolute;top:5px;left:calc(50% + 8px);width:9px;height:9px;border-radius:50%;background:var(--amber)}
+
+/* Feuille modale */
+.backdrop{position:fixed;inset:0;z-index:20;background:rgba(10,18,14,.38)}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-height:90dvh;overflow:auto;background:var(--paper);border-radius:24px 24px 0 0;padding:10px 20px calc(24px + var(--safe-b));max-width:560px;margin:0 auto;animation:up .22s ease-out}
+.sheet .grab{width:38px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+.sheet h2{font:700 22px var(--num);margin:4px 0 14px}
+.sheet h3{font:650 16px var(--num);margin:26px 0 10px}
+.sheet .stack-form{display:grid;gap:12px}
+.list{list-style:none;margin:0;padding:0}
+.list li button{width:100%;display:flex;justify-content:space-between;gap:10px;padding:13px 2px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
+.list .closed{opacity:.5}
+@keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+.toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:15px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion: reduce){.sheet{animation:none}.toast{transition:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="layer"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<input type="file" id="importfile" accept="application/json,.json" hidden>
+<script>
+'use strict';
+
+/* ---------- Référentiel ---------- */
+const ITER = 600000;            // itérations PBKDF2
+const LOCK_MS = 2 * 60 * 1000;  // verrouillage après 2 min en arrière-plan
+
+const TYPES = {
+  livretA: { label: 'Livret A', cat: 'livrets', plafond: 22950 },
+  ldds:    { label: 'LDDS', cat: 'livrets', plafond: 12000 },
+  lep:     { label: 'LEP', cat: 'livrets', plafond: 10000 },
+  livret:  { label: 'Autre livret', cat: 'livrets' },
+  pea:     { label: 'PEA', cat: 'bourse', plafondVersements: 150000, maturite: 5,
+             note: 'les retraits ne clôturent plus le plan et les gains sont exonérés d’impôt sur le revenu (prélèvements sociaux dus)' },
+  cto:     { label: 'Compte-titres', cat: 'bourse' },
+  av:      { label: 'Assurance-vie', cat: 'av', maturite: 8,
+             note: 'les gains retirés profitent d’un abattement annuel (4 600 € seul, 9 200 € en couple)' },
+  per:     { label: 'PER', cat: 'retraite' },
+  pee:     { label: 'PEE', cat: 'salariale' },
+  percol:  { label: 'PERCOL', cat: 'retraite' },
+};
+const DEFAULTS = {
+  livretA:{apport:true,retraite:false}, ldds:{apport:true,retraite:false}, lep:{apport:true,retraite:false},
+  livret:{apport:true,retraite:false}, pea:{apport:true,retraite:false}, cto:{apport:true,retraite:false},
+  av:{apport:true,retraite:false}, per:{apport:false,retraite:true}, pee:{apport:false,retraite:false},
+  percol:{apport:false,retraite:true},
+};
+const CATS = {
+  livrets:   { label: 'Livrets', color: 'var(--c-livrets)' },
+  bourse:    { label: 'Bourse (PEA, CTO)', color: 'var(--c-bourse)' },
+  av:        { label: 'Assurance-vie', color: 'var(--c-av)' },
+  retraite:  { label: 'Retraite (PER, PERCOL)', color: 'var(--c-retraite)' },
+  salariale: { label: 'Épargne salariale', color: 'var(--c-salariale)' },
+};
+
+/* ---------- Utilitaires ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const app = $('#app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)).slice(0, 12);
+const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+
+const pad = n => String(n).padStart(2, '0');
+const monthKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+const addMonths = (k, n) => { const [y, m] = k.split('-').map(Number); return monthKey(new Date(y, m - 1 + n, 1)); };
+const monthDiff = (a, b) => { const [y1, m1] = a.split('-').map(Number), [y2, m2] = b.split('-').map(Number); return (y2 - y1) * 12 + (m2 - m1); };
+const monthLabel = (k, opt = { month: 'long', year: 'numeric' }) => { const [y, m] = k.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('fr-FR', opt); };
+const monthName = k => monthLabel(k, { month: 'long' });
+const monthShort = k => monthLabel(k, { month: 'short', year: '2-digit' });
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+const fmtE = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+const eur = v => fmtE.format(Math.round(v || 0));
+const signed = v => (v > 0.5 ? '+' : v < -0.5 ? '−' : '') + fmtE.format(Math.abs(Math.round(v || 0)));
+const pct = (v, d = 0) => (v * 100).toLocaleString('fr-FR', { maximumFractionDigits: d, minimumFractionDigits: d }) + ' %';
+const spct = (v, d = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + pct(Math.abs(v), d);
+function approx(v) {
+  const a = Math.abs(v || 0);
+  if (a >= 10000) return (Math.round(a / 500) / 2).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' k€';
+  if (a >= 1000) return fmtE.format(Math.round(a / 100) * 100);
+  return fmtE.format(Math.round(a / 10) * 10);
+}
+function num(s) {
+  if (s == null) return null;
+  s = String(s).replace(/[\s\u00a0\u202f€]/g, '').replace(',', '.');
+  if (s === '') return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+const numStr = v => v == null ? '' : String(v).replace('.', ',');
+
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ---------- Stockage local (IndexedDB, sinon mémoire) ---------- */
+let persistent = true;
+const mem = new Map();
+const memStore = { get: async k => mem.get(k), set: async (k, v) => { mem.set(k, v); }, del: async k => { mem.delete(k); } };
+function idbStore(db) {
+  const os = mode => db.transaction('kv', mode).objectStore('kv');
+  const wrap = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  return { get: k => wrap(os('readonly').get(k)), set: (k, v) => wrap(os('readwrite').put(v, k)), del: k => wrap(os('readwrite').delete(k)) };
+}
+async function openStore() {
+  try {
+    const db = await Promise.race([
+      new Promise((res, rej) => {
+        const r = indexedDB.open('patrimoine', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('kv');
+        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error('blocked'));
+      }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000)),
+    ]);
+    const s = idbStore(db);
+    await s.set('_probe', 1); await s.del('_probe');
+    return s;
+  } catch (e) { persistent = false; return memStore; }
+}
+// Délai croissant après 5 mots de passe erronés (30 s, 1 min, 2 min… jusqu'à 15 min)
+const getFails = async () => (await store.get('fails')) || { n: 0, until: 0 };
+async function noteFail() { const f = await getFails(); f.n++; if (f.n >= 5) f.until = Date.now() + Math.min(15 * 60e3, 30e3 * 2 ** (f.n - 5)); await store.set('fails', f); return f; }
+const clearFails = () => store.del('fails');
+
+/* ---------- Chiffrement ----------
+   Les données sont chiffrées (AES-GCM 256) avec une clé maître aléatoire.
+   Cette clé maître est elle-même chiffrée dans des « emplacements » :
+   - pw : clé dérivée du mot de passe (PBKDF2-SHA256, 600 000 itérations) ;
+   - pk : clé dérivée d'une clé d'accès grâce à l'extension WebAuthn PRF (Face ID).
+   Changer le mot de passe ne rechiffre que la clé maître. */
+const enc = new TextEncoder(), dec = new TextDecoder();
+const rand = n => crypto.getRandomValues(new Uint8Array(n));
+function b64(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const importDek = raw => crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+async function aesEnc(k, bytes) { const iv = rand(12); const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, bytes); return { iv: b64(iv), ct: b64(ct) }; }
+async function aesDec(k, iv, ct) { return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, k, unb64(ct))); }
+async function pwKek(pass, salt, iter) {
+  const base = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function prfKek(secret) {
+  const base = await crypto.subtle.importKey('raw', secret, 'HKDF', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: enc.encode('patrimoine'), info: enc.encode('cle-d-acces-v2') }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function makePwSlot(raw, pass) { const salt = rand(16); return { salt: b64(salt), iter: ITER, ...(await aesEnc(await pwKek(pass, salt, ITER), raw)) }; }
+const openPwSlot = async (slot, pass) => aesDec(await pwKek(pass, unb64(slot.salt), slot.iter), slot.iv, slot.ct);
+async function seal() {
+  const w = await aesEnc(dek, enc.encode(JSON.stringify(S)));
+  return { app: 'patrimoine', v: 2, slots, ...w, savedAt: Date.now() };
+}
+// Ouvre le coffre (ou une sauvegarde) avec le mot de passe ou le secret d'une clé d'accès.
+async function openVault(vault, { pass, prf }) {
+  if (!vault.slots) { // ancien format v1 : converti au passage
+    const data = JSON.parse(dec.decode(await aesDec(await pwKek(pass, unb64(vault.salt), vault.iter), vault.iv, vault.ct)));
+    const raw = rand(32);
+    return { raw, data, slots: { pw: await makePwSlot(raw, pass) }, migrated: true };
+  }
+  const raw = prf ? await aesDec(await prfKek(prf), vault.slots.pk.iv, vault.slots.pk.ct) : await openPwSlot(vault.slots.pw, pass);
+  const data = JSON.parse(dec.decode(await aesDec(await importDek(raw), vault.iv, vault.ct)));
+  return { raw, data, slots: vault.slots };
+}
+async function adopt(o) { dekRaw = o.raw; dek = await importDek(o.raw); slots = o.slots; S = normalize(o.data); mode = 'app'; }
+function wipeKeys() { dekRaw?.fill(0); dekRaw = null; dek = null; slots = null; S = null; }
+
+/* ---------- Clé d'accès : Face ID via le trousseau iCloud ou un gestionnaire compatible ---------- */
+const pkAvailable = () => !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
+function pkError(e) {
+  if (e?.message === 'noprf') return 'Ce gestionnaire de clés d’accès ne permet pas de déverrouiller l’app (extension PRF non prise en charge). Supprime la clé créée dans ce gestionnaire, puis réessaie en l’enregistrant ailleurs, par exemple dans le trousseau iCloud.';
+  if (e?.name === 'NotAllowedError') return 'Opération annulée ou expirée.';
+  if (e?.name === 'SecurityError') return 'Les clés d’accès ne fonctionnent qu’à l’adresse https de l’app installée.';
+  return 'La clé d’accès n’a pas pu être utilisée.';
+}
+async function prfGet(slot) {
+  const cred = await navigator.credentials.get({ publicKey: {
+    challenge: rand(32), rpId: location.hostname, userVerification: 'required', timeout: 60000,
+    allowCredentials: [{ type: 'public-key', id: unb64(slot.credId) }],
+    extensions: { prf: { eval: { first: unb64(slot.prfSalt) } } } } });
+  const r = cred.getClientExtensionResults()?.prf?.results?.first;
+  if (!r) throw new Error('noprf');
+  return new Uint8Array(r);
+}
+async function pkCreate() {
+  const prfSalt = rand(32);
+  const cred = await navigator.credentials.create({ publicKey: {
+    rp: { name: 'Patrimoine', id: location.hostname },
+    user: { id: rand(16), name: 'Patrimoine', displayName: 'Patrimoine' },
+    challenge: rand(32),
+    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+    authenticatorSelection: { residentKey: 'required', requireResidentKey: true, userVerification: 'required' },
+    timeout: 60000, extensions: { prf: { eval: { first: prfSalt } } } } });
+  const ext = cred.getClientExtensionResults()?.prf;
+  if (ext && ext.enabled === false) throw new Error('noprf');
+  return { slot: { credId: b64(cred.rawId), prfSalt: b64(prfSalt) }, secret: ext?.results?.first ? new Uint8Array(ext.results.first) : null };
+}
+async function pkStore(slot, secret) {
+  slots = { ...slots, pk: { ...slot, ...(await aesEnc(await prfKek(secret), dekRaw)), createdAt: Date.now() } };
+  await save();
+}
+
+/* ---------- État ---------- */
+let store, S = null, dek = null, dekRaw = null, slots = null, mode = 'boot', view = 'home', lockHasPk = false, pkPending = null;
+let saisieMonth = monthKey(), resumeMonth = null, rounding = true, hiddenAt = 0, pendingImport = null;
+
+const emptyData = () => ({
+  v: 1, accounts: [], entries: {},
+  settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null },
+  goals: { apport: { target: null, date: null }, rente: { birthYear: null, retireAge: 64, monthly: null, ret: 3, withdraw: 4 } },
+});
+function normalize(d) {
+  const e = emptyData();
+  d.settings = { ...e.settings, ...(d.settings || {}) };
+  d.goals = { apport: { ...e.goals.apport, ...(d.goals?.apport || {}) }, rente: { ...e.goals.rente, ...(d.goals?.rente || {}) } };
+  d.accounts = (d.accounts || []).map(a => ({ owner: 'moi', ...a })); // « owner » : prévu pour la gestion familiale
+  d.entries = d.entries || {};
+  return d;
+}
+async function save() {
+  if (mode !== 'app') return;
+  await store.set('vault', await seal());
+}
+
+/* ---------- Calculs ---------- */
+const active = () => S.accounts.filter(a => !a.closed);
+const months = () => Object.keys(S.entries).filter(k => Object.keys(S.entries[k]).length).sort();
+const entry = (m, a) => S.entries[m]?.[a.id];
+function firstMonthOf(a) { for (const k of months()) if (S.entries[k][a.id]?.value != null) return k; return null; }
+function lastUpdate(a) { const ms = months(); for (let i = ms.length - 1; i >= 0; i--) if (S.entries[ms[i]][a.id]?.value != null) return ms[i]; return null; }
+function valueAt(a, m) {
+  if (a.closed && m > a.closed) return 0;
+  const ms = months();
+  for (let i = ms.length - 1; i >= 0; i--) {
+    if (ms[i] > m) continue;
+    const e = S.entries[ms[i]][a.id];
+    if (e && e.value != null) return e.value;
+  }
+  return 0;
+}
+const totalAt = (m, f = () => true) => S.accounts.filter(f).reduce((s, a) => s + valueAt(a, m), 0);
+
+// Décomposition de la variation d’un compte sur un mois : versements, entrée dans le suivi, performance
+function accBreak(a, m) {
+  const prevM = addMonths(m, -1);
+  const v = valueAt(a, m), p = valueAt(a, prevM);
+  const dep = entry(m, a)?.deposit || 0;
+  if (a.closed && m === addMonths(a.closed, 1)) return { v: 0, p, dep: 0, added: -p, perf: 0 };
+  const first = firstMonthOf(a);
+  if (!first || first > m) return { v: 0, p: 0, dep: 0, added: 0, perf: 0 };
+  if (first === m) return { v, p: 0, dep, added: v - dep, perf: 0 };
+  return { v, p, dep, added: 0, perf: v - p - dep };
+}
+function breakdown(m, f = () => true) {
+  const r = { total: 0, prevTotal: 0, dep: 0, added: 0, perf: 0 };
+  for (const a of S.accounts.filter(f)) { const b = accBreak(a, m); r.total += b.v; r.prevTotal += b.p; r.dep += b.dep; r.added += b.added; r.perf += b.perf; }
+  return r;
+}
+function timeline() {
+  const ms = months(); if (!ms.length) return [];
+  const out = []; let inv = 0;
+  for (let k = ms[0]; k <= ms[ms.length - 1]; k = addMonths(k, 1)) {
+    const b = breakdown(k); inv += b.dep + b.added;
+    out.push({ k, t: b.total, inv });
+  }
+  return out;
+}
+function avgDep(upto, n, f = () => true) {
+  const ms = months(); if (!ms.length || upto < ms[0]) return { avg: 0, n: 0 };
+  let from = addMonths(upto, -(n - 1)); if (from < ms[0]) from = ms[0];
+  let sum = 0, c = 0;
+  for (let k = from; k <= upto; k = addMonths(k, 1)) { c++; for (const a of S.accounts.filter(f)) sum += entry(k, a)?.deposit || 0; }
+  return { avg: c ? sum / c : 0, n: c };
+}
+const focusMonth = () => { const ms = months(); return ms.length ? ms[ms.length - 1] : monthKey(); };
+
+function goalApport(F) {
+  const g = S.goals.apport; if (!g.target) return null;
+  const f = a => a.apport;
+  const cur = totalAt(F, f), pace = avgDep(F, 6, f).avg;
+  const left = g.date ? monthDiff(F, g.date) : null;
+  const r = { cur, pace, left, prog: Math.min(1, cur / g.target), need: null, reach: null, late: null, done: cur >= g.target };
+  if (r.done) return r;
+  if (left != null && left > 0) r.need = (g.target - cur) / left;
+  if (pace > 0) { r.reach = addMonths(F, Math.ceil((g.target - cur) / pace)); if (g.date) r.late = monthDiff(g.date, r.reach); }
+  return r;
+}
+function goalRente(F) {
+  const g = S.goals.rente; if (!g.birthYear || !g.retireAge) return null;
+  const f = a => a.retraite;
+  const C = totalAt(F, f), m = Math.max(0, avgDep(F, 6, f).avg);
+  const [y, mo] = F.split('-').map(Number);
+  const n = Math.max(0, (g.birthYear + g.retireAge - y) * 12 - (mo - 1));
+  const w = (g.withdraw || 4) / 100, r = Math.pow(1 + (g.ret ?? 3) / 100, 1 / 12) - 1, G = Math.pow(1 + r, n);
+  const fv = n === 0 ? C : r ? C * G + m * (G - 1) / r : C + m * n;
+  const target = g.monthly ? g.monthly * 12 / w : null;
+  let need = null;
+  if (target != null && n > 0) need = Math.max(0, r ? (target - C * G) * r / (G - 1) : (target - C) / n);
+  return { C, m, n, fv, rente: fv * w / 12, target, need, age: g.retireAge };
+}
+
+/* ---------- Points d’attention ---------- */
+function alerts(F, forSummary = false) {
+  const out = [], cur = monthKey(), [yy, mm] = F.split('-').map(Number);
+  const E = forSummary && rounding ? approx : eur;
+  const acc = active();
+  for (const a of acc) {
+    const lu = lastUpdate(a);
+    if (lu && monthDiff(lu, cur) >= 2 && !forSummary) out.push({ l: 'warn', t: `${a.name} n’a pas été mis à jour depuis ${monthName(lu)}.` });
+  }
+  for (const a of acc) {
+    const T = TYPES[a.type]; if (!T.plafond) continue;
+    const v = valueAt(a, F); const nm = forSummary ? T.label : a.name;
+    if (v >= T.plafond) out.push({ l: 'info', t: `${nm} a atteint son plafond de versement (${eur(T.plafond)}) : les prochains versements devront aller sur un autre support.` });
+    else if (v >= 0.9 * T.plafond) out.push({ l: 'info', t: `${nm} est rempli à ${pct(v / T.plafond)} : il reste ${eur(T.plafond - v)} avant le plafond.` });
+  }
+  for (const a of acc.filter(a => a.type === 'pea')) {
+    let versed = 0; const first = firstMonthOf(a);
+    for (const k of months()) { if (k > F) break; const e = entry(k, a); if (!e) continue; versed += (k === first ? e.value : (e.deposit || 0)); }
+    if (versed > 0.8 * 150000) out.push({ l: 'info', t: `${forSummary ? 'PEA' : a.name} : environ ${eur(versed)} versés sur 150 000 € autorisés (estimation depuis le début du suivi).` });
+  }
+  for (const a of acc) {
+    const T = TYPES[a.type]; if (!T.maturite || !a.open) continue;
+    const anniv = addMonths(a.open, T.maturite * 12), d = monthDiff(F, anniv); const nm = forSummary ? T.label : a.name;
+    if (d > 0 && d <= 6) out.push({ l: 'info', t: `${nm} aura ${T.maturite} ans en ${monthLabel(anniv)} : ensuite, ${T.note}. Évite si possible les retraits d’ici là.` });
+    else if (d <= 0 && d > -3) out.push({ l: 'good', t: `${nm} a passé ${T.maturite} ans : ${T.note}.` });
+  }
+  const pers = acc.filter(a => a.type === 'per');
+  if (pers.length && mm >= 9) {
+    const y = String(yy);
+    const verse = months().filter(k => k.startsWith(y) && k <= F).reduce((s, k) => s + pers.reduce((t, a) => t + (entry(k, a)?.deposit || 0), 0), 0);
+    if (S.settings.perPlafond) {
+      const reste = S.settings.perPlafond - verse;
+      if (reste > 0) out.push({ l: 'info', t: `PER : environ ${E(reste)} de plafond de déduction encore utilisable avant le 31 décembre (${E(verse)} versés cette année).` });
+    } else if (!forSummary) out.push({ l: 'info', t: 'Renseigne ton plafond de déduction PER (sur ton avis d’impôt) dans les réglages pour suivre ce qu’il te reste à déduire cette année.' });
+  }
+  if (S.settings.depenses) {
+    const liv = totalAt(F, a => TYPES[a.type].cat === 'livrets'), n = liv / S.settings.depenses;
+    if (n < 3) out.push({ l: 'warn', t: `Épargne de précaution : ${n.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} mois de dépenses sur les livrets, sous les 3 à 6 mois généralement recommandés.` });
+    else if (n > 12) out.push({ l: 'info', t: `${Math.round(n)} mois de dépenses dorment sur les livrets, à rendement faible : vérifie que c’est voulu (apport à court terme, par exemple).` });
+  }
+  const ms = months();
+  if (ms.length >= 3) {
+    const b = breakdown(F), prev = avgDep(addMonths(F, -1), 6);
+    if (b.dep < 0) out.push({ l: 'warn', t: `Retrait net de ${E(-b.dep)} en ${monthName(F)} : vérifie qu’il était prévu.` });
+    else if (prev.n >= 2 && prev.avg > 0 && b.dep < 0.7 * prev.avg) out.push({ l: 'warn', t: `Épargne de ${monthName(F)} : ${E(b.dep)}, sous ta moyenne récente (${E(prev.avg)} par mois).` });
+    else if (prev.n >= 2 && prev.avg > 0 && b.dep > 1.3 * prev.avg) out.push({ l: 'good', t: `Bon mois : ${E(b.dep)} épargnés, au-dessus de ta moyenne récente (${E(prev.avg)} par mois).` });
+  }
+  const ga = goalApport(F);
+  if (ga && !ga.done && ga.late > 0) out.push({ l: 'warn', t: `Apport immobilier : au rythme actuel, objectif atteint en ${monthLabel(ga.reach)}, soit ${plural(ga.late, 'mois', 'mois')} après l’échéance.` });
+  if (ga && !ga.done && ga.pace <= 0 && ga.cur < S.goals.apport.target) out.push({ l: 'warn', t: 'Apport immobilier : aucun versement récent sur les comptes comptés pour l’apport.' });
+  const unlockable = acc.filter(a => ['pee', 'per', 'percol'].includes(a.type) && !a.apport);
+  if (S.goals.apport.target && unlockable.length && !forSummary)
+    out.push({ l: 'info', t: `${[...new Set(unlockable.map(a => TYPES[a.type].label))].join(', ')} : déblocage anticipé possible pour acheter ta résidence principale. Si c’est ton projet, compte-les dans l’apport depuis les réglages.` });
+  if (mode === 'app' && !forSummary) {
+    const le = S.settings.lastExport, days = le ? Math.floor((Date.now() - le) / 864e5) : null;
+    if (days == null) out.push({ l: 'warn', t: 'Aucune sauvegarde exportée : si tu perds ou changes d’iPhone, tes données seront perdues.' });
+    else if (days > 35) out.push({ l: 'warn', t: `Dernière sauvegarde il y a ${days} jours. Pense à en exporter une nouvelle.` });
+  }
+  const order = { warn: 0, info: 1, good: 2 };
+  return out.sort((a, b) => order[a.l] - order[b.l]);
+}
+
+/* ---------- Résumé mensuel ---------- */
+function summary(F) {
+  const R = v => rounding ? approx(v) : eur(v);
+  const SR = v => (v > 0.5 ? '+' : v < -0.5 ? '−' : '') + R(Math.abs(v));
+  const ms = months(), b = breakdown(F), L = [];
+  L.push(`Résumé de mes finances : ${monthLabel(F)}`);
+  L.push(`Suivi personnel${rounding ? ', montants arrondis' : ''}, sans nom d’établissement.`);
+  L.push('');
+  const delta = b.total - b.prevTotal;
+  if (ms[0] === F) L.push(`Patrimoine suivi : ${R(b.total)} (premier mois de suivi).`);
+  else {
+    L.push(`Patrimoine suivi : ${R(b.total)} (${b.prevTotal ? spct(delta / b.prevTotal) + ' sur le mois, soit ' : ''}${SR(delta)}).`);
+    let d = `Détail de la variation : versements nets ${SR(b.dep)}, performance et intérêts ${SR(b.perf)}`;
+    if (Math.abs(b.added) > 1) d += `, comptes ajoutés ou retirés du suivi ${SR(b.added)}`;
+    L.push(d + '.');
+    const from = monthDiff(ms[0], F) >= 12 ? addMonths(F, -12) : ms[0];
+    const tl = timeline(), a0 = tl.find(p => p.k === from), a1 = tl.find(p => p.k === F);
+    if (a0 && a1) L.push(`${monthDiff(from, F) === 12 ? 'Sur 12 mois' : 'Depuis ' + monthLabel(from)} : ${SR(a1.t - a0.t)}, dont ${R(a1.inv - a0.inv)} versés.`);
+  }
+  const prev = avgDep(addMonths(F, -1), 6);
+  L.push(`Épargne du mois : ${R(b.dep)}${prev.n >= 2 ? ` (moyenne des ${prev.n} mois précédents : ${R(prev.avg)} par mois)` : ''}.`);
+  if (S.settings.revenus) L.push(`Taux d’épargne : ${pct(b.dep / S.settings.revenus)} des revenus nets mensuels.`);
+  if (S.settings.depenses) L.push(`Épargne de précaution : ${(totalAt(F, a => TYPES[a.type].cat === 'livrets') / S.settings.depenses).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} mois de dépenses sur les livrets.`);
+  L.push('', 'Répartition :');
+  for (const [c, C] of Object.entries(CATS)) {
+    const v = totalAt(F, a => TYPES[a.type].cat === c); if (v <= 0) continue;
+    let extra = '';
+    if (c === 'livrets') {
+      const parts = active().filter(a => TYPES[a.type].plafond).map(a => { const x = valueAt(a, F) / TYPES[a.type].plafond; return `${TYPES[a.type].label} ${x >= 1 ? 'au plafond' : 'rempli à ' + pct(x)}`; });
+      if (parts.length) extra = ` (${parts.join(', ')})`;
+    }
+    L.push(`- ${C.label} : ${pct(v / b.total)}, ${R(v)}${extra}`);
+  }
+  const notUpd = active().filter(a => firstMonthOf(a) && firstMonthOf(a) <= F && entry(F, a)?.value == null);
+  const market = ['pea', 'cto', 'av', 'per', 'pee', 'percol'].filter(t => S.accounts.some(a => a.type === t && entry(F, a)?.value != null && valueAt(a, F) > 0));
+  if (market.length && ms[0] !== F) {
+    L.push('', 'Performance du mois hors versements :');
+    for (const t of market) {
+      const bb = breakdown(F, a => a.type === t);
+      L.push(`- ${TYPES[t].label} : ${bb.prevTotal ? spct(bb.perf / bb.prevTotal) : 'n. d.'} (${SR(bb.perf)})`);
+    }
+  }
+  if (notUpd.length) L.push('', `Pas encore mis à jour ce mois-ci (valeur du mois précédent reprise) : ${[...new Set(notUpd.map(a => TYPES[a.type].label))].join(', ')}.`);
+  const ga = goalApport(F), gr = goalRente(F);
+  if (ga || gr) L.push('', 'Objectifs :');
+  if (ga) {
+    const g = S.goals.apport;
+    let t = `- Apport immobilier : ${pct(ga.prog)} de ${R(g.target)} visés${g.date ? ' pour ' + monthLabel(g.date) : ''}.`;
+    if (!ga.done) { t += ` Rythme actuel ${R(ga.pace)} par mois`; if (ga.need) t += `, il faudrait ${R(ga.need)} par mois pour tenir l’échéance`; t += '.'; }
+    L.push(t);
+  }
+  if (gr) {
+    const g = S.goals.rente;
+    let t = `- Retraite : capital actuel ${R(gr.C)}, versements ${R(gr.m)} par mois. Projection à ${gr.age} ans : ${R(gr.fv)} (hypothèse ${String(g.ret).replace('.', ',')} % par an net d’inflation, retrait ${String(g.withdraw).replace('.', ',')} % par an), soit une rente d’environ ${R(gr.rente)} par mois`;
+    if (g.monthly) t += ` pour ${R(g.monthly)} visés`;
+    L.push(t + '.');
+  }
+  const al = alerts(F, true);
+  if (al.length) { L.push('', 'Points d’attention repérés par l’app :'); al.forEach(x => L.push('- ' + x.t)); }
+  L.push('', 'Ma question : d’après ce résumé, à quoi dois-je faire attention le mois prochain ? Je cherche des points de vigilance et des ajustements concrets, pas de conseil sur de gros placements.');
+  return L.join('\n');
+}
+
+/* ---------- Icônes ---------- */
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const ICON = {
+  home: svg('<path d="M4 20V10l8-6 8 6v10"/><path d="M9.5 20v-5h5v5"/>'),
+  edit: svg('<rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M8 9h8M8 13h8M8 17h4"/>'),
+  target: svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>'),
+  doc: svg('<path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 16h6"/>'),
+  lock: svg('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>'),
+  gear: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+};
+const LOGO = `<svg viewBox="0 0 56 56" aria-hidden="true"><rect width="56" height="56" rx="15" fill="var(--pine)"/><rect x="13" y="30" width="7" height="13" rx="3.5" fill="var(--on-pine)" opacity=".55"/><rect x="24.5" y="23" width="7" height="20" rx="3.5" fill="var(--on-pine)" opacity=".78"/><rect x="36" y="14" width="7" height="29" rx="3.5" fill="var(--on-pine)"/></svg>`;
+
+/* ---------- Écrans de verrouillage ---------- */
+const previewNote = () => persistent ? '' : '<p class="note">Aperçu : rien n’est conservé dans cet environnement. Une fois l’app installée depuis ton hébergement, les données restent sur l’iPhone.</p>';
+const USERFIELD = '<input type="text" name="username" autocomplete="username" value="Patrimoine" class="sr-only" tabindex="-1" aria-hidden="true" readonly>';
+function renderLock(kind, err = '') {
+  mode = 'locked'; closeSheet();
+  const e = err ? `<p class="err" role="alert">${esc(err)}</p>` : '';
+  const pk = kind === 'unlock' && lockHasPk && pkAvailable();
+  app.innerHTML = `<main class="lock">
+    <div class="lock-mark">${LOGO}</div>
+    <h1 class="lock-title">Patrimoine</h1>
+    ${kind === 'setup' ? `
+      <p class="lock-text">Tes données restent sur cet iPhone, chiffrées avec un mot de passe que toi seul connais. Il ne peut pas être récupéré : génère-le et range-le dans ton gestionnaire de mots de passe.</p>
+      <form id="f-setup" class="lock-form" autocomplete="on">${USERFIELD}
+        <label>Mot de passe (8 caractères minimum)<input type="password" id="p1" autocomplete="new-password" required></label>
+        <label>Confirmation<input type="password" id="p2" autocomplete="new-password" required></label>
+        ${e}<button class="btn primary" type="submit">Créer mon coffre</button>
+      </form>
+      <div class="lock-links"><button class="link" data-act="demo">Essayer avec des données fictives</button><button class="link" data-act="import">Restaurer une sauvegarde</button></div>`
+    : `
+      <p class="lock-text">${pk ? 'Déverrouille avec Face ID, ou avec ton mot de passe.' : 'Saisis ton mot de passe pour déchiffrer tes données.'}</p>
+      ${e}
+      ${pk ? '<button class="btn primary wide" data-act="pkunlock">Déverrouiller avec Face ID</button><p class="or">ou</p>' : ''}
+      <form id="f-unlock" class="lock-form">${USERFIELD}
+        <label>Mot de passe<input type="password" id="p1" autocomplete="current-password" required></label>
+        <button class="btn ${pk ? '' : 'primary'}" type="submit">${pk ? 'Utiliser le mot de passe' : 'Déverrouiller'}</button>
+      </form>
+      <div class="lock-links"><button class="link" data-act="import">Restaurer une sauvegarde</button></div>`}
+    ${previewNote()}
+  </main>`;
+}
+
+/* ---------- Rendu principal ---------- */
+function render() {
+  const cur = monthKey();
+  const todo = active().some(a => entry(cur, a)?.value == null);
+  const titles = { home: 'Patrimoine', saisie: 'Saisie du mois', objectifs: 'Objectifs', resume: 'Résumé' };
+  const body = { home: vHome, saisie: vSaisie, objectifs: vObjectifs, resume: vResume }[view]();
+  const tabs = [['home', 'Accueil', ICON.home], ['saisie', 'Saisie', ICON.edit], ['objectifs', 'Objectifs', ICON.target], ['resume', 'Résumé', ICON.doc]];
+  app.innerHTML = `
+    <header class="top"><h1>${titles[view]}</h1>
+      <div class="top-actions">${mode === 'demo' ? '<span class="pill">Démo</span>' : ''}
+        <button class="icon-btn" data-act="lock" aria-label="${mode === 'demo' ? 'Quitter la démo' : 'Verrouiller'}">${ICON.lock}</button>
+        <button class="icon-btn" data-act="settings" aria-label="Réglages">${ICON.gear}</button></div></header>
+    ${mode === 'demo' ? '<p class="banner">Données fictives : rien n’est enregistré. Touche le cadenas pour créer ton coffre.</p>' : !persistent ? '<p class="banner">Aperçu : rien n’est conservé dans cet environnement.</p>' : ''}
+    <main class="view">${body}</main>
+    <nav class="tabs" aria-label="Navigation">${tabs.map(([v, l, i]) => `<button class="tab ${view === v ? 'on' : ''}" data-act="go" data-view="${v}" ${view === v ? 'aria-current="page"' : ''}>${i}<span>${l}</span>${v === 'saisie' && todo ? '<i class="badge" aria-label="mise à jour à faire"></i>' : ''}</button>`).join('')}</nav>`;
+}
+function go(v) { view = v; render(); window.scrollTo(0, 0); }
+
+function emptyAccounts() {
+  return `<section class="empty"><h2>Ajoute tes comptes</h2><p class="muted">Livrets, PEA, assurance-vie, PER, épargne salariale : ajoute chaque compte une fois, puis mets à jour les soldes chaque mois.</p><button class="btn primary" data-act="newacc">Ajouter un compte</button></section>`;
+}
+
+function vHome() {
+  if (!S.accounts.length) return emptyAccounts();
+  const ms = months(), cur = monthKey();
+  if (!ms.length) return `<section class="empty"><h2>Première saisie</h2><p class="muted">Indique le solde actuel de chaque compte pour démarrer le suivi.</p><button class="btn primary" data-act="go" data-view="saisie">Saisir ${monthName(cur)}</button></section>`;
+  const F = focusMonth(), b = breakdown(F), delta = b.total - b.prevTotal;
+  const acc = active(), missing = acc.filter(a => entry(cur, a)?.value == null), doneN = acc.length - missing.length;
+  const tl = timeline(), last = tl[tl.length - 1];
+  const cats = Object.entries(CATS).map(([c, C]) => ({ c, ...C, v: totalAt(F, a => TYPES[a.type].cat === c) })).filter(x => x.v > 0);
+  const al = alerts(F);
+  return `
+    <section class="hero">
+      <p class="hero-month">Fin ${monthLabel(F)}</p>
+      <p class="hero-total num">${eur(b.total)}</p>
+      <p class="hero-delta ${delta >= 0 ? 'up' : 'down'}">${ms[0] === F ? 'Premier mois de suivi' : `${signed(delta)} sur le mois, dont ${signed(b.dep)} versés`}</p>
+    </section>
+    ${missing.length ? `
+    <section class="update"><div><p class="update-title">${cap(monthName(cur))} à mettre à jour</p><p class="muted">${doneN} ${doneN > 1 ? 'comptes' : 'compte'} sur ${acc.length}</p><div class="progress"><i style="width:${Math.round(doneN / acc.length * 100)}%"></i></div></div>
+      <button class="btn primary" data-act="go" data-view="saisie">Mettre à jour</button></section>` : `
+    <section class="update done"><p class="update-title">${cap(monthName(cur))} est à jour.</p><button class="btn ghost" data-act="go" data-view="resume">Voir le résumé</button></section>`}
+    <section><h2>Évolution</h2>${chart(tl)}
+      ${tl.length > 1 ? `<div class="legend"><span><i class="key"></i>Valeur</span><span><i class="key inv"></i>Argent versé</span><span>Gains cumulés <b>${signed(last.t - last.inv)}</b></span></div>` : ''}</section>
+    <section><h2>Répartition</h2>
+      <div class="stack" role="img" aria-label="Répartition par type de placement">${cats.map(x => `<i style="width:${x.v / b.total * 100}%;background:${x.color}"></i>`).join('')}</div>
+      <ul class="rep">${cats.map(x => `<li><span class="dot" style="background:${x.color}"></span><span>${x.label}</span><span class="p">${pct(x.v / b.total)}</span><span class="num">${eur(x.v)}</span></li>`).join('')}</ul></section>
+    <section><h2>Points d’attention</h2>
+      ${al.length ? `<ul class="alerts">${al.map(x => `<li class="${x.l}">${esc(x.t)}</li>`).join('')}</ul>` : '<p class="muted">Rien à signaler ce mois-ci.</p>'}</section>`;
+}
+
+function chart(tl) {
+  if (tl.length < 2) return '<p class="muted">Le graphique apparaîtra après ta deuxième mise à jour mensuelle.</p>';
+  const pts = tl.slice(-13), W = 340, H = 160, pl = 2, pr = 6, pt = 10, pb = 24;
+  const vals = pts.flatMap(p => [p.t, p.inv]);
+  let lo = Math.min(...vals), hi = Math.max(...vals); const sp = (hi - lo) || hi || 1;
+  lo = Math.max(0, lo - sp * 0.25); hi = hi + sp * 0.08;
+  const x = i => pl + i * (W - pl - pr) / (pts.length - 1), y = v => pt + (H - pt - pb) * (1 - (v - lo) / (hi - lo));
+  const path = key => pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join('');
+  const line = path('t'), n = pts.length - 1;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Évolution du patrimoine sur ${pts.length} mois, de ${eur(pts[0].t)} à ${eur(pts[n].t)}">
+    <path class="c-area" d="${line}L${x(n).toFixed(1)},${H - pb}L${x(0)},${H - pb}Z"/>
+    <path class="c-inv" d="${path('inv')}"/><path class="c-line" d="${line}"/>
+    <circle class="c-dot" cx="${x(n).toFixed(1)}" cy="${y(pts[n].t).toFixed(1)}" r="4"/>
+    <text class="c-lbl" x="${x(0)}" y="${H - 6}">${monthShort(pts[0].k)}</text>
+    <text class="c-lbl" x="${x(n)}" y="${H - 6}" text-anchor="end">${monthShort(pts[n].k)}</text></svg>`;
+}
+
+function vSaisie() {
+  if (!S.accounts.length) return emptyAccounts();
+  const m = saisieMonth, cur = monthKey();
+  const accs = S.accounts.filter(a => !a.closed || a.closed >= m);
+  return `
+    <div class="month-nav"><button data-act="month" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(m))}</strong><button data-act="month" data-d="1" aria-label="Mois suivant" ${m >= cur ? 'disabled' : ''}>›</button></div>
+    <p class="explain">Solde : la valeur du compte aujourd’hui. Versé ce mois : ce que tu as ajouté moins ce que tu as retiré (hors intérêts et plus-values). Laisse vide s’il n’y a rien eu.</p>
+    <div id="saisie">${accs.map(a => {
+      const e = entry(m, a) || {}, first = firstMonthOf(a), hasPrev = first && first < m, prev = hasPrev ? valueAt(a, addMonths(m, -1)) : null;
+      const T = TYPES[a.type];
+      return `<fieldset class="acc"><legend><span class="acc-name">${esc(a.name)}</span>${a.name.trim().toLowerCase() === T.label.toLowerCase() ? '' : `<span class="acc-type">${T.label}</span>`}</legend>
+        <div class="acc-fields">
+          <label>Solde<input inputmode="decimal" data-acc="${a.id}" data-f="value" value="${esc(numStr(e.value))}" placeholder="${hasPrev ? esc(numStr(prev)) : 'ex. 12500'}" autocomplete="off"></label>
+          <label>Versé ce mois<input inputmode="decimal" data-acc="${a.id}" data-f="deposit" value="${esc(numStr(e.deposit))}" placeholder="0" autocomplete="off"></label></div>
+        ${hasPrev ? `<p class="hint">Mois précédent : ${eur(prev)}${T.plafond ? `, plafond ${eur(T.plafond)}` : ''}</p>` : T.plafond ? `<p class="hint">Plafond ${eur(T.plafond)}</p>` : ''}</fieldset>`;
+    }).join('')}</div>
+    <div class="actions">
+      <button class="btn primary wide" data-act="savesaisie">Enregistrer ${monthName(m)}</button>
+      <button class="btn ghost wide" data-act="copyprev">Reprendre les soldes précédents</button>
+      <button class="link" data-act="settings">Ajouter ou modifier un compte</button></div>`;
+}
+
+function vObjectifs() {
+  const F = focusMonth(), g = S.goals, ga = S.accounts.length ? goalApport(F) : null, gr = S.accounts.length ? goalRente(F) : null;
+  const counted = f => active().filter(f).map(a => esc(a.name)).join(', ') || 'aucun compte';
+  const inp = (path, label, val, attrs = '') => `<label${attrs.includes('full') ? ' class="full"' : ''}>${label}<input ${attrs.replace('full', '')} data-goal="${path}" value="${esc(val ?? '')}"></label>`;
+  let ra = '';
+  if (ga) {
+    ra = `<div class="result"><p class="big num">${eur(ga.cur)}</p><p class="small">disponibles sur ${eur(g.apport.target)} visés</p>
+      <div class="bar"><i style="width:${ga.prog * 100}%"></i></div>
+      ${ga.done ? '<p>Objectif atteint.</p>' : `
+        <p>Rythme actuel : ${eur(ga.pace)} par mois${ga.reach ? `, objectif atteint vers ${monthLabel(ga.reach)}` : ''}.</p>
+        ${ga.need ? `<p>Pour tenir l’échéance : ${eur(ga.need)} par mois${ga.late > 0 ? `, soit ${eur(ga.need - ga.pace)} de plus.` : '.'}</p>` : ''}`}
+      <p class="small">Comptés : ${counted(a => a.apport)}.</p></div>`;
+  }
+  let rr = '';
+  if (gr) {
+    rr = `<div class="result"><p class="big num">${eur(gr.rente)} <span class="small">par mois</span></p>
+      <p class="small">rente estimée à ${gr.age} ans avec ${eur(gr.fv)} de capital projeté</p>
+      ${gr.target ? `<div class="bar"><i style="width:${Math.min(100, gr.fv / gr.target * 100)}%"></i></div>
+        <p>Capital nécessaire : ${eur(gr.target)}.</p>
+        <p>Versements actuels : ${eur(gr.m)} par mois. ${gr.need != null ? (gr.need <= gr.m ? 'Tu es sur la bonne trajectoire.' : `Il faudrait environ ${eur(gr.need)} par mois.`) : ''}</p>` : ''}
+      <p class="small">Comptés : ${counted(a => a.retraite)}. Projection indicative, pas une prévision.</p></div>`;
+  }
+  return `
+    <section><div class="goal"><h2>Apport immobilier</h2>
+      <div class="fields">${inp('apport.target', 'Montant visé (€)', g.apport.target, 'inputmode="decimal"')}${inp('apport.date', 'Échéance', g.apport.date, 'type="month"')}</div>${ra}</div></section>
+    <section><div class="goal"><h2>Rente future</h2>
+      <div class="fields">
+        ${inp('rente.birthYear', 'Année de naissance', g.rente.birthYear, 'inputmode="numeric"')}${inp('rente.retireAge', 'Âge de départ', g.rente.retireAge, 'inputmode="numeric"')}
+        ${inp('rente.monthly', 'Rente visée par mois (€ d’aujourd’hui)', g.rente.monthly, 'inputmode="decimal" full')}
+        ${inp('rente.ret', 'Rendement annuel (%, net d’inflation)', numStr(g.rente.ret), 'inputmode="decimal"')}${inp('rente.withdraw', 'Retrait annuel (%)', numStr(g.rente.withdraw), 'inputmode="decimal"')}
+      </div>${rr}</div></section>
+    <p class="explain">Les comptes pris en compte se choisissent dans les réglages, compte par compte.</p>`;
+}
+
+function vResume() {
+  const ms = months();
+  if (!ms.length) return '<section class="empty"><h2>Pas encore de résumé</h2><p class="muted">Le résumé se génère à partir de ta saisie mensuelle.</p><button class="btn primary" data-act="go" data-view="saisie">Faire la saisie</button></section>';
+  if (!resumeMonth || !ms.includes(resumeMonth)) resumeMonth = ms[ms.length - 1];
+  return `
+    <section style="margin-top:14px"><label>Mois<select id="resmonth">${ms.slice().reverse().map(k => `<option value="${k}" ${k === resumeMonth ? 'selected' : ''}>${cap(monthLabel(k))}</option>`).join('')}</select></label>
+      <label class="check"><input type="checkbox" id="round" ${rounding ? 'checked' : ''}>Arrondir les montants</label></section>
+    <section style="margin-top:14px"><pre class="summary" id="sumtext">${esc(summary(resumeMonth))}</pre>
+      <div class="row2" style="margin-top:12px"><button class="btn primary" data-act="copy">Copier</button><button class="btn" data-act="share">Partager</button></div>
+      <p class="explain">Colle ce résumé dans une conversation avec Claude pour obtenir des points de vigilance pour le mois suivant. Il ne contient ni nom de compte ni établissement.</p></section>`;
+}
+
+/* ---------- Feuilles (réglages, compte, import) ---------- */
+function openSheet(html) {
+  $('#layer').innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+  const f = $('.sheet input:not([readonly]), .sheet select, .sheet button:not(.link)'); if (f && f.type !== 'password') f.focus({ preventScroll: true });
+}
+function closeSheet() { $('#layer').innerHTML = ''; }
+
+function sheetSettings() {
+  const st = S.settings, F = focusMonth();
+  const le = st.lastExport ? new Date(st.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+  openSheet(`<h2>Réglages</h2>
+    <h3>Comptes</h3>
+    <ul class="list">${S.accounts.map(a => `<li class="${a.closed ? 'closed' : ''}"><button data-act="editacc" data-id="${a.id}"><span>${esc(a.name)}<br><span class="small">${TYPES[a.type].label}${a.closed ? ' (clôturé)' : ''}</span></span><span class="num">${eur(valueAt(a, F))}</span></button></li>`).join('')}</ul>
+    <button class="btn wide" style="margin-top:12px" data-act="newacc">Ajouter un compte</button>
+    <h3>Budget du foyer</h3>
+    <div class="stack-form">
+      <label>Dépenses mensuelles (€), pour l’épargne de précaution<input inputmode="decimal" data-set="depenses" value="${esc(numStr(st.depenses))}"></label>
+      <label>Revenus nets mensuels (€), pour le taux d’épargne<input inputmode="decimal" data-set="revenus" value="${esc(numStr(st.revenus))}"></label>
+      <label>Plafond de déduction PER de l’année (€), indiqué sur l’avis d’impôt<input inputmode="decimal" data-set="perPlafond" value="${esc(numStr(st.perPlafond))}"></label></div>
+    <h3>Sauvegarde</h3>
+    <p class="small" style="margin:0 0 10px">${le ? `Dernière sauvegarde exportée le ${le}.` : 'Aucune sauvegarde exportée.'} Le fichier reste chiffré avec ton mot de passe : range-le dans iCloud Drive.</p>
+    <div class="row2"><button class="btn" data-act="export">Exporter</button><button class="btn ghost" data-act="import">Restaurer</button></div>
+    <h3>Sécurité</h3>
+    <div class="stack-form">
+      ${pkAvailable() ? (slots?.pk ? `<p class="small" style="margin:0">Face ID activé le ${new Date(slots.pk.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}.</p><button class="btn ghost wide" data-act="pkdisable">Désactiver Face ID</button>` : '<button class="btn wide" data-act="pkenable">Activer Face ID</button>') : ''}
+      <button class="btn ghost wide" data-act="chpw">Changer le mot de passe</button>
+      <button class="btn ghost wide" data-act="lock">${mode === 'demo' ? 'Quitter la démo' : 'Verrouiller maintenant'}</button>
+      <button class="btn danger wide" data-act="wipe">Effacer toutes les données de cet iPhone</button></div>
+    <p class="small" style="margin-top:18px">L’app ne transmet aucune donnée : elle charge uniquement son propre code, et tout le reste est chiffré sur cet appareil.</p>
+    <button class="btn wide" style="margin-top:14px" data-act="close">Fermer</button>`);
+}
+
+function sheetAccount(id) {
+  const a = S.accounts.find(x => x.id === id) || { id: null, name: '', type: 'livretA', open: '', ...DEFAULTS.livretA };
+  const T = TYPES[a.type];
+  openSheet(`<h2>${a.id ? 'Modifier le compte' : 'Nouveau compte'}</h2>
+    <form id="f-acc" class="stack-form" data-id="${a.id || ''}">
+      <label>Nom (visible seulement ici)<input id="a-name" value="${esc(a.name)}" placeholder="ex. Livret A banque en ligne" required></label>
+      <label>Type<select id="a-type">${Object.entries(TYPES).map(([k, t]) => `<option value="${k}" ${k === a.type ? 'selected' : ''}>${t.label}</option>`).join('')}</select></label>
+      <label id="a-open-wrap" ${T.maturite ? '' : 'hidden'}>Date d’ouverture (pour les alertes fiscales)<input id="a-open" type="month" value="${esc(a.open || '')}"></label>
+      <label class="check"><input type="checkbox" id="a-apport" ${a.apport ? 'checked' : ''}>Compter dans l’apport immobilier</label>
+      <label class="check"><input type="checkbox" id="a-retraite" ${a.retraite ? 'checked' : ''}>Compter pour la retraite</label>
+      <button class="btn primary wide" type="submit">Enregistrer</button>
+      ${a.id ? `<button class="btn ghost wide" type="button" data-act="closeacc" data-id="${a.id}">${a.closed ? 'Rouvrir le compte' : 'Clôturer le compte (garde l’historique)'}</button>
+      <button class="btn danger wide" type="button" data-act="delacc" data-id="${a.id}">Supprimer le compte et son historique</button>` : ''}
+      <button class="link" type="button" data-act="settings">Retour</button>
+    </form>`);
+}
+
+function sheetChangePw() {
+  if (mode !== 'app') return toast('Crée ton coffre pour gérer le mot de passe');
+  openSheet(`<h2>Changer le mot de passe</h2><form id="f-chpw" class="stack-form">${USERFIELD}
+    <label>Mot de passe actuel<input type="password" id="c0" autocomplete="current-password" required></label>
+    <label>Nouveau mot de passe<input type="password" id="c1" autocomplete="new-password" required></label>
+    <label>Confirmation<input type="password" id="c2" autocomplete="new-password" required></label>
+    <p class="err" id="cerr" hidden></p>
+    <p class="small" style="margin:0">Face ID continue de fonctionner. Les sauvegardes déjà exportées restent protégées par l’ancien mot de passe : exporte-en une nouvelle ensuite.</p>
+    <button class="btn primary wide" type="submit">Changer le mot de passe</button>
+    <button class="link" type="button" data-act="settings">Annuler</button></form>`);
+}
+function offerPasskey() {
+  openSheet(`<h2>Activer Face ID ?</h2>
+    <p>Tu pourras ouvrir l’app avec une clé d’accès, sans taper ton mot de passe. Le mot de passe reste nécessaire en secours.</p>
+    <p class="small">iOS te demandera où ranger la clé d’accès : trousseau iCloud ou Proton Pass. Si ton gestionnaire n’est pas compatible, l’app te le dira.</p>
+    <button class="btn primary wide" data-act="pkenable" data-after="close">Activer Face ID</button>
+    <button class="link" data-act="close">Plus tard</button>`);
+}
+const sheetMsg = msg => openSheet(`<h2>Face ID</h2><p>${esc(msg)}</p><button class="btn wide" data-act="settings">Retour</button>`);
+function enterApp() { view = 'home'; saisieMonth = monthKey(); render(); window.scrollTo(0, 0); }
+async function finishImport(o) {
+  if (mode === 'app' && !confirm('Remplacer les données actuelles par cette sauvegarde ?')) { closeSheet(); return; }
+  await adopt(o); await save(); navigator.storage?.persist?.(); pendingImport = null; await clearFails();
+  closeSheet(); enterApp(); toast('Sauvegarde restaurée');
+}
+const pkDone = after => { if (after === 'close') { closeSheet(); render(); } else sheetSettings(); toast('Face ID activé'); };
+
+/* ---------- Actions ---------- */
+const ACT = {
+  go: t => go(t.dataset.view),
+  chpw: () => sheetChangePw(),
+  pkenable: async t => {
+    if (mode !== 'app') return toast('Crée ton coffre pour activer Face ID');
+    const after = t.dataset.after;
+    try {
+      const { slot, secret } = await pkCreate();
+      if (secret) { await pkStore(slot, secret); pkDone(after); }
+      else {
+        pkPending = { slot, after };
+        openSheet(`<h2>Dernière étape</h2><p>La clé d’accès est créée. Confirme-la une fois pour la relier à ton coffre.</p>
+          <button class="btn primary wide" data-act="pkfinish">Confirmer avec Face ID</button><button class="link" data-act="settings">Annuler</button>`);
+      }
+    } catch (e) { sheetMsg(pkError(e)); }
+  },
+  pkfinish: async () => {
+    try { await pkStore(pkPending.slot, await prfGet(pkPending.slot)); pkDone(pkPending.after); pkPending = null; }
+    catch (e) { sheetMsg(pkError(e)); }
+  },
+  pkdisable: async () => {
+    if (!confirm('Désactiver le déverrouillage par Face ID ? Tu pourras ensuite supprimer la clé d’accès dans ton gestionnaire.')) return;
+    const { pk, ...rest } = slots; slots = rest; await save(); sheetSettings(); toast('Face ID désactivé');
+  },
+  pkunlock: async t => {
+    t.disabled = true;
+    try { const vault = await store.get('vault'); await adopt(await openVault(vault, { prf: await prfGet(vault.slots.pk) })); await clearFails(); enterApp(); }
+    catch (e) { renderLock('unlock', pkError(e)); }
+  },
+  pkimport: async () => {
+    try { const v = pendingImport; await finishImport(await openVault(v, { prf: await prfGet(v.slots.pk) })); }
+    catch (e) { const er = $('#ierr'); er.hidden = false; er.textContent = pkError(e); }
+  },
+  close: () => closeSheet(),
+  settings: () => sheetSettings(),
+  newacc: () => sheetAccount(null),
+  editacc: t => sheetAccount(t.dataset.id),
+  month: t => { const n = addMonths(saisieMonth, +t.dataset.d); if (n <= monthKey()) { saisieMonth = n; render(); } },
+  lock: () => {
+    if (mode === 'demo') { if (confirm('Quitter la démo ? Les données fictives seront effacées.')) boot(); return; }
+    lockNow();
+  },
+  demo: () => { wipeKeys(); S = demoData(); mode = 'demo'; view = 'home'; saisieMonth = monthKey(); render(); },
+  import: () => { const i = $('#importfile'); i.value = ''; i.click(); },
+  export: () => exportBackup(),
+  wipe: async () => {
+    if (!confirm('Effacer toutes les données de cet iPhone ? Sans sauvegarde exportée, elles seront perdues définitivement.')) return;
+    if (!confirm('Confirmer l’effacement définitif ?')) return;
+    await store.del('vault'); await store.del('fails'); boot();
+  },
+  copyprev: () => {
+    const prevM = addMonths(saisieMonth, -1);
+    $$('#saisie input[data-f="value"]').forEach(i => { if (i.value.trim() === '') { const a = S.accounts.find(x => x.id === i.dataset.acc); if (firstMonthOf(a) && firstMonthOf(a) <= prevM) i.value = numStr(valueAt(a, prevM)); } });
+    toast('Soldes repris, ajuste ceux qui ont changé');
+  },
+  savesaisie: async () => {
+    const m = saisieMonth, out = {}; let bad = null;
+    const rows = {};
+    $$('#saisie input').forEach(i => { i.classList.remove('bad'); (rows[i.dataset.acc] ||= {})[i.dataset.f] = i; });
+    for (const [id, r] of Object.entries(rows)) {
+      const v = num(r.value.value), d = num(r.deposit.value);
+      if (Number.isNaN(v)) { r.value.classList.add('bad'); bad ||= r.value; continue; }
+      if (Number.isNaN(d)) { r.deposit.classList.add('bad'); bad ||= r.deposit; continue; }
+      if (v == null && d != null) { r.value.classList.add('bad'); bad ||= r.value; continue; }
+      if (v != null) out[id] = { value: v, deposit: d || 0 };
+    }
+    if (bad) { bad.focus(); toast('Vérifie les montants en rouge : un solde est requis pour chaque versement'); return; }
+    if (Object.keys(out).length) S.entries[m] = out; else delete S.entries[m];
+    await save(); toast(`${cap(monthName(m))} enregistré`); go('home');
+  },
+  copy: async () => {
+    const txt = summary(resumeMonth);
+    try { await navigator.clipboard.writeText(txt); toast('Résumé copié'); }
+    catch { const r = document.createRange(); r.selectNodeContents($('#sumtext')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Texte sélectionné : touche Copier'); }
+  },
+  share: async () => {
+    const txt = summary(resumeMonth);
+    if (navigator.share) { try { await navigator.share({ text: txt }); } catch (e) { /* annulé */ } } else ACT.copy();
+  },
+  closeacc: async t => {
+    const a = S.accounts.find(x => x.id === t.dataset.id);
+    if (a.closed) delete a.closed; else { if (!confirm(`Clôturer « ${a.name} » ? Son historique reste dans les graphiques.`)) return; a.closed = lastUpdate(a) || monthKey(); }
+    await save(); sheetSettings(); render();
+  },
+  delacc: async t => {
+    const a = S.accounts.find(x => x.id === t.dataset.id);
+    if (!confirm(`Supprimer « ${a.name} » et tout son historique ?`)) return;
+    S.accounts = S.accounts.filter(x => x.id !== a.id);
+    for (const k of Object.keys(S.entries)) { delete S.entries[k][a.id]; if (!Object.keys(S.entries[k]).length) delete S.entries[k]; }
+    await save(); sheetSettings(); render();
+  },
+};
+
+document.addEventListener('click', e => { const t = e.target.closest('[data-act]'); if (t && ACT[t.dataset.act]) { e.preventDefault(); ACT[t.dataset.act](t, e); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+document.addEventListener('change', async e => {
+  const t = e.target;
+  if (t.dataset.set) { const v = num(t.value); S.settings[t.dataset.set] = Number.isNaN(v) ? null : v; await save(); render(); }
+  else if (t.dataset.goal) {
+    const [g, k] = t.dataset.goal.split('.');
+    const v = t.type === 'month' ? (t.value || null) : num(t.value);
+    S.goals[g][k] = Number.isNaN(v) ? null : v; await save(); render();
+  }
+  else if (t.id === 'resmonth') { resumeMonth = t.value; render(); }
+  else if (t.id === 'round') { rounding = t.checked; render(); }
+  else if (t.id === 'a-type') {
+    const T = TYPES[t.value]; $('#a-open-wrap').hidden = !T.maturite;
+    if (!$('#f-acc').dataset.id) { $('#a-apport').checked = DEFAULTS[t.value].apport; $('#a-retraite').checked = DEFAULTS[t.value].retraite; if (!$('#a-name').value) $('#a-name').placeholder = `ex. ${T.label}`; }
+  }
+  else if (t.id === 'importfile' && t.files[0]) {
+    try {
+      const v = JSON.parse(await t.files[0].text());
+      if (v.app !== 'patrimoine' || !v.iv || !v.ct || !(v.salt || v.slots?.pw)) throw new Error();
+      pendingImport = v;
+      openSheet(`<h2>Restaurer une sauvegarde</h2><form id="f-import" class="stack-form">
+        <p class="small" style="margin:0">Sauvegarde du ${new Date(v.savedAt || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}. Saisis le mot de passe utilisé à ce moment-là.</p>
+        <label>Mot de passe<input type="password" id="pi" autocomplete="current-password" required></label>
+        <p class="err" id="ierr" hidden></p>
+        <button class="btn primary wide" type="submit">Restaurer</button>
+        ${v.slots?.pk && pkAvailable() ? '<button class="btn wide" type="button" data-act="pkimport">Restaurer avec Face ID</button>' : ''}<button class="link" type="button" data-act="close">Annuler</button></form>`);
+    } catch { toast('Ce fichier n’est pas une sauvegarde de l’app'); }
+  }
+});
+
+document.addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target, btn = f.querySelector('[type=submit]');
+  const busy = label => { btn.disabled = true; btn.textContent = label; };
+  if (f.id === 'f-setup') {
+    const p1 = $('#p1').value, p2 = $('#p2').value;
+    if (p1.length < 8) return renderLock('setup', 'Le mot de passe doit faire au moins 8 caractères.');
+    if (p1 !== p2) return renderLock('setup', 'Les deux mots de passe ne correspondent pas.');
+    busy('Création…');
+    const raw = rand(32);
+    await adopt({ raw, data: emptyData(), slots: { pw: await makePwSlot(raw, p1) } });
+    await save(); navigator.storage?.persist?.(); await clearFails();
+    enterApp(); toast('Coffre créé');
+    if (pkAvailable()) offerPasskey();
+  }
+  else if (f.id === 'f-unlock') {
+    const fl = await getFails(), wait = () => Math.ceil((fl.until - Date.now()) / 1000);
+    if (fl.until > Date.now()) return renderLock('unlock', `Trop d’essais. Réessaie dans ${wait()} secondes.`);
+    busy('Déchiffrement…');
+    try {
+      const o = await openVault(await store.get('vault'), { pass: $('#p1').value });
+      await adopt(o); if (o.migrated) await save(); await clearFails(); enterApp();
+    } catch {
+      const n = await noteFail();
+      renderLock('unlock', n.until > Date.now() ? `Mot de passe incorrect. Réessaie dans ${Math.ceil((n.until - Date.now()) / 1000)} secondes.` : 'Mot de passe incorrect.');
+    }
+  }
+  else if (f.id === 'f-import') {
+    busy('Déchiffrement…');
+    try { await finishImport(await openVault(pendingImport, { pass: $('#pi').value })); }
+    catch { btn.disabled = false; btn.textContent = 'Restaurer'; const er = $('#ierr'); er.hidden = false; er.textContent = 'Mot de passe incorrect pour cette sauvegarde.'; }
+  }
+  else if (f.id === 'f-chpw') {
+    const cur = $('#c0').value, p1 = $('#c1').value, p2 = $('#c2').value, er = $('#cerr');
+    const fail = m => { er.hidden = false; er.textContent = m; btn.disabled = false; btn.textContent = 'Changer le mot de passe'; };
+    if (p1.length < 8) return fail('Le nouveau mot de passe doit faire au moins 8 caractères.');
+    if (p1 !== p2) return fail('Les deux nouveaux mots de passe ne correspondent pas.');
+    busy('Vérification…');
+    try { await openPwSlot(slots.pw, cur); } catch { return fail('Mot de passe actuel incorrect.'); }
+    slots = { ...slots, pw: await makePwSlot(dekRaw, p1) };
+    S.settings.lastExport = null; await save(); sheetSettings(); render(); toast('Mot de passe modifié');
+  }
+  else if (f.id === 'f-acc') {
+    const name = $('#a-name').value.trim(); if (!name) return;
+    const data = { name, type: $('#a-type').value, open: $('#a-open').value || null, apport: $('#a-apport').checked, retraite: $('#a-retraite').checked };
+    const id = f.dataset.id;
+    if (id) Object.assign(S.accounts.find(a => a.id === id), data);
+    else S.accounts.push({ id: uid(), owner: 'moi', ...data });
+    await save(); sheetSettings(); render(); toast(id ? 'Compte modifié' : 'Compte ajouté');
+  }
+});
+
+async function exportBackup() {
+  if (mode !== 'app') { toast('Crée ton coffre pour pouvoir exporter une sauvegarde'); return; }
+  const v = await seal();
+  const name = `patrimoine-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
+  const blob = new Blob([JSON.stringify(v)], { type: 'application/json' });
+  const file = new File([blob], name, { type: 'application/json' });
+  let ok = false;
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); ok = true; } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  if (!ok) { const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
+  S.settings.lastExport = Date.now(); await save(); sheetSettings(); render(); toast('Sauvegarde exportée');
+}
+
+function lockNow() { lockHasPk = !!slots?.pk; wipeKeys(); closeSheet(); renderLock('unlock'); }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) hiddenAt = Date.now();
+  else if (mode === 'app' && hiddenAt && Date.now() - hiddenAt > LOCK_MS) lockNow();
+});
+
+/* ---------- Données fictives ---------- */
+function demoData() {
+  const d = emptyData(); let seed = 11;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  const mk = (name, type, extra = {}) => { const a = { id: uid(), owner: 'moi', name, type, ...DEFAULTS[type], ...extra }; d.accounts.push(a); return a; };
+  const cur = monthKey(), start = addMonths(cur, -13);
+  const la = mk('Livret A', 'livretA'), ld = mk('LDDS', 'ldds'), lep = mk('LEP', 'lep');
+  const pea = mk('PEA', 'pea', { open: addMonths(cur, -58) }), av = mk('Assurance-vie', 'av', { open: '2019-02' });
+  const per = mk('PER', 'per'), pee = mk('PEE', 'pee');
+  const v = { [la.id]: 19400, [ld.id]: 4900, [lep.id]: 9500, [pea.id]: 14200, [av.id]: 21500, [per.id]: 4200, [pee.id]: 3100 };
+  for (let k = start; k <= cur; k = addMonths(k, 1)) {
+    const mm = +k.slice(5), e = {};
+    const dep = { [la.id]: 280, [ld.id]: 150, [lep.id]: 0, [pea.id]: 250, [av.id]: 100, [per.id]: mm === 12 ? 1000 : 200, [pee.id]: mm === 4 ? 1200 : 0 };
+    if (k === start) Object.keys(dep).forEach(i => dep[i] = 0);
+    if (k === cur) { dep[ld.id] = 0; dep[pea.id] = 120; dep[la.id] = 150; }
+    for (const id of Object.keys(v)) {
+      let g = 1;
+      if ([la.id, ld.id, lep.id].includes(id) && mm === 1) g = id === lep.id ? 1.027 : 1.017;
+      if (id === pea.id) g = 1 + (rnd() - 0.42) * 0.05;
+      if (id === av.id) g = 1 + (rnd() - 0.3) * 0.012;
+      if (id === per.id) g = 1 + (rnd() - 0.42) * 0.04;
+      if (id === pee.id) g = 1 + (rnd() - 0.42) * 0.045;
+      if (id === la.id && v[id] >= 22950) dep[id] = 0;
+      if (k !== start) v[id] = v[id] * g + dep[id];
+      if (id === la.id && v[id] > 22950 && mm !== 1) { dep[id] -= v[id] - 22950; v[id] = 22950; }
+      if (k === cur && (id === per.id || id === pee.id)) continue;
+      e[id] = { value: Math.round(v[id]), deposit: Math.round(dep[id]) };
+    }
+    d.entries[k] = e;
+  }
+  d.settings = { depenses: 2600, revenus: 4300, perPlafond: 4400, lastExport: null };
+  d.goals = { apport: { target: 100000, date: addMonths(cur, 30) }, rente: { birthYear: 1990, retireAge: 64, monthly: 1200, ret: 3, withdraw: 4 } };
+  return d;
+}
+
+/* ---------- Démarrage ---------- */
+async function boot() {
+  wipeKeys(); view = 'home';
+  if (!window.crypto?.subtle) { app.innerHTML = '<main class="lock"><h1 class="lock-title">Patrimoine</h1><p class="lock-text">Le chiffrement n’est pas disponible ici. Ouvre l’app depuis son adresse https.</p></main>'; return; }
+  store ||= await openStore();
+  const vault = await store.get('vault');
+  lockHasPk = !!vault?.slots?.pk;
+  renderLock(vault ? 'unlock' : 'setup');
+}
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+boot();
+</script>
+</body>
+</html>
