@@ -382,32 +382,42 @@ async function pkStore(slot, secret) {
 const CACHE_NAME = 'patrimoine-v3';
 const SHELL = ['./', './index.html', './sw.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 const CODE_FILES = ['./index.html', './sw.js'];
-let code = { status: 'unknown', served: null, approved: null, net: null, at: null };
+let code = { status: 'unknown', served: null, approved: null, net: null, at: null, err: null, checked: null };
 const hex = u8 => [...u8].map(b => b.toString(16).padStart(2, '0')).join('');
 const fpLabel = h => h ? hex(unb64(h).slice(0, 8)).toUpperCase().match(/.{4}/g).join(' ') : '—';
 async function fpOf(fresh) {
   const parts = [];
   for (const f of CODE_FILES) {
-    const r = await fetch(fresh ? f + '?fresh=1' : f, { cache: 'no-store' });
-    if (!r.ok) throw new Error('http');
+    // Le paramètre « fresh » est laissé passer par le service worker, et l'horodatage
+    // empêche le cache du navigateur ou du CDN de renvoyer une version périmée.
+    const r = await fetch(fresh ? `${f}?fresh=${Date.now()}` : f, { cache: 'no-store' });
+    if (!r.ok) throw new Error('Réponse ' + r.status + ' pour ' + f);
     parts.push(await r.text());
   }
   return b64(await crypto.subtle.digest('SHA-256', enc.encode(parts.join('\u0000'))));
 }
 async function checkCode() {
-  if (!window.isSecureContext) return;
-  try { code.served = await fpOf(false); } catch { return; }
+  if (!window.isSecureContext) { code.err = 'Vérification indisponible hors https.'; return; }
+  try { code.served = await fpOf(false); } catch (e) { code.err = e.message; return; }
   const saved = await store.get('code');
-  if (!saved) { await store.set('code', { fp: code.served, at: Date.now() }); code.approved = code.served; code.at = Date.now(); code.status = 'ok'; return; }
-  code.approved = saved.fp; code.at = saved.at;
-  code.status = saved.fp === code.served ? 'ok' : 'changed';
+  if (!saved || saved.pending) {
+    // Première ouverture, ou retour d'une mise à jour que tu viens d'approuver.
+    await store.set('code', { fp: code.served, at: Date.now() });
+    code.approved = code.served; code.at = Date.now(); code.status = 'ok';
+  } else {
+    code.approved = saved.fp; code.at = saved.at;
+    code.status = saved.fp === code.served ? 'ok' : 'changed';
+  }
   paintCode();
   if (code.status === 'ok') checkNetwork();
 }
-async function checkNetwork() {
-  if (navigator.onLine === false) return;
-  try { code.net = await fpOf(true); } catch { return; }
-  if (code.net !== code.approved) { code.status = 'update'; paintCode(); }
+async function checkNetwork(manual) {
+  if (!window.isSecureContext) return false;
+  if (navigator.onLine === false) { code.err = 'Pas de connexion réseau.'; return false; }
+  try { code.net = await fpOf(true); code.err = null; code.checked = Date.now(); }
+  catch (e) { code.err = e.message; return false; }
+  if (code.net !== code.approved && code.status !== 'changed') { code.status = 'update'; paintCode(); }
+  return code.net !== code.approved;
 }
 function paintCode() {
   const el = $('#codebar'); if (!el) return;
@@ -417,18 +427,20 @@ function paintCode() {
     <div class="row"><button class="btn" data-act="codeinfo">Que faire ?</button></div></div>`;
   else el.innerHTML = '';
 }
+// Remise à zéro du code installé : on supprime le service worker et ses caches,
+// puis on recharge depuis le réseau. Les données du coffre (IndexedDB) ne sont pas touchées.
 async function applyCodeUpdate() {
+  if (!confirm('Installer cette version du code ? À ne faire que si tu viens de mettre les fichiers à jour toi-même.\n\nTes données ne sont pas touchées.')) return;
+  const btn = $('#codebar .btn.primary'); if (btn) { btn.disabled = true; btn.textContent = 'Installation…'; }
   try {
-    if (!confirm('Installer cette version du code ? À ne faire que si tu viens de mettre les fichiers à jour toi-même.')) return;
-    const c = await caches.open(CACHE_NAME);
-    for (const f of SHELL) {
-      const r = await fetch(f + '?fresh=1', { cache: 'no-store' });
-      if (r.ok) await c.put(new Request(new URL(f, location.href).href), r);
-    }
-    await store.set('code', { fp: code.net, at: Date.now() });
-    const reg = await navigator.serviceWorker?.getRegistration(); await reg?.update();
-    location.reload();
-  } catch { toast('Mise à jour impossible, réessaie avec du réseau'); }
+    await store.set('code', { fp: code.net, at: Date.now(), pending: true });
+    for (const r of await navigator.serviceWorker?.getRegistrations() || []) await r.unregister();
+    for (const k of await caches.keys()) await caches.delete(k);
+    location.replace(location.pathname + '?u=' + Date.now());
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Installer la mise à jour'; }
+    toast('Mise à jour impossible : ' + (e.message || 'réessaie avec du réseau'));
+  }
 }
 function sheetCode() {
   const changed = code.status === 'changed';
@@ -438,7 +450,9 @@ function sheetCode() {
     <p>${changed ? 'Code actuellement servi' : 'Version en ligne'}<br><span class="fp">${fpLabel(changed ? code.served : code.net)}</span></p>
     ${changed ? `<p>Si tu viens de modifier les fichiers chez ton hébergeur, c’est normal. Sinon, quelqu’un a peut-être pris le contrôle de ton compte : change son mot de passe et vérifie l’historique du dépôt avant d’ouvrir l’app.</p>
       <button class="btn wide" data-act="codeapprove">Approuver cette version</button>`
-      : '<p>N’installe cette version que si tu viens de mettre les fichiers à jour toi-même.</p><button class="btn primary wide" data-act="codeupdate">Installer la mise à jour</button>'}
+      : code.status === 'update' ? '<p>N’installe cette version que si tu viens de mettre les fichiers à jour toi-même.</p><button class="btn primary wide" data-act="codeupdate">Installer la mise à jour</button>'
+      : `<p class="small">${code.err ? 'Dernière vérification en échec : ' + esc(code.err) : code.checked ? 'Vérifié à ' + new Date(code.checked).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + ' : la version en ligne est identique.' : 'Pas encore vérifié en ligne.'}</p>
+        <button class="btn primary wide" data-act="codecheck">Vérifier maintenant</button>`}
     <button class="btn wide" style="margin-top:10px" data-act="close">Fermer</button>`);
 }
 
@@ -1177,6 +1191,13 @@ const ACT = {
   },
   codeinfo: () => sheetCode(),
   codeupdate: () => applyCodeUpdate(),
+  codecheck: async t => {
+    t.disabled = true; t.textContent = 'Vérification…';
+    const diff = await checkNetwork(true);
+    sheetCode();
+    if (!diff && !code.err) toast('L’app est à jour');
+    else if (code.err) toast('Vérification impossible : ' + code.err);
+  },
   codelater: () => { code.status = 'ok'; paintCode(); closeSheet(); },
   codeapprove: async () => {
     if (!confirm('Approuver le code actuellement installé ? Ne le fais que si tu es à l’origine du changement.')) return;
@@ -1467,7 +1488,8 @@ async function boot() {
   lockHasPk = !!vault?.slots?.pk;
   renderLock(vault ? 'unlock' : 'setup');
 }
-if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('sw.js').catch(() => {});
+if (location.search.includes('u=')) history.replaceState({}, '', location.pathname);
+if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 boot();
 </script>
 </body>
