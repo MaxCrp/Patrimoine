@@ -80,6 +80,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .link{background:none;border:0;padding:8px 0;color:var(--pine);font-weight:600;text-align:left}
 .icon-btn{width:40px;height:40px;border:0;border-radius:12px;background:transparent;display:grid;place-items:center;color:var(--ink)}
 .icon-btn svg{width:22px;height:22px}
+.icon-btn.on{background:var(--pine-soft);color:var(--pine)}
 
 /* Structure */
 .top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--safe-t)) 16px 8px 20px;background:color-mix(in srgb,var(--paper) 88%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
@@ -104,6 +105,29 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .update-title{font-weight:650}
 .progress{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:8px;width:140px}
 .progress i{display:block;height:100%;background:var(--pine);border-radius:9px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface);border-radius:14px;padding:4px;margin-top:14px}
+.seg button{border:0;background:none;border-radius:11px;padding:9px 0;font-weight:600;font-size:15px;color:var(--muted)}
+.seg button.on{background:var(--pine);color:var(--on-pine)}
+.acct{background:var(--surface);border-radius:20px;padding:16px;margin-bottom:12px}
+.acct header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.acct h3{font:650 17px var(--num);margin:0 0 2px}
+.acct .small{margin:0;color:var(--muted);font-size:13px}
+.acct-v{text-align:right;display:grid;gap:2px}
+.acct-v .num{font:650 19px var(--num)}
+.bar.sm{height:6px;margin:12px 0 6px}
+.kv{list-style:none;margin:12px 0 0;padding:0;font-size:14px}
+.kv li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}
+.kv li:last-child{border-bottom:0}
+.kv li span:first-child{color:var(--muted)}
+.bullets{margin:10px 0 0;padding-left:20px;font-size:14.5px}
+.bullets li{margin:7px 0}
+.ech{list-style:none;margin:0;padding:0}
+.ech li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--surface);border-left:4px solid var(--line);margin-bottom:8px}
+.ech li.soon{border-left-color:var(--amber)}
+.ech li.done{border-left-color:var(--pine)}
+.ech strong{font-weight:650}
+.ech .small{margin:2px 0 0;color:var(--muted);font-size:13px}
+.tag{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
 .chart{width:100%;height:auto;display:block}
 .c-area{fill:var(--pine);opacity:.14}
 .c-line{fill:none;stroke:var(--pine);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
@@ -164,8 +188,8 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* Barre d'onglets */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(4,1fr);padding:6px 8px calc(6px + var(--safe-b));background:color-mix(in srgb,var(--surface) 90%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--line)}
-.tab{position:relative;border:0;background:none;display:grid;justify-items:center;gap:2px;padding:6px 0;font-size:11px;font-weight:600;color:var(--muted)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(6px + var(--safe-b));background:color-mix(in srgb,var(--surface) 90%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--line)}
+.tab{position:relative;border:0;background:none;display:grid;justify-items:center;gap:2px;padding:6px 0;font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:-.01em}
 .tab svg{width:24px;height:24px}
 .tab.on{color:var(--pine)}
 .badge{position:absolute;top:5px;left:calc(50% + 8px);width:9px;height:9px;border-radius:50%;background:var(--amber)}
@@ -220,6 +244,21 @@ const DEFAULTS = {
   av:{apport:true,retraite:false}, per:{apport:false,retraite:true}, pee:{apport:false,retraite:false},
   percol:{apport:false,retraite:true},
 };
+// Repères fiscaux, à jour au 13 septembre 2026. Les règles changent chaque année :
+// l'écran Fiscalité renvoie vers service-public.fr pour vérification.
+const TAX = {
+  livretA: ['Intérêts totalement exonérés d’impôt sur le revenu et de prélèvements sociaux.', 'Plafond de versements : 22 950 €. Les intérêts capitalisés peuvent le dépasser.', 'Argent disponible à tout moment, sans condition de durée.'],
+  ldds: ['Intérêts totalement exonérés d’impôt sur le revenu et de prélèvements sociaux.', 'Plafond de versements : 12 000 €.', 'Argent disponible à tout moment.'],
+  lep: ['Intérêts totalement exonérés, au taux le plus élevé de l’épargne réglementée.', 'Plafond de versements : 10 000 €.', 'Soumis à condition de revenus, vérifiée chaque année par la banque : un dépassement entraîne la clôture.'],
+  livret: ['Livret bancaire ordinaire : les intérêts sont soumis au prélèvement forfaitaire unique.', 'Aucun plafond ni durée minimale.'],
+  pea: ['Après 5 ans, les gains sont exonérés d’impôt sur le revenu. Les prélèvements sociaux restent dus.', 'Les 5 ans courent à partir du premier versement, pas de l’ouverture du compte.', 'Avant 5 ans, tout retrait entraîne la clôture du plan, sauf cas particuliers (licenciement, invalidité, création d’entreprise).', 'Après 5 ans, les retraits ne clôturent plus le plan et tu peux continuer à verser.', 'Plafond de versements : 150 000 €.'],
+  cto: ['Gains et dividendes soumis au prélèvement forfaitaire unique, ou au barème de l’impôt sur option globale.', 'Aucun plafond, aucune durée minimale, aucun avantage fiscal lié à la durée.'],
+  av: ['Après 8 ans, abattement annuel sur les gains retirés : 4 600 € si tu es seul, 9 200 € pour un couple soumis à imposition commune.', 'Au-delà de l’abattement : 7,5 % d’impôt pour la part correspondant à des versements sous 150 000 €, 12,8 % au-delà.', 'Avant 8 ans, les gains retirés sont soumis au prélèvement forfaitaire unique.', 'Les 8 ans sont un seuil fiscal, pas un blocage : l’argent reste disponible à tout moment.', 'Transmission : abattement de 152 500 € par bénéficiaire pour les versements faits avant 70 ans.'],
+  per: ['Versements déductibles du revenu imposable, dans la limite de ton plafond épargne retraite indiqué sur ton avis d’impôt.', 'Depuis 2026, les versements effectués à partir de 70 ans ne sont plus déductibles.', 'Épargne bloquée jusqu’à la retraite, sauf cas de déblocage anticipé, dont l’achat de la résidence principale.', 'À la sortie en capital : la part correspondant aux versements déduits est imposée au barème, les gains au prélèvement forfaitaire unique.'],
+  pee: ['Épargne bloquée 5 ans à compter de chaque versement, sauf cas de déblocage anticipé, dont l’achat de la résidence principale.', 'À la sortie, les gains sont exonérés d’impôt sur le revenu. Les prélèvements sociaux restent dus.', 'L’abondement de l’employeur n’est pas imposable, dans les limites légales.'],
+  percol: ['Versements volontaires déductibles du revenu imposable, comme sur un PER, sauf renonciation.', 'Bloqué jusqu’à la retraite, sauf cas de déblocage anticipé, dont l’achat de la résidence principale.', 'L’abondement de l’employeur n’est pas imposable, dans les limites légales.'],
+};
+const TAX_NOTE = 'Prélèvements sociaux : 17,2 % historiquement, portés à 18,6 % au 1ᵉʳ janvier 2026 pour plusieurs placements, dont le PEA, le compte-titres et le PER. Le prélèvement forfaitaire unique passe ainsi de 30 % à 31,4 %. L’assurance-vie et l’épargne réglementée en sont exclues.';
 const CATS = {
   livrets:   { label: 'Livrets', color: 'var(--c-livrets)' },
   bourse:    { label: 'Bourse (PEA, CTO)', color: 'var(--c-bourse)' },
@@ -246,11 +285,14 @@ const monthShort = k => monthLabel(k, { month: 'short', year: '2-digit' });
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 const fmtE = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
-const eur = v => fmtE.format(Math.round(v || 0));
-const signed = v => (v > 0.5 ? '+' : v < -0.5 ? '−' : '') + fmtE.format(Math.abs(Math.round(v || 0)));
+const MASK = '**** €';
+let masked = false;               // reflète S.settings.masked, lu partout pendant le rendu
+const eur = v => masked ? MASK : fmtE.format(Math.round(v || 0));
+const signed = v => masked ? MASK : (v > 0.5 ? '+' : v < -0.5 ? '−' : '') + fmtE.format(Math.abs(Math.round(v || 0)));
 const pct = (v, d = 0) => (v * 100).toLocaleString('fr-FR', { maximumFractionDigits: d, minimumFractionDigits: d }) + ' %';
 const spct = (v, d = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + pct(Math.abs(v), d);
 function approx(v) {
+  if (masked) return MASK;
   const a = Math.abs(v || 0);
   if (a >= 10000) return (Math.round(a / 500) / 2).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' k€';
   if (a >= 1000) return fmtE.format(Math.round(a / 100) * 100);
@@ -375,6 +417,36 @@ async function pkStore(slot, secret) {
   await save();
 }
 
+/* ---------- Masquage des montants ----------
+   Masquer est immédiat ; démasquer demande Face ID ou le mot de passe. */
+const sameBytes = (a, b) => a && b && a.length === b.length && a.every((v, i) => v === b[i]);
+async function setMasked(v) {
+  masked = v;
+  if (mode === 'app') { S.settings.masked = v; await save(); }
+  else if (S) S.settings.masked = v;
+  closeSheet(); render(); window.scrollTo(0, 0);
+}
+async function askUnmask() {
+  if (mode !== 'app') return setMasked(false);
+  if (slots?.pk && pkAvailable()) {
+    try {
+      const raw = await aesDec(await prfKek(await prfGet(slots.pk)), slots.pk.iv, slots.pk.ct);
+      if (!sameBytes(raw, dekRaw)) throw new Error('mismatch');
+      return setMasked(false);
+    } catch (e) { return sheetUnmask(e.name === 'NotAllowedError' ? null : pkError(e)); }
+  }
+  sheetUnmask();
+}
+function sheetUnmask(err) {
+  openSheet(`<h2>Afficher les montants</h2>
+    <form id="f-unmask" class="stack-form">${USERFIELD}
+      <label>Mot de passe<input type="password" id="um" autocomplete="current-password" required></label>
+      <p class="err" id="umerr" ${err ? '' : 'hidden'}>${err ? esc(err) : ''}</p>
+      <button class="btn primary wide" type="submit">Afficher</button>
+      ${slots?.pk && pkAvailable() ? '<button class="btn wide" type="button" data-act="unmask">Réessayer avec Face ID</button>' : ''}
+      <button class="link" type="button" data-act="close">Annuler</button></form>`);
+}
+
 /* ---------- Vérification du code de l'app ----------
    Le service worker sert toujours la version mise en cache : le code ne change
    jamais tout seul. À chaque démarrage, l'app calcule l'empreinte du code servi,
@@ -458,7 +530,7 @@ function sheetCode() {
 
 /* ---------- État ---------- */
 let store, S = null, dek = null, dekRaw = null, slots = null, mode = 'boot', view = 'home', lockHasPk = false, pkPending = null;
-let saisieMonth = monthKey(), resumeMonth = null, rounding = true, hiddenAt = 0, pendingImport = null;
+let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', rounding = true, hiddenAt = 0, pendingImport = null;
 
 const emptyData = () => ({
   v: 1, accounts: [], entries: {},
@@ -583,12 +655,6 @@ function alerts(F, forSummary = false) {
     for (const k of months()) { if (k > F) break; const e = entry(k, a); if (!e) continue; versed += (k === first ? e.value : moveSum(e)); }
     if (versed > 0.8 * 150000) out.push({ l: 'info', t: `${forSummary ? 'PEA' : a.name} : environ ${eur(versed)} versés sur 150 000 € autorisés (estimation depuis le début du suivi).` });
   }
-  for (const a of acc) {
-    const T = TYPES[a.type]; if (!T.maturite || !a.open) continue;
-    const anniv = addMonths(a.open, T.maturite * 12), d = monthDiff(F, anniv); const nm = forSummary ? T.label : a.name;
-    if (d > 0 && d <= 6) out.push({ l: 'info', t: `${nm} aura ${T.maturite} ans en ${monthLabel(anniv)} : ensuite, ${T.note}. Évite si possible les retraits d’ici là.` });
-    else if (d <= 0 && d > -3) out.push({ l: 'good', t: `${nm} a passé ${T.maturite} ans : ${T.note}.` });
-  }
   const pers = acc.filter(a => a.type === 'per');
   if (pers.length && mm >= 9) {
     const y = String(yy);
@@ -695,6 +761,8 @@ function summary(F) {
     if (g.monthly) t += ` pour ${R(g.monthly)} visés`;
     L.push(t + '.');
   }
+  const ech = active().map(a => ({ a, m: maturityOf(a) })).filter(x => x.m && monthDiff(F, x.m.date) > 0 && monthDiff(F, x.m.date) <= 12);
+  if (ech.length) { L.push('', 'Échéances fiscales dans les 12 mois :'); ech.forEach(({ a, m }) => L.push(`- ${TYPES[a.type].label} : ${m.years} ans en ${monthLabel(m.date)}`)); }
   const al = alerts(F, true);
   if (al.length) { L.push('', 'Points d’attention repérés par l’app :'); al.forEach(x => L.push('- ' + x.t)); }
   L.push('', 'Ma question : d’après ce résumé, à quoi dois-je faire attention le mois prochain ? Je cherche des points de vigilance et des ajustements concrets, pas de conseil sur de gros placements.');
@@ -706,8 +774,11 @@ const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const ICON = {
   home: svg('<path d="M4 20V10l8-6 8 6v10"/><path d="M9.5 20v-5h5v5"/>'),
   edit: svg('<rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M8 9h8M8 13h8M8 17h4"/>'),
+  wallet: svg('<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16.5 14.5h.01"/>'),
   target: svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>'),
   doc: svg('<path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 16h6"/>'),
+  eye: svg('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>'),
+  eyeOff: svg('<path d="M4 4l16 16"/><path d="M9.9 5.9A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.3 4"/><path d="M6.3 8.1A16.8 16.8 0 0 0 2.5 12S6 18.5 12 18.5c1.2 0 2.3-.3 3.3-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
   lock: svg('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>'),
   gear: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
 };
@@ -748,12 +819,14 @@ function renderLock(kind, err = '') {
 function render() {
   const cur = monthKey();
   const todo = active().some(a => entry(cur, a)?.value == null);
-  const titles = { home: 'Patrimoine', saisie: 'Saisie du mois', objectifs: 'Objectifs', resume: 'Résumé' };
-  const body = { home: vHome, saisie: vSaisie, objectifs: vObjectifs, resume: vResume }[view]();
-  const tabs = [['home', 'Accueil', ICON.home], ['saisie', 'Saisie', ICON.edit], ['objectifs', 'Objectifs', ICON.target], ['resume', 'Résumé', ICON.doc]];
+  const titles = { home: 'Patrimoine', comptes: 'Mes comptes', saisie: 'Saisie du mois', objectifs: 'Objectifs', resume: 'Résumé' };
+  const hidden = masked && (view === 'saisie' || view === 'resume');
+  const body = hidden ? vHidden(view) : { home: vHome, comptes: vComptes, saisie: vSaisie, objectifs: vObjectifs, resume: vResume }[view]();
+  const tabs = [['home', 'Accueil', ICON.home], ['comptes', 'Comptes', ICON.wallet], ['saisie', 'Saisie', ICON.edit], ['objectifs', 'Objectifs', ICON.target], ['resume', 'Résumé', ICON.doc]];
   app.innerHTML = `
     <header class="top"><h1>${titles[view]}</h1>
       <div class="top-actions">${mode === 'demo' ? '<span class="pill">Démo</span>' : ''}
+        <button class="icon-btn ${masked ? 'on' : ''}" data-act="mask" aria-label="${masked ? 'Afficher les montants' : 'Masquer les montants'}" aria-pressed="${masked}">${masked ? ICON.eyeOff : ICON.eye}</button>
         <button class="icon-btn" data-act="lock" aria-label="${mode === 'demo' ? 'Quitter la démo' : 'Verrouiller'}">${ICON.lock}</button>
         <button class="icon-btn" data-act="settings" aria-label="Réglages">${ICON.gear}</button></div></header>
     ${mode === 'demo' ? '<p class="banner">Données fictives : rien n’est enregistré. Touche le cadenas pour créer ton coffre.</p>' : !persistent ? '<p class="banner">Aperçu : rien n’est conservé dans cet environnement.</p>' : ''}
@@ -766,6 +839,11 @@ function emptyAccounts() {
   return `<section class="empty"><h2>Ajoute tes comptes</h2><p class="muted">Livrets, PEA, assurance-vie, PER, épargne salariale : ajoute chaque compte une fois, puis mets à jour les soldes chaque mois.</p><button class="btn primary" data-act="newacc">Ajouter un compte</button></section>`;
 }
 
+function vHidden(v) {
+  return `<section class="empty"><h2>Montants masqués</h2>
+    <p class="muted">${v === 'saisie' ? 'La saisie affiche tes soldes : elle reste cachée tant que le masquage est actif.' : 'Le résumé contient tes montants détaillés : il reste caché tant que le masquage est actif.'}</p>
+    <button class="btn primary" data-act="unmask">Afficher les montants</button></section>`;
+}
 function vHome() {
   if (!S.accounts.length) return emptyAccounts();
   const ms = months(), cur = monthKey();
@@ -811,13 +889,77 @@ function chart(tl) {
     <text class="c-lbl" x="${x(n)}" y="${H - 6}" text-anchor="end">${monthShort(pts[n].k)}</text></svg>`;
 }
 
+const maturityOf = a => { const T = TYPES[a.type]; return T.maturite && a.open ? { date: addMonths(a.open, T.maturite * 12), years: T.maturite } : null; };
+function vComptes() {
+  if (!S.accounts.length) return emptyAccounts();
+  return `<div class="seg" role="tablist">
+      <button class="${compteTab === 'detail' ? 'on' : ''}" data-act="comptetab" data-t="detail">Détail</button>
+      <button class="${compteTab === 'fisc' ? 'on' : ''}" data-act="comptetab" data-t="fisc">Fiscalité</button>
+    </div>${compteTab === 'detail' ? vComptesDetail() : vComptesFisc()}`;
+}
+function vComptesDetail() {
+  const F = focusMonth(), total = totalAt(F), first = months()[0];
+  const acc = active().slice().sort((x, y) => valueAt(y, F) - valueAt(x, F));
+  const closed = S.accounts.filter(a => a.closed);
+  if (!acc.length) return '<section class="empty"><p class="muted">Tous tes comptes sont clôturés.</p><button class="btn primary" data-act="newacc">Ajouter un compte</button></section>';
+  const card = a => {
+    const T = TYPES[a.type], v = valueAt(a, F), b = accBreak(a, F), lu = lastUpdate(a), mat = maturityOf(a);
+    const e = entry(F, a), moves = e?.moves?.length ? ` · ${plural(e.moves.length, 'mouvement', 'mouvements')}` : '';
+    return `<article class="acct">
+      <header><div><h3>${esc(a.name)}</h3><p class="small">${T.label}${a.open ? ` · ouvert en ${monthLabel(a.open, { month: 'short', year: 'numeric' })}` : ''}</p></div>
+        <div class="acct-v"><span class="num">${eur(v)}</span><span class="small">${total ? pct(v / total, 1) : '—'}</span></div></header>
+      ${T.plafond ? `<div class="bar sm"><i style="width:${Math.min(100, v / T.plafond * 100)}%"></i></div>
+        <p class="small">${v >= T.plafond ? 'Plafond atteint' : `${eur(T.plafond - v)} avant le plafond de ${eur(T.plafond)}`}</p>` : ''}
+      <ul class="kv">
+        ${first === F ? '<li><span>Premier mois de suivi</span><span></span></li>' : `
+        <li><span>Versements du mois</span><span class="num">${signed(b.dep)}${moves}</span></li>
+        <li><span>Performance du mois</span><span class="num ${b.perf < 0 ? 'down' : b.perf > 0 ? 'up' : ''}">${signed(b.perf)}${b.p ? ` (${spct(b.perf / b.p)})` : ''}</span></li>`}
+        ${mat ? `<li><span>${mat.years} ans atteints</span><span>${monthDiff(F, mat.date) <= 0 ? 'oui, depuis ' + monthLabel(mat.date) : monthLabel(mat.date)}</span></li>` : ''}
+        <li><span>Compté pour</span><span>${[a.apport && 'apport', a.retraite && 'retraite'].filter(Boolean).join(', ') || 'aucun objectif'}</span></li>
+        <li><span>Dernière mise à jour</span><span>${lu ? cap(monthLabel(lu)) : 'jamais'}</span></li>
+      </ul>
+      <button class="link" data-act="editacc" data-id="${a.id}">Modifier ce compte</button></article>`;
+  };
+  return `<section style="margin-top:16px"><p class="hero-month">Fin ${monthLabel(F)}</p><p class="hero-total num">${eur(total)}</p>
+      <p class="muted" style="margin:0">${plural(acc.length, 'compte suivi', 'comptes suivis')}</p></section>
+    <section>${acc.map(card).join('')}</section>
+    ${closed.length ? `<section><h2>Comptes clôturés</h2><ul class="list">${closed.map(a => `<li class="closed"><button data-act="editacc" data-id="${a.id}"><span>${esc(a.name)}<br><span class="small">${TYPES[a.type].label} · clôturé en ${monthLabel(a.closed)}</span></span><span></span></button></li>`).join('')}</ul></section>` : ''}
+    <section><button class="btn wide" data-act="newacc">Ajouter un compte</button></section>`;
+}
+function vComptesFisc() {
+  const F = focusMonth();
+  const acc = active();
+  const ech = acc.map(a => ({ a, m: maturityOf(a) })).filter(x => x.m).sort((x, y) => x.m.date < y.m.date ? -1 : 1);
+  const missing = acc.filter(a => TYPES[a.type].maturite && !a.open);
+  const types = [...new Set(acc.map(a => a.type))];
+  return `
+    <section style="margin-top:18px"><h2>Échéances</h2>
+      ${ech.length ? `<ul class="ech">${ech.map(({ a, m }) => {
+        const d = monthDiff(F, m.date);
+        return `<li class="${d <= 0 ? 'done' : d <= 12 ? 'soon' : ''}"><div><strong>${esc(a.name)}</strong><p class="small">${m.years} ans ${d <= 0 ? 'atteints en' : 'en'} ${monthLabel(m.date)}</p></div>
+          <span class="tag">${d <= 0 ? 'atteint' : d <= 12 ? `dans ${plural(d, 'mois', 'mois')}` : `dans ${plural(Math.round(d / 12), 'an', 'ans')}`}</span></li>`;
+      }).join('')}</ul>` : '<p class="muted">Aucune échéance à suivre pour l’instant.</p>'}
+      ${missing.length ? `<p class="hint">Renseigne la date d’ouverture de ${missing.map(a => esc(a.name)).join(', ')} pour calculer son échéance : Détail > Modifier ce compte.</p>` : ''}
+      ${acc.some(a => ['per', 'percol'].includes(a.type)) ? '<p class="hint">PER et PERCOL n’ont pas d’échéance de date : l’épargne est bloquée jusqu’à la retraite, avec déblocage anticipé possible pour l’achat de la résidence principale.</p>' : ''}
+      ${acc.some(a => a.type === 'pee') ? '<p class="hint">Sur un PEE, le blocage de 5 ans court à partir de chaque versement : il n’y a pas une échéance unique.</p>' : ''}
+    </section>
+    <section><h2>Avantages fiscaux</h2>
+      ${types.map(t => `<article class="acct"><h3>${TYPES[t].label}</h3>
+        <ul class="bullets">${(TAX[t] || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></article>`).join('')}
+    </section>
+    <section><h2>À savoir</h2>
+      <p class="small">${esc(TAX_NOTE)}</p>
+      <p class="small">Ces repères sont ceux du 13 septembre 2026 et n’ont pas valeur de conseil. La fiscalité de l’épargne change à chaque loi de finances : vérifie sur service-public.fr ou auprès de ton établissement avant toute décision.</p>
+    </section>`;
+}
+
 function vSaisie() {
   if (!S.accounts.length) return emptyAccounts();
   const m = saisieMonth, cur = monthKey();
   const accs = S.accounts.filter(a => !a.closed || a.closed >= m);
   return `
     <div class="month-nav"><button data-act="month" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(m))}</strong><button data-act="month" data-d="1" aria-label="Mois suivant" ${m >= cur ? 'disabled' : ''}>›</button></div>
-    <p class="explain">Solde : la valeur du compte aujourd’hui. Versé ce mois : ce que tu as ajouté moins ce que tu as retiré (hors intérêts et plus-values). Laisse vide s’il n’y a rien eu.</p>
+    <p class="explain">Solde : la valeur du compte aujourd’hui. Versé ce mois : ce que tu as ajouté, hors intérêts et plus-values. Laisse vide s’il n’y a rien eu. Pour une reprise d’argent, passe par « Détailler les mouvements du mois ».</p>
     <div id="saisie">${accs.map(a => {
       const e = entry(m, a) || {}, first = firstMonthOf(a), hasPrev = first && first < m, prev = hasPrev ? valueAt(a, addMonths(m, -1)) : null;
       const T = TYPES[a.type];
@@ -839,7 +981,8 @@ function vSaisie() {
 function vObjectifs() {
   const F = focusMonth(), g = S.goals, ga = S.accounts.length ? goalApport(F) : null, gr = S.accounts.length ? goalRente(F) : null;
   const counted = f => active().filter(f).map(a => esc(a.name)).join(', ') || 'aucun compte';
-  const inp = (path, label, val, attrs = '') => `<label${attrs.includes('full') ? ' class="full"' : ''}>${label}<input ${attrs.replace('full', '')} data-goal="${path}" value="${esc(val ?? '')}"></label>`;
+  const money = /target|monthly/;
+  const inp = (path, label, val, attrs = '') => `<label${attrs.includes('full') ? ' class="full"' : ''}>${label}<input ${attrs.replace('full', '')} ${masked && money.test(path) ? 'readonly' : `data-goal="${path}"`} value="${esc(masked && money.test(path) ? (val == null ? '' : MASK) : (val ?? ''))}"></label>`;
   let ra = '';
   if (ga) {
     ra = `<div class="result"><p class="big num">${eur(ga.cur)}</p><p class="small">disponibles sur ${eur(g.apport.target)} visés</p>
@@ -933,7 +1076,7 @@ function sheetAccount(id) {
     <form id="f-acc" class="stack-form" data-id="${a.id || ''}">
       <label>Nom (visible seulement ici)<input id="a-name" value="${esc(a.name)}" placeholder="ex. Livret A banque en ligne" required></label>
       <label>Type<select id="a-type">${Object.entries(TYPES).map(([k, t]) => `<option value="${k}" ${k === a.type ? 'selected' : ''}>${t.label}</option>`).join('')}</select></label>
-      <label id="a-open-wrap" ${T.maturite ? '' : 'hidden'}>Date d’ouverture (pour les alertes fiscales)<input id="a-open" type="month" value="${esc(a.open || '')}"></label>
+      <label id="a-open-wrap" ${T.maturite ? '' : 'hidden'}>Date d’ouverture (pour calculer l’échéance fiscale)<input id="a-open" type="month" value="${esc(a.open || '')}"></label>
       <label class="check"><input type="checkbox" id="a-apport" ${a.apport ? 'checked' : ''}>Compter dans l’apport immobilier</label>
       <label class="check"><input type="checkbox" id="a-retraite" ${a.retraite ? 'checked' : ''}>Compter pour la retraite</label>
       <button class="btn primary wide" type="submit">Enregistrer</button>
@@ -962,7 +1105,7 @@ function offerPasskey() {
     <button class="link" data-act="close">Plus tard</button>`);
 }
 const sheetMsg = msg => openSheet(`<h2>Face ID</h2><p>${esc(msg)}</p><button class="btn wide" data-act="settings">Retour</button>`);
-function enterApp() { view = 'home'; saisieMonth = monthKey(); render(); window.scrollTo(0, 0); }
+function enterApp() { view = 'home'; saisieMonth = monthKey(); masked = !!S.settings.masked; render(); window.scrollTo(0, 0); }
 async function finishImport(o) {
   if (mode === 'app' && !confirm('Remplacer les données actuelles par cette sauvegarde ?')) { closeSheet(); return; }
   await adopt(o); await save(); navigator.storage?.persist?.(); pendingImport = null; await clearFails();
@@ -1060,7 +1203,8 @@ function sheetMoves(id) {
     <h3>Ajouter un mouvement</h3>
     <form id="f-move" class="stack-form" data-id="${a.id}">
       <div class="row2"><label>Jour<input id="m-day" inputmode="numeric" value="${Math.min(new Date().getDate(), lastDay)}" required></label>
-        <label>Montant (€)<input id="m-amt" inputmode="decimal" placeholder="500 ou -150" required></label></div>
+        <label>Montant (€)<input id="m-amt" inputmode="decimal" placeholder="500" required></label></div>
+      <label class="check"><input type="checkbox" id="m-out">Reprise : argent retiré du compte</label>
       <label>Motif (facultatif)<input id="m-note" placeholder="ex. imprévu voiture" maxlength="40"></label>
       <button class="btn primary wide" type="submit">Ajouter</button>
       <button class="link" type="button" data-act="close">Fermer</button></form>`);
@@ -1175,6 +1319,9 @@ function sheetImportMap(list) {
 /* ---------- Actions ---------- */
 const ACT = {
   go: t => go(t.dataset.view),
+  mask: () => masked ? askUnmask() : setMasked(true),
+  unmask: () => askUnmask(),
+  comptetab: t => { compteTab = t.dataset.t; render(); window.scrollTo(0, 0); },
   chpw: () => sheetChangePw(),
   aiconf: () => sheetAI(),
   analyse: () => runAnalysis(resumeMonth),
@@ -1243,7 +1390,7 @@ const ACT = {
     if (mode === 'demo') { if (confirm('Quitter la démo ? Les données fictives seront effacées.')) boot(); return; }
     lockNow();
   },
-  demo: () => { wipeKeys(); S = demoData(); mode = 'demo'; view = 'home'; saisieMonth = monthKey(); render(); },
+  demo: () => { wipeKeys(); S = demoData(); masked = false; mode = 'demo'; view = 'home'; saisieMonth = monthKey(); render(); },
   import: () => { const i = $('#importfile'); i.value = ''; i.click(); },
   export: () => exportBackup(),
   wipe: async () => {
@@ -1379,6 +1526,17 @@ document.addEventListener('submit', async e => {
     slots = { ...slots, pw: await makePwSlot(dekRaw, p1) };
     S.settings.lastExport = null; await save(); sheetSettings(); render(); toast('Mot de passe modifié');
   }
+  else if (f.id === 'f-unmask') {
+    busy('Vérification…');
+    try {
+      const raw = await openPwSlot(slots.pw, $('#um').value);
+      if (!sameBytes(raw, dekRaw)) throw new Error('mismatch');
+      setMasked(false);
+    } catch {
+      btn.disabled = false; btn.textContent = 'Afficher';
+      const er = $('#umerr'); er.hidden = false; er.textContent = 'Mot de passe incorrect.';
+    }
+  }
   else if (f.id === 'f-ai') {
     const key = $('#ai-key').value.trim();
     S.settings.ai = key ? { provider: $('#ai-prov').value, key, model: $('#ai-model').value.trim() } : null;
@@ -1389,10 +1547,11 @@ document.addEventListener('submit', async e => {
     const d = Math.round(num($('#m-day').value)), amt = num($('#m-amt').value);
     const [yy, mo] = m.split('-').map(Number), lastDay = new Date(yy, mo, 0).getDate();
     if (!Number.isFinite(d) || d < 1 || d > lastDay) return toast(`Le jour doit être compris entre 1 et ${lastDay}`);
-    if (!Number.isFinite(amt) || amt === 0) return toast('Indique un montant, négatif pour une reprise');
+    if (!Number.isFinite(amt) || amt === 0) return toast('Indique un montant');
+    const signedAmt = $('#m-out').checked ? -Math.abs(amt) : amt;
     const e = (S.entries[m] ||= {})[a.id] ||= { value: valueAt(a, addMonths(m, -1)) };
     if (!e.moves) { e.moves = e.deposit ? [{ d: 1, a: e.deposit }] : []; delete e.deposit; }
-    e.moves.push({ d, a: amt, n: $('#m-note').value.trim() || undefined });
+    e.moves.push({ d, a: signedAmt, n: $('#m-note').value.trim() || undefined });
     await save(); sheetMoves(a.id); render();
   }
   else if (f.id === 'f-stmt') {
@@ -1437,7 +1596,7 @@ async function exportBackup() {
   S.settings.lastExport = Date.now(); await save(); sheetSettings(); render(); toast('Sauvegarde exportée');
 }
 
-function lockNow() { lockHasPk = !!slots?.pk; wipeKeys(); closeSheet(); renderLock('unlock'); }
+function lockNow() { masked = false; lockHasPk = !!slots?.pk; wipeKeys(); closeSheet(); renderLock('unlock'); }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) hiddenAt = Date.now();
   else if (mode === 'app' && hiddenAt && Date.now() - hiddenAt > LOCK_MS) lockNow();
