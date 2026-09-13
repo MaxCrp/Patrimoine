@@ -78,13 +78,15 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .btn.wide{width:100%}
 .btn:disabled{opacity:.55}
 .link{background:none;border:0;padding:8px 0;color:var(--pine);font-weight:600;text-align:left}
+.inline{background:none;border:0;padding:0;color:var(--pine);font-weight:600;font-size:inherit;text-decoration:underline}
 .icon-btn{width:40px;height:40px;border:0;border-radius:12px;background:transparent;display:grid;place-items:center;color:var(--ink)}
 .icon-btn svg{width:22px;height:22px}
 .icon-btn.on{background:var(--pine-soft);color:var(--pine)}
 
 /* Structure */
 .top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:calc(10px + var(--safe-t)) 16px 8px 20px;background:color-mix(in srgb,var(--paper) 88%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
-.top h1{font:700 22px/1.2 var(--num);margin:0;letter-spacing:-.01em}
+.top h1{font:700 22px/1.2 var(--num);margin:0;letter-spacing:-.01em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.icon-btn.back{margin:0 4px 0 -8px;flex:0 0 auto}
 .top-actions{display:flex;align-items:center;gap:2px}
 .pill{font-size:13px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--amber-soft);color:var(--amber);margin-right:4px}
 .view{padding:4px 20px calc(110px + var(--safe-b));max-width:560px;margin:0 auto}
@@ -113,6 +115,14 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .seg button.on{background:var(--pine);color:var(--on-pine)}
 .seg.seg3{grid-template-columns:1fr 1fr 1fr}
 .seg.seg3 button{font-size:14px}
+.acctlist{display:grid;gap:2px}
+.acctrow{width:100%;display:flex;align-items:center;gap:12px;padding:14px 4px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;color:inherit}
+.acctrow:last-child{border-bottom:0}
+.arow-main{flex:1;display:grid;gap:2px;min-width:0}
+.arow-n{font-weight:650;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arow-main .small,.arow-v .small{color:var(--muted);font-size:13px}
+.arow-v{text-align:right;display:grid;gap:2px;flex:0 0 auto}
+.arow-v .num{font:650 16px var(--num)}
 .acct{background:var(--surface);border-radius:20px;padding:16px;margin-bottom:12px}
 .acct header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
 .acct h3{font:650 17px var(--num);margin:0 0 2px}
@@ -186,6 +196,16 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .empty p{max-width:34ch}
 
 /* Saisie */
+.steps{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:10px}
+.steps li button{width:100%;display:flex;align-items:center;gap:14px;padding:16px;border:0;border-radius:18px;background:var(--surface);text-align:left;color:inherit}
+.steps li.ok button{background:transparent;border:1px solid var(--line)}
+.stepno{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--pine-soft);color:var(--pine);font-weight:700;font-size:15px}
+.steps li.ok .stepno{background:var(--pine);color:var(--on-pine)}
+.stepmain{flex:1;display:grid;gap:2px;min-width:0}
+.stept{font-weight:650;font-size:16px}
+.stepd{color:var(--muted);font-size:14px}
+.chev{color:var(--muted);font-size:22px;line-height:1}
+.month-sub{margin:14px 0 0;color:var(--muted);font-size:15px}
 .month-nav{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
 .month-nav strong{font:650 19px var(--num)}
 .month-nav button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:20px}
@@ -235,7 +255,9 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .sheet h3{font:650 16px var(--num);margin:26px 0 10px}
 .sheet .stack-form{display:grid;gap:12px}
 .list{list-style:none;margin:0;padding:0}
-.list li button{width:100%;display:flex;justify-content:space-between;gap:10px;padding:13px 2px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
+.list li button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 2px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;color:inherit}
+.menu li button{padding:15px 2px;font-weight:650}
+.menu .small{font-weight:400;color:var(--muted)}
 .list .closed{opacity:.5}
 @keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
 .toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:15px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
@@ -574,7 +596,7 @@ function sheetCode() {
 
 /* ---------- État ---------- */
 let store, S = null, dek = null, dekRaw = null, slots = null, mode = 'boot', view = 'home', lockHasPk = false, pkPending = null;
-let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', potMonth = monthKey(), scope = 'moi', rounding = true, hiddenAt = 0, pendingImport = null;
+let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', subview = null, setPage = null, potMonth = monthKey(), scope = 'moi', rounding = true, hiddenAt = 0, pendingImport = null;
 
 const emptyData = () => ({
   v: 1, accounts: [], entries: {}, pot: {}, rules: {},
@@ -958,6 +980,7 @@ const ICON = {
   wallet: svg('<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16.5 14.5h.01"/>'),
   target: svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>'),
   doc: svg('<path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 16h6"/>'),
+  back: svg('<path d="M15 5l-7 7 7 7"/>'),
   eye: svg('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>'),
   eyeOff: svg('<path d="M4 4l16 16"/><path d="M9.9 5.9A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.3 4"/><path d="M6.3 8.1A16.8 16.8 0 0 0 2.5 12S6 18.5 12 18.5c1.2 0 2.3-.3 3.3-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
   lock: svg('<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>'),
@@ -1001,12 +1024,16 @@ function render() {
   const cur = monthKey();
   const filled = a => isSimple(a) ? entry(cur, a)?.dot != null : entry(cur, a)?.value != null;
   const todo = active().some(a => !filled(a));
-  const titles = { home: 'Patrimoine', comptes: 'Mes comptes', saisie: 'Saisie du mois', objectifs: 'Objectifs', resume: 'Résumé' };
+  const titles = { home: 'Patrimoine', comptes: 'Mes comptes', saisie: 'Ce mois', objectifs: 'Objectifs', resume: 'Résumé' };
+  const subs = { soldes: 'Soldes des comptes', operations: 'Opérations du mois' };
+  const sub = view === 'saisie' ? subview : null;
   const hidden = masked && (view === 'saisie' || view === 'resume');
-  const body = hidden ? vHidden(view) : { home: vHome, comptes: vComptes, saisie: vSaisie, objectifs: vObjectifs, resume: vResume }[view]();
-  const tabs = [['home', 'Accueil', ICON.home], ['comptes', 'Comptes', ICON.wallet], ['saisie', 'Saisie', ICON.edit], ['objectifs', 'Objectifs', ICON.target], ['resume', 'Résumé', ICON.doc]];
+  const body = hidden ? vHidden(view)
+    : sub === 'soldes' ? vSoldes() : sub === 'operations' ? vOperations()
+    : { home: vHome, comptes: vComptes, saisie: vMois, objectifs: vObjectifs, resume: vResume }[view]();
+  const tabs = [['home', 'Accueil', ICON.home], ['comptes', 'Comptes', ICON.wallet], ['saisie', 'Ce mois', ICON.edit], ['objectifs', 'Objectifs', ICON.target], ['resume', 'Résumé', ICON.doc]];
   app.innerHTML = `
-    <header class="top"><h1>${titles[view]}</h1>
+    <header class="top">${sub ? `<button class="icon-btn back" data-act="back" aria-label="Retour">${ICON.back}</button>` : ''}<h1>${sub ? subs[sub] : titles[view]}</h1>
       <div class="top-actions">${mode === 'demo' ? '<span class="pill">Démo</span>' : ''}
         <button class="icon-btn ${masked ? 'on' : ''}" data-act="mask" aria-label="${masked ? 'Afficher les montants' : 'Masquer les montants'}" aria-pressed="${masked}">${masked ? ICON.eyeOff : ICON.eye}</button>
         <button class="icon-btn" data-act="lock" aria-label="${mode === 'demo' ? 'Quitter la démo' : 'Verrouiller'}">${ICON.lock}</button>
@@ -1015,7 +1042,8 @@ function render() {
     <main class="view">${body}</main>
     <nav class="tabs" aria-label="Navigation">${tabs.map(([v, l, i]) => `<button class="tab ${view === v ? 'on' : ''}" data-act="go" data-view="${v}" ${view === v ? 'aria-current="page"' : ''}>${i}<span>${l}</span>${v === 'saisie' && todo ? '<i class="badge" aria-label="mise à jour à faire"></i>' : ''}</button>`).join('')}</nav>`;
 }
-function go(v) { view = v; render(); window.scrollTo(0, 0); }
+function go(v) { view = v; subview = null; render(); window.scrollTo(0, 0); }
+function goSub(v) { subview = v; render(); window.scrollTo(0, 0); }
 
 function emptyAccounts() {
   return `<section class="empty"><h2>Ajoute tes comptes</h2><p class="muted">Livrets, PEA, assurance-vie, PER, épargne salariale : ajoute chaque compte une fois, puis mets à jour les soldes chaque mois.</p><button class="btn primary" data-act="newacc">Ajouter un compte</button></section>`;
@@ -1083,9 +1111,9 @@ function chart(tl) {
 const maturityOf = a => { const T = TYPES[a.type]; return T.maturite && a.open ? { date: addMonths(a.open, T.maturite * 12), years: T.maturite } : null; };
 function vComptes() {
   if (!S.accounts.length && !S.household.on) return emptyAccounts();
-  const tabs = [['detail', 'Détail'], ['foyer', 'Foyer'], ['fisc', 'Fiscalité']];
-  return `<div class="seg seg3" role="tablist">${tabs.map(([v, l]) => `<button class="${compteTab === v ? 'on' : ''}" data-act="comptetab" data-t="${v}">${l}</button>`).join('')}</div>
-    ${compteTab === 'detail' ? vComptesDetail() : compteTab === 'foyer' ? vFoyer() : vComptesFisc()}`;
+  const tabs = [['detail', 'Placements'], ['foyer', 'Foyer']];
+  return `${S.household.on ? `<div class="seg" role="tablist">${tabs.map(([v, l]) => `<button class="${compteTab === v ? 'on' : ''}" data-act="comptetab" data-t="${v}">${l}</button>`).join('')}</div>` : ''}
+    ${compteTab === 'foyer' && S.household.on ? vFoyer() : vComptesDetail()}`;
 }
 function vComptesDetail() {
   const f = scopeF();
@@ -1096,52 +1124,31 @@ function vComptesDetail() {
   const closed = S.accounts.filter(a => a.closed);
   if (!all.length) return '<section class="empty"><p class="muted">Aucun compte pour cette personne.</p><button class="btn primary" data-act="newacc">Ajouter un compte</button></section>';
   const card = a => {
-    const T = TYPES[a.type], v = valueAt(a, F), b = accBreak(a, F), lu = lastUpdate(a), mat = maturityOf(a);
-    const e = entry(F, a), moves = e?.moves?.length ? ` · ${plural(e.moves.length, 'mouvement', 'mouvements')}` : '';
-    return `<article class="acct">
-      <header><div><h3>${esc(a.name)}</h3><p class="small">${T.label}${multi() ? ' · ' + esc(mName(a.owner || 'moi')) : ''}${a.open ? ` · ouvert en ${monthLabel(a.open, { month: 'short', year: 'numeric' })}` : ''}</p></div>
-        <div class="acct-v"><span class="num">${eur(v)}</span><span class="small">${total ? pct(v / total, 1) : '—'}</span></div></header>
-      ${T.plafond ? `<div class="bar sm"><i style="width:${Math.min(100, v / T.plafond * 100)}%"></i></div>
-        <p class="small">${v >= T.plafond ? 'Plafond atteint' : `${eur(T.plafond - v)} avant le plafond de ${eur(T.plafond)}`}</p>` : ''}
-      <ul class="kv">
-        ${first === F ? '<li><span>Premier mois de suivi</span><span></span></li>' : `
-        <li><span>Versements du mois</span><span class="num">${signed(b.dep)}${moves}</span></li>
-        <li><span>Performance du mois</span><span class="num ${b.perf < 0 ? 'down' : b.perf > 0 ? 'up' : ''}">${signed(b.perf)}${b.p ? ` (${spct(b.perf / b.p)})` : ''}</span></li>`}
-        ${mat ? `<li><span>${mat.years} ans atteints</span><span>${monthDiff(F, mat.date) <= 0 ? 'oui, depuis ' + monthLabel(mat.date) : monthLabel(mat.date)}</span></li>` : ''}
-        <li><span>Compté pour</span><span>${[a.apport && 'apport', a.retraite && 'retraite'].filter(Boolean).join(', ') || 'aucun objectif'}</span></li>
-        <li><span>Dernière mise à jour</span><span>${lu ? cap(monthLabel(lu)) : 'jamais'}</span></li>
-      </ul>
-      ${a.lines?.length ? (() => {
-        const tot = a.lines.reduce((t, l) => t + l.v, 0) || 1;
-        const top = a.lines.slice().sort((x, y) => y.v - x.v);
-        return `<div class="lines"><p class="small">Composition${a.linesAt ? `, relevé de ${monthLabel(a.linesAt)}` : ''}</p>
-          <ul>${top.map(l => `<li><span class="ln">${esc(l.n)}</span><span class="lb"><i style="width:${Math.round(l.v / tot * 100)}%"></i></span><span class="lp">${pct(l.v / tot)}</span><span class="num">${eur(l.v)}</span></li>`).join('')}</ul></div>`;
-      })() : ''}
-      <button class="link" data-act="editacc" data-id="${a.id}">Modifier ce compte</button></article>`;
+    const T = TYPES[a.type], v = valueAt(a, F), b = accBreak(a, F), mat = maturityOf(a);
+    const tags = [multi() ? esc(mName(a.owner || 'moi')) : '', mat ? `${mat.years} ans ${monthDiff(F, mat.date) <= 0 ? 'atteints' : 'en ' + monthLabel(mat.date, { month: 'short', year: '2-digit' })}` : '',
+      T.plafond && v >= T.plafond ? 'au plafond' : ''].filter(Boolean);
+    return `<button class="acctrow" data-act="accinfo" data-id="${a.id}">
+      <span class="arow-main"><span class="arow-n">${esc(a.name)}</span>
+        <span class="small">${[a.name.trim().toLowerCase() === T.label.toLowerCase() ? '' : T.label, ...tags].filter(Boolean).join(' · ')}</span></span>
+      <span class="arow-v"><span class="num">${eur(v)}</span>
+        <span class="small ${b.perf < 0 ? 'down' : b.perf > 0 ? 'up' : ''}">${first === F ? (total ? pct(v / total, 0) : '') : signed(b.dep + b.perf)}</span></span>
+      <span class="chev">›</span></button>`;
   };
   return `${scopeBar()}<section style="margin-top:16px"><p class="hero-month">Fin ${monthLabel(F)}</p><p class="hero-total num">${eur(total)}</p>
       <p class="muted" style="margin:0">${plural(acc.length, 'compte suivi', 'comptes suivis')}</p></section>
-    ${acc.length ? `<section>${acc.map(card).join('')}</section>` : ''}
+    ${acc.length ? `<section class="acctlist">${acc.map(card).join('')}</section>` : ''}
     ${cash.length ? `<section><h2>Comptes de fonctionnement</h2>
       <p class="muted" style="margin:-6px 0 12px;font-size:14px">Suivis à part : ils ne comptent pas dans le patrimoine.</p>
-      ${cash.map(a => {
-        const tx = txOf(F, a), deb = tx.filter(t => t.a < 0);
-        const ch = deb.filter(t => t.c === 'charge').reduce((s, t) => s - t.a, 0);
-        const ho = deb.filter(t => t.c === 'hors').reduce((s, t) => s - t.a, 0);
-        const vi = deb.filter(t => t.c === 'vir').reduce((s, t) => s - t.a, 0);
-        const todo = deb.filter(t => !t.c).length;
-        const hist = [3, 2, 1, 0].map(i => addMonths(F, -i));
-        return `<article class="acct"><header><div><h3>${esc(a.name)}</h3>
-            <p class="small">${isSimple(a) ? 'Enveloppe' : TYPES[a.type].label}${multi() ? ' · ' + esc(mName(a.owner || 'moi')) : ''}${a.potCharge ? ' · charges communes' : ''}</p></div>
-            <div class="acct-v"><span class="num">${eur(isSimple(a) ? dotOf(F, a) : valueAt(a, F))}</span><span class="small">${isSimple(a) ? 'envoyé ce mois' : 'solde'}</span></div></header>
-          ${isSimple(a) ? `<ul class="kv">${hist.map(k => `<li><span>${cap(monthLabel(k, { month: 'long' }))}</span><span class="num">${dotOf(k, a) ? eur(dotOf(k, a)) : '—'}</span></li>`).join('')}</ul>`
-            : tx.length ? `<ul class="kv"><li><span>Charges communes</span><span class="num">${eur(ch)}</span></li>
-              <li><span>Hors charges</span><span class="num">${eur(ho)}</span></li>
-              ${vi ? `<li><span>Virements vers tes comptes</span><span class="num">${eur(vi)}</span></li>` : ''}
-              <li><span>Opérations</span><span>${plural(tx.length, 'ligne', 'lignes')}${todo ? `, ${todo} à classer` : ''}</span></li></ul>`
-            : '<p class="small" style="margin-top:10px">Aucune opération importée pour ce mois.</p>'}
-          <button class="link" data-act="editacc" data-id="${a.id}">Modifier ce compte</button></article>`;
-      }).join('')}</section>` : ''}
+      <div class="acctlist">${cash.map(a => {
+        const todo = txOf(F, a).filter(t => t.a < 0 && !t.c).length;
+        const tags = [multi() ? esc(mName(a.owner || 'moi')) : '', a.potCharge ? 'charges communes' : '', todo ? `${todo} à classer` : ''].filter(Boolean);
+        return `<button class="acctrow" data-act="accinfo" data-id="${a.id}">
+          <span class="arow-main"><span class="arow-n">${esc(a.name)}</span>
+            <span class="small">${[isSimple(a) ? 'Enveloppe' : (a.name.trim().toLowerCase() === TYPES[a.type].label.toLowerCase() ? '' : TYPES[a.type].label), ...tags].filter(Boolean).join(' · ')}</span></span>
+          <span class="arow-v"><span class="num">${eur(isSimple(a) ? dotOf(F, a) : valueAt(a, F))}</span>
+            <span class="small">${isSimple(a) ? 'envoyé' : 'solde'}</span></span>
+          <span class="chev">›</span></button>`;
+      }).join('')}</div></section>` : ''}
     ${closed.length ? `<section><h2>Comptes clôturés</h2><ul class="list">${closed.map(a => `<li class="closed"><button data-act="editacc" data-id="${a.id}"><span>${esc(a.name)}<br><span class="small">${TYPES[a.type].label} · clôturé en ${monthLabel(a.closed)}</span></span><span></span></button></li>`).join('')}</ul></section>` : ''}
     <section><button class="btn wide" data-act="newacc">Ajouter un compte</button></section>`;
 }
@@ -1179,7 +1186,7 @@ function vFoyer() {
       ${dues.length ? `<div class="settle">${dues.map(d => `<p><strong>${esc(mName(d.from))} doit ${eur(d.a)} à ${esc(mName(d.to))}</strong></p>
         <button class="btn wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer ce virement</button>`).join('')}</div>`
         : st.total ? '<p class="small" style="margin-top:12px">Comptes équilibrés entre vous.</p>' : ''}
-      <button class="btn ghost wide" style="margin-top:12px" data-act="split">Changer la répartition</button></div></section>
+      <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>
     <section><h2>Dépenses du mois</h2>
       ${st.p.from && st.p.items.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Dépenses fixes reprises de ${monthLabel(st.p.from)} : vérifie les montants qui ont changé.</p>` : ''}
       ${items.length ? `<ul class="list">${items.map(i => `<li><button data-act="${i.src ? 'srcinfo' : 'editcharge'}" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : i.r === false ? ' · ponctuelle' : ' · fixe'}</span></span><span class="num">${eur(i.a)}</span></button></li>`).join('')}</ul>`
@@ -1195,41 +1202,40 @@ function vFoyer() {
       <div class="actions"><button class="btn wide" data-act="newtransfer">Ajouter un virement</button></div></section>
     ${effort ? `<section><h2>Reste à vivre</h2><ul class="kv effort">${effort}</ul>
       <p class="small">Calculé sur les revenus renseignés, la part de charges due et l’épargne versée ce mois-ci.</p></section>` : ''}
-    <section><button class="btn ghost wide" data-act="household">Membres et revenus</button></section>`;
+`;
 }
-function vComptesFisc() {
-  const F = focusMonth();
-  const acc = active();
-  const ech = acc.map(a => ({ a, m: maturityOf(a) })).filter(x => x.m).sort((x, y) => x.m.date < y.m.date ? -1 : 1);
-  const missing = acc.filter(a => TYPES[a.type].maturite && !a.open);
-  const types = [...new Set(acc.map(a => a.type))];
-  return `
-    <section style="margin-top:18px"><h2>Échéances</h2>
-      ${ech.length ? `<ul class="ech">${ech.map(({ a, m }) => {
-        const d = monthDiff(F, m.date);
-        return `<li class="${d <= 0 ? 'done' : d <= 12 ? 'soon' : ''}"><div><strong>${esc(a.name)}</strong><p class="small">${m.years} ans ${d <= 0 ? 'atteints en' : 'en'} ${monthLabel(m.date)}</p></div>
-          <span class="tag">${d <= 0 ? 'atteint' : d <= 12 ? `dans ${plural(d, 'mois', 'mois')}` : `dans ${plural(Math.round(d / 12), 'an', 'ans')}`}</span></li>`;
-      }).join('')}</ul>` : '<p class="muted">Aucune échéance à suivre pour l’instant.</p>'}
-      ${missing.length ? `<p class="hint">Renseigne la date d’ouverture de ${missing.map(a => esc(a.name)).join(', ')} pour calculer son échéance : Détail > Modifier ce compte.</p>` : ''}
-      ${acc.some(a => ['per', 'percol'].includes(a.type)) ? '<p class="hint">PER et PERCOL n’ont pas d’échéance de date : l’épargne est bloquée jusqu’à la retraite, avec déblocage anticipé possible pour l’achat de la résidence principale.</p>' : ''}
-      ${acc.some(a => a.type === 'pee') ? '<p class="hint">Sur un PEE, le blocage de 5 ans court à partir de chaque versement : il n’y a pas une échéance unique.</p>' : ''}
-    </section>
-    <section><h2>Avantages fiscaux</h2>
-      ${types.map(t => `<article class="acct"><h3>${TYPES[t].label}</h3>
-        <ul class="bullets">${(TAX[t] || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></article>`).join('')}
-    </section>
-    <section><h2>À savoir</h2>
-      <p class="small">${esc(TAX_NOTE)}</p>
-      <p class="small">Ces repères sont ceux du 13 septembre 2026 et n’ont pas valeur de conseil. La fiscalité de l’épargne change à chaque loi de finances : vérifie sur service-public.fr ou auprès de ton établissement avant toute décision.</p>
-    </section>`;
-}
-
-function vSaisie() {
+function vMois() {
   if (!S.accounts.length) return emptyAccounts();
+  const m = saisieMonth, cur = monthKey();
+  const accs = active();
+  const filled = a => isSimple(a) ? entry(m, a)?.dot != null : entry(m, a)?.value != null;
+  const doneN = accs.filter(filled).length;
+  const cashDet = cashAccounts().filter(a => !isSimple(a));
+  const txAll = cashDet.flatMap(a => txOf(m, a));
+  const txTodo = txAll.filter(t => t.a < 0 && !t.c).length;
+  const st = S.household.on ? potStats(m) : null;
+  const incOk = !incomeMissing(m) || !incomeMissing(m).length;
+  const steps = [
+    { k: 'soldes', t: 'Soldes des comptes', d: `${doneN} sur ${accs.length} à jour`, ok: doneN === accs.length, act: 'sub', v: 'soldes' },
+    ...(cashDet.length ? [{ k: 'operations', t: 'Opérations du mois', d: !txAll.length ? 'aucun relevé importé' : txTodo ? `${plural(txTodo, 'ligne', 'lignes')} à classer` : `${plural(txAll.length, 'ligne classée', 'lignes classées')}`, ok: txAll.length > 0 && !txTodo, act: 'sub', v: 'operations' }] : []),
+    ...(S.household.on && members().length > 1 ? [{ k: 'foyer', t: 'Revenus et charges du foyer', d: !st.total ? 'aucune dépense enregistrée' : `${eur(st.total)} de charges${incOk ? '' : ', revenus à saisir'}`, ok: st.total > 0 && incOk, act: 'foyer' }] : []),
+  ];
+  const allOk = steps.every(x => x.ok);
+  return `
+    <div class="month-nav"><button data-act="month" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(m))}</strong><button data-act="month" data-d="1" aria-label="Mois suivant" ${m >= cur ? 'disabled' : ''}>›</button></div>
+    <p class="explain">${allOk ? 'Tout est à jour pour ce mois. Le résumé est prêt dans l’onglet Résumé.' : 'Trois minutes par mois : suis les étapes, elles passent au vert une fois terminées.'}</p>
+    <ol class="steps">${steps.map((x, i) => `<li class="${x.ok ? 'ok' : ''}">
+      <button data-act="${x.act === 'sub' ? 'gosub' : 'gofoyer'}" ${x.v ? `data-v="${x.v}"` : ''}>
+        <span class="stepno">${x.ok ? '✓' : i + 1}</span>
+        <span class="stepmain"><span class="stept">${x.t}</span><span class="stepd">${x.d}</span></span>
+        <span class="chev">›</span></button></li>`).join('')}</ol>
+    ${allOk ? `<div class="actions"><button class="btn primary wide" data-act="go" data-view="resume">Voir le résumé du mois</button></div>` : ''}`;
+}
+function vSoldes() {
   const m = saisieMonth, cur = monthKey();
   const accs = S.accounts.filter(a => !a.closed || a.closed >= m);
   return `
-    <div class="month-nav"><button data-act="month" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(m))}</strong><button data-act="month" data-d="1" aria-label="Mois suivant" ${m >= cur ? 'disabled' : ''}>›</button></div>
+    <p class="month-sub">${cap(monthLabel(m))}</p>
     <p class="explain">Solde : la valeur du compte aujourd’hui. Versé ce mois : ce que tu as ajouté, hors intérêts et plus-values. Laisse vide s’il n’y a rien eu. Pour une reprise d’argent, passe par « Détailler les mouvements du mois ».</p>
     <div id="saisie">${accs.map(a => {
       const e = entry(m, a) || {}, first = firstMonthOf(a), hasPrev = first && first < m, prev = hasPrev ? valueAt(a, addMonths(m, -1)) : null;
@@ -1256,9 +1262,24 @@ function vSaisie() {
     }).join('')}</div>
     <div class="actions">
       <button class="btn primary wide" data-act="savesaisie">Enregistrer ${monthName(m)}</button>
-      <button class="btn ghost wide" data-act="importstmt">Importer un relevé</button>
-      <button class="btn ghost wide" data-act="copyprev">Reprendre les soldes précédents</button>
-      <button class="link" data-act="settings">Ajouter ou modifier un compte</button></div>`;
+      <button class="btn ghost wide" data-act="importstmt">Importer un relevé de placement</button>
+      <button class="btn ghost wide" data-act="copyprev">Reprendre les soldes précédents</button></div>`;
+}
+// Écran des opérations : un relevé de compte courant par ligne
+function vOperations() {
+  const m = saisieMonth, list = cashAccounts().filter(a => !isSimple(a));
+  return `<p class="month-sub">${cap(monthLabel(m))}</p>
+    <p class="explain">Importe le relevé de chaque compte courant, puis classe les débits en charge commune, dépense personnelle ou virement interne.</p>
+    ${list.map(a => {
+      const tx = txOf(m, a), deb = tx.filter(t => t.a < 0), todo = deb.filter(t => !t.c).length;
+      const ch = deb.filter(t => t.c === 'charge').reduce((s, t) => s - t.a, 0);
+      const ho = deb.filter(t => t.c === 'hors').reduce((s, t) => s - t.a, 0);
+      return `<article class="acct"><header><div><h3>${esc(a.name)}</h3>
+          <p class="small">${tx.length ? `${plural(tx.length, 'opération', 'opérations')}${todo ? ` · ${todo} à classer` : ' · toutes classées'}` : 'aucun relevé importé'}${a.potCharge ? ' · charges communes' : ''}</p></div></header>
+        ${tx.length ? `<ul class="kv"><li><span>Charges communes</span><span class="num">${eur(ch)}</span></li>
+          <li><span>Hors charges</span><span class="num">${eur(ho)}</span></li></ul>` : ''}
+        <div class="actions"><button class="btn ${todo || !tx.length ? 'primary' : ''} wide" data-act="tx" data-id="${a.id}">${tx.length ? 'Reprendre le classement ou réimporter' : 'Importer le relevé'}</button></div></article>`;
+    }).join('')}`;
 }
 
 function vObjectifs() {
@@ -1321,40 +1342,125 @@ function openSheet(html) {
 }
 function closeSheet() { $('#layer').innerHTML = ''; }
 
+// Réglages : un menu, puis une page par domaine. Les comptes se gèrent dans leur onglet.
+const SET_PAGES = {
+  foyer:   { t: 'Foyer', d: () => S.household.on ? members().map(m => m.name).join(', ') : 'non activé' },
+  budget:  { t: 'Budget de référence', d: () => S.settings.depenses || S.settings.revenus ? 'dépenses et revenus renseignés' : 'à renseigner' },
+  ai:      { t: 'Analyse par IA', d: () => S.settings.ai?.key ? (AI[S.settings.ai.provider] || AI.anthropic).label : 'désactivée, app hors ligne' },
+  secu:    { t: 'Sécurité', d: () => slots?.pk ? 'mot de passe et Face ID' : 'mot de passe' },
+  backup:  { t: 'Sauvegarde', d: () => S.settings.lastExport ? 'dernière le ' + new Date(S.settings.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : 'aucune sauvegarde' },
+  code:    { t: 'Code de l’app', d: () => code.status === 'ok' ? 'conforme à la version approuvée' : code.status === 'unknown' ? 'vérification indisponible' : 'différence détectée' },
+};
 function sheetSettings() {
-  const st = S.settings, F = focusMonth();
-  const le = st.lastExport ? new Date(st.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+  setPage = null;
   openSheet(`<h2>Réglages</h2>
-    <h3>Comptes</h3>
-    <ul class="list">${S.accounts.map(a => `<li class="${a.closed ? 'closed' : ''}"><button data-act="editacc" data-id="${a.id}"><span>${esc(a.name)}<br><span class="small">${TYPES[a.type].label}${a.closed ? ' (clôturé)' : ''}</span></span><span class="num">${eur(valueAt(a, F))}</span></button></li>`).join('')}</ul>
-    <button class="btn wide" style="margin-top:12px" data-act="newacc">Ajouter un compte</button>
-    <h3>Budget du foyer</h3>
-    <div class="stack-form">
-      <label>Dépenses mensuelles (€), pour l’épargne de précaution<input inputmode="decimal" data-set="depenses" value="${esc(numStr(st.depenses))}"></label>
-      <label>Revenus nets mensuels (€), pour le taux d’épargne<input inputmode="decimal" data-set="revenus" value="${esc(numStr(st.revenus))}"></label>
-      <label>Plafond de déduction PER de l’année (€), indiqué sur l’avis d’impôt<input inputmode="decimal" data-set="perPlafond" value="${esc(numStr(st.perPlafond))}"></label></div>
-    <h3>Sauvegarde</h3>
-    <p class="small" style="margin:0 0 10px">${le ? `Dernière sauvegarde exportée le ${le}.` : 'Aucune sauvegarde exportée.'} Le fichier reste chiffré avec ton mot de passe : range-le dans iCloud Drive.</p>
-    <div class="row2"><button class="btn" data-act="export">Exporter</button><button class="btn ghost" data-act="import">Restaurer</button></div>
-    <h3>Foyer</h3>
-    <p class="small" style="margin:0 0 10px">${S.household.on ? esc(members().map(m => m.name).join(', ')) + ' · charges réparties dans l’onglet Comptes > Foyer.' : 'Non activé : l’app suit uniquement tes finances.'}</p>
-    <button class="btn ghost wide" data-act="household">${S.household.on ? 'Membres et revenus' : 'Activer la gestion du foyer'}</button>
-    <h3>Analyse par IA</h3>
-    <p class="small" style="margin:0 0 10px">${st.ai?.key ? `Configurée : ${esc((AI[st.ai.provider] || AI.anthropic).label)}.` : 'Non configurée. L’app fonctionne entièrement hors ligne.'}</p>
-    <button class="btn ghost wide" data-act="aiconf">${st.ai?.key ? 'Modifier' : 'Configurer'}</button>
-    <h3>Sécurité</h3>
-    <div class="stack-form">
-      ${pkAvailable() ? (slots?.pk ? `<p class="small" style="margin:0">Face ID activé le ${new Date(slots.pk.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}.</p><button class="btn ghost wide" data-act="pkdisable">Désactiver Face ID</button>` : '<button class="btn wide" data-act="pkenable">Activer Face ID</button>') : ''}
-      <button class="btn ghost wide" data-act="chpw">Changer le mot de passe</button>
-      <button class="btn ghost wide" data-act="lock">${mode === 'demo' ? 'Quitter la démo' : 'Verrouiller maintenant'}</button>
-      <button class="btn danger wide" data-act="wipe">Effacer toutes les données de cet iPhone</button></div>
-    <h3>Code de l’app</h3>
-    <p class="small" style="margin:0 0 10px">Empreinte approuvée : <span class="fp">${fpLabel(code.approved)}</span>${code.at ? `, le ${new Date(code.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}. ${code.status === 'ok' ? 'Le code servi correspond.' : code.status === 'unknown' ? 'Vérification indisponible ici.' : 'Une différence a été détectée.'}</p>
-    <button class="btn ghost wide" data-act="codeinfo">Vérifier le code</button>
-    <p class="small" style="margin-top:18px">L’app ne transmet aucune donnée : elle charge uniquement son propre code, et tout le reste est chiffré sur cet appareil.</p>
+    <ul class="list menu">${Object.entries(SET_PAGES).map(([k, p]) => `<li><button data-act="setpage" data-p="${k}">
+      <span>${p.t}<br><span class="small">${esc(p.d())}</span></span><span class="chev">›</span></button></li>`).join('')}</ul>
+    <p class="small" style="margin-top:18px">Tes comptes se gèrent dans l’onglet Comptes. L’app ne transmet aucune donnée : tout est chiffré sur cet appareil.</p>
     <button class="btn wide" style="margin-top:14px" data-act="close">Fermer</button>`);
 }
-
+const setBack = '<button class="link" data-act="settings">Retour aux réglages</button>';
+function sheetSetPage(k) {
+  setPage = k;
+  const st = S.settings, H = S.household, sh = shares(potMonth);
+  const head = `<h2>${SET_PAGES[k].t}</h2>`;
+  if (k === 'foyer') return openSheet(`${head}
+    <label class="check"><input type="checkbox" id="h-on" ${H.on ? 'checked' : ''}>Gérer les finances à deux</label>
+    <p class="small">Les comptes reçoivent un titulaire et les charges communes se répartissent entre les membres.</p>
+    <form id="f-members" class="stack-form">
+      <h3>Membres</h3>
+      ${H.members.map(m => `<div class="mrow"><label>Nom<input data-mname="${m.id}" value="${esc(m.name)}"></label>
+        <label>Revenu de référence (€ par mois)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-mincome="${m.id}" value="${esc(numStr(m.income))}"`}></label>
+        ${m.id === 'moi' ? '' : `<button class="link" type="button" data-act="delmember" data-id="${m.id}">Retirer ${esc(m.name)}</button>`}</div>`).join('')}
+      <p class="small" style="margin:0">Le revenu de référence sert par défaut. Si les revenus varient, saisis-les mois par mois dans Comptes &gt; Foyer.</p>
+      <button class="btn wide" type="button" data-act="addmember">Ajouter un membre</button>
+      <h3>Répartition des charges</h3>
+      <label>Mode<select id="s-mode">
+        <option value="moitie" ${H.split.mode === 'moitie' ? 'selected' : ''}>Parts égales</option>
+        <option value="revenus" ${H.split.mode === 'revenus' ? 'selected' : ''}>Au prorata des revenus</option>
+        <option value="manuel" ${H.split.mode === 'manuel' ? 'selected' : ''}>Parts choisies</option></select></label>
+      <div id="s-manual" ${H.split.mode === 'manuel' ? '' : 'hidden'}>
+        ${H.members.map(m => `<label>${esc(m.name)} — part<input inputmode="decimal" data-share="${m.id}" value="${esc(numStr(H.split.shares[m.id]))}" placeholder="ex. 60"></label>`).join('')}
+        <p class="small">Les parts sont ramenées à 100 % entre elles : 60 et 40 donnent le même résultat que 6 et 4.</p></div>
+      <p class="small" style="margin:0">Répartition actuelle : ${H.members.map(m => `${esc(m.name)} ${pct(sh[m.id] || 0)}`).join(', ')}.</p>
+      <button class="btn primary wide" type="submit">Enregistrer</button>
+      ${setBack}</form>`);
+  if (k === 'budget') return openSheet(`${head}
+    <p class="small" style="margin:0 0 14px">Sert à calculer ton épargne de précaution, ton taux d’épargne et le plafond PER restant.</p>
+    <div class="stack-form">
+      <label>Dépenses mensuelles (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="depenses" value="${esc(numStr(st.depenses))}"`}></label>
+      <label>Revenus nets mensuels (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="revenus" value="${esc(numStr(st.revenus))}"`}></label>
+      <label>Plafond de déduction PER de l’année (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="perPlafond" value="${esc(numStr(st.perPlafond))}"`}></label>
+      <p class="small" style="margin:0">Le plafond PER figure sur ton avis d’impôt.</p>
+      ${setBack}</div>`);
+  if (k === 'ai') return sheetAI();
+  if (k === 'secu') return openSheet(`${head}
+    <div class="stack-form">
+      ${pkAvailable() ? (slots?.pk ? `<p class="small" style="margin:0">Face ID activé le ${new Date(slots.pk.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}.</p><button class="btn ghost wide" data-act="pkdisable">Désactiver Face ID</button>` : '<button class="btn wide" data-act="pkenable">Activer Face ID</button>') : '<p class="small" style="margin:0">Face ID n’est pas disponible à cette adresse.</p>'}
+      <button class="btn ghost wide" data-act="chpw">Changer le mot de passe</button>
+      <button class="btn ghost wide" data-act="lock">${mode === 'demo' ? 'Quitter la démo' : 'Verrouiller maintenant'}</button>
+      <p class="small" style="margin:0">L’app se verrouille seule après deux minutes en arrière-plan.</p>
+      <button class="btn danger wide" data-act="wipe">Effacer toutes les données de cet iPhone</button>
+      ${setBack}</div>`);
+  if (k === 'backup') {
+    const le = st.lastExport ? new Date(st.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+    return openSheet(`${head}
+      <p class="small" style="margin:0 0 14px">${le ? `Dernière sauvegarde exportée le ${le}.` : 'Aucune sauvegarde exportée.'} Le fichier reste chiffré avec ton mot de passe : range-le dans iCloud Drive.</p>
+      <div class="stack-form"><button class="btn primary wide" data-act="export">Exporter une sauvegarde</button>
+        <button class="btn ghost wide" data-act="import">Restaurer une sauvegarde</button>
+        ${setBack}</div>`);
+  }
+  return openSheet(`${head}
+    <p class="small" style="margin:0 0 6px">Empreinte approuvée</p>
+    <p class="fp">${fpLabel(code.approved)}</p>
+    <p class="small">${code.at ? `Approuvée le ${new Date(code.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}. ` : ''}${code.status === 'ok' ? 'Le code installé correspond.' : code.status === 'unknown' ? 'Vérification indisponible ici.' : 'Une différence a été détectée.'}</p>
+    <p class="small">L’app n’installe jamais une nouvelle version sans ta confirmation.</p>
+    <div class="stack-form"><button class="btn wide" data-act="codeinfo">Vérifier le code</button>${setBack}</div>`);
+}
+function sheetAccountInfo(id) {
+  const a = S.accounts.find(x => x.id === id); if (!a) return;
+  const T = TYPES[a.type], F = focusMonth(), mat = maturityOf(a), b = accBreak(a, F);
+  const e = entry(F, a), lu = lastUpdate(a), v = valueAt(a, F);
+  const cash = isCash(a), simple = isSimple(a);
+  const kv = [];
+  if (simple) [3, 2, 1, 0].map(i => addMonths(F, -i)).forEach(k => kv.push([cap(monthLabel(k, { month: 'long' })), dotOf(k, a) ? eur(dotOf(k, a)) : '—']));
+  else if (cash) {
+    const deb = txOf(F, a).filter(t => t.a < 0), sum = c => deb.filter(t => t.c === c).reduce((s, t) => s - t.a, 0);
+    kv.push(['Charges communes', eur(sum('charge'))], ['Hors charges', eur(sum('hors'))]);
+    if (sum('vir')) kv.push(['Virements vers tes comptes', eur(sum('vir'))]);
+    kv.push(['Opérations du mois', txOf(F, a).length ? plural(txOf(F, a).length, 'ligne', 'lignes') : 'aucune']);
+  } else {
+    if (firstMonthOf(a) !== F) {
+      kv.push(['Versements du mois', signed(b.dep) + (e?.moves?.length ? ` · ${plural(e.moves.length, 'mouvement', 'mouvements')}` : '')]);
+      kv.push(['Performance du mois', signed(b.perf) + (b.p ? ` (${spct(b.perf / b.p)})` : '')]);
+    }
+    kv.push(['Compté pour', [a.apport && 'apport immobilier', a.retraite && 'retraite'].filter(Boolean).join(', ') || 'aucun objectif']);
+  }
+  kv.push(['Dernière mise à jour', lu ? cap(monthLabel(lu)) : simple ? '—' : 'jamais']);
+  const lines = a.lines?.length ? (() => {
+    const tot = a.lines.reduce((t, l) => t + l.v, 0) || 1;
+    return `<h3>Composition${a.linesAt ? ` · relevé de ${monthLabel(a.linesAt)}` : ''}</h3>
+      <div class="lines"><ul>${a.lines.slice().sort((x, y) => y.v - x.v).map(l => `<li><span class="ln">${esc(l.n)}</span><span class="lb"><i style="width:${Math.round(l.v / tot * 100)}%"></i></span><span class="lp">${pct(l.v / tot)}</span><span class="num">${eur(l.v)}</span></li>`).join('')}</ul></div>`;
+  })() : '';
+  openSheet(`<h2>${esc(a.name)}</h2>
+    <p class="small" style="margin:0">${T.label}${multi() ? ' · ' + esc(mName(a.owner || 'moi')) : ''}${a.open ? ` · ouvert en ${monthLabel(a.open)}` : ''}${a.closed ? ` · clôturé en ${monthLabel(a.closed)}` : ''}</p>
+    <p class="big num" style="margin:10px 0 2px">${eur(simple ? dotOf(F, a) : v)}</p>
+    <p class="small" style="margin:0 0 8px">${simple ? `envoyé en ${monthName(F)}` : `solde fin ${monthLabel(F)}`}</p>
+    ${T.plafond ? `<div class="bar sm"><i style="width:${Math.min(100, v / T.plafond * 100)}%"></i></div>
+      <p class="small">${v >= T.plafond ? `Plafond de ${eur(T.plafond)} atteint` : `${eur(T.plafond - v)} avant le plafond de ${eur(T.plafond)}`}</p>` : ''}
+    <ul class="kv">${kv.map(([k, val]) => `<li><span>${k}</span><span class="num">${val}</span></li>`).join('')}</ul>
+    ${lines}
+    ${mat ? `<h3>Échéance</h3><p>${mat.years} ans ${monthDiff(F, mat.date) <= 0 ? `atteints depuis ${monthLabel(mat.date)}` : `en ${monthLabel(mat.date)}, dans ${plural(monthDiff(F, mat.date), 'mois', 'mois')}`}.</p>`
+      : T.maturite ? `<h3>Échéance</h3><p class="small">Renseigne la date d’ouverture pour calculer l’échéance des ${T.maturite} ans.</p>` : ''}
+    ${TAX[a.type] ? `<h3>Fiscalité</h3><ul class="bullets">${TAX[a.type].map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+      <p class="small">${esc(TAX_NOTE)}</p>
+      <p class="small">Repères du 13 septembre 2026, sans valeur de conseil : vérifie sur service-public.fr avant toute décision.</p>` : ''}
+    <div class="actions">
+      ${cash && !simple ? `<button class="btn wide" data-act="tx" data-id="${a.id}">Opérations du mois</button>` : ''}
+      ${!cash ? `<button class="btn wide" data-act="moves" data-id="${a.id}">Mouvements du mois</button>` : ''}
+      <button class="btn ghost wide" data-act="editacc" data-id="${a.id}">Modifier ce compte</button>
+      <button class="link" data-act="close">Fermer</button></div>`);
+}
 function sheetAccount(id) {
   const a = S.accounts.find(x => x.id === id) || { id: null, name: '', type: 'livretA', open: '', ...DEFAULTS.livretA };
   const T = TYPES[a.type];
@@ -1376,7 +1482,7 @@ function sheetAccount(id) {
       ${a.lines?.length ? `<button class="btn ghost wide" type="button" data-act="dellines" data-id="${a.id}">Supprimer le détail des lignes (${a.lines.length})</button>` : ''}
       ${a.id ? `<button class="btn ghost wide" type="button" data-act="closeacc" data-id="${a.id}">${a.closed ? 'Rouvrir le compte' : 'Clôturer le compte (garde l’historique)'}</button>
       <button class="btn danger wide" type="button" data-act="delacc" data-id="${a.id}">Supprimer le compte et son historique</button>` : ''}
-      <button class="link" type="button" data-act="settings">Retour</button>
+      <button class="link" type="button" data-act="close">Retour</button>
     </form>`);
 }
 
@@ -1398,7 +1504,7 @@ function offerPasskey() {
     <button class="btn primary wide" data-act="pkenable" data-after="close">Activer Face ID</button>
     <button class="link" data-act="close">Plus tard</button>`);
 }
-const sheetMsg = msg => openSheet(`<h2>Face ID</h2><p>${esc(msg)}</p><button class="btn wide" data-act="settings">Retour</button>`);
+const sheetMsg = msg => openSheet(`<h2>Face ID</h2><p>${esc(msg)}</p><button class="btn wide" data-act="setpage" data-p="secu">Retour</button>`);
 function enterApp() {
   view = 'home'; compteTab = 'detail';
   saisieMonth = monthKey(); potMonth = monthKey(); resumeMonth = null;
@@ -1411,7 +1517,7 @@ async function finishImport(o) {
   await adopt(o); await save(); navigator.storage?.persist?.(); pendingImport = null; await clearFails();
   closeSheet(); enterApp(); toast('Sauvegarde restaurée');
 }
-const pkDone = after => { if (after === 'close') { closeSheet(); render(); } else sheetSettings(); toast('Face ID activé'); };
+const pkDone = after => { if (after === 'close') { closeSheet(); render(); } else sheetSetPage('secu'); toast('Face ID activé'); };
 
 /* ---------- Analyse par IA ----------
    Le texte envoyé est exactement le résumé affiché : arrondi, sans nom d'établissement.
@@ -1486,7 +1592,7 @@ function sheetAI() {
       <label>Modèle (facultatif)<input id="ai-model" value="${esc(c.model || '')}" placeholder="${esc((AI[c.provider] || AI.anthropic).model)}" autocomplete="off"></label>
       <button class="btn primary wide" type="submit">Enregistrer</button>
       ${c.key ? '<button class="btn danger wide" type="button" data-act="aiclear">Supprimer la clé</button>' : ''}
-      <button class="link" type="button" data-act="close">Fermer</button></form>
+      <button class="link" type="button" data-act="settings">Retour aux réglages</button></form>
     <p class="small">Crée la clé sur ${esc((AI[c.provider] || AI.anthropic).keyUrl)} et fixe-lui un plafond de dépense. Une analyse coûte quelques centimes. Tu peux la révoquer à tout moment.</p>`);
 }
 
@@ -1573,37 +1679,6 @@ function sheetClassify(list) {
 }
 
 /* ---------- Foyer : feuilles ---------- */
-function sheetHousehold() {
-  const H = S.household;
-  openSheet(`<h2>Foyer</h2>
-    <label class="check"><input type="checkbox" id="h-on" ${H.on ? 'checked' : ''}>Activer la gestion des finances communes</label>
-    <p class="small">Les comptes gardent un titulaire et les charges se répartissent entre les membres. Tout reste sur ton iPhone.</p>
-    <h3>Membres</h3>
-    <form id="f-members" class="stack-form">
-      ${H.members.map(m => `<div class="mrow"><label>Nom<input data-mname="${m.id}" value="${esc(m.name)}" ${m.id === 'moi' ? '' : ''}></label>
-        <label>Revenu de référence (€ par mois)<input inputmode="decimal" data-mincome="${m.id}" value="${esc(numStr(m.income))}"></label>
-        ${m.id === 'moi' ? '' : `<button class="link" type="button" data-act="delmember" data-id="${m.id}">Retirer ${esc(m.name)}</button>`}</div>`).join('')}
-      <p class="small" style="margin:0">Le revenu de référence sert par défaut. Si les revenus varient, saisis-les mois par mois dans Comptes &gt; Foyer.</p>
-      <button class="btn wide" type="button" data-act="addmember">Ajouter un membre</button>
-      <button class="btn primary wide" type="submit">Enregistrer</button>
-      <button class="link" type="button" data-act="close">Fermer</button></form>`);
-}
-function sheetSplit() {
-  const H = S.household, sh = shares(potMonth);
-  openSheet(`<h2>Répartition des charges</h2>
-    <form id="f-split" class="stack-form">
-      <label>Mode<select id="s-mode">
-        <option value="moitie" ${H.split.mode === 'moitie' ? 'selected' : ''}>Parts égales</option>
-        <option value="revenus" ${H.split.mode === 'revenus' ? 'selected' : ''}>Au prorata des revenus</option>
-        <option value="manuel" ${H.split.mode === 'manuel' ? 'selected' : ''}>Parts choisies</option></select></label>
-      <div id="s-manual" ${H.split.mode === 'manuel' ? '' : 'hidden'}>
-        ${members().map(m => `<label>${esc(m.name)} — part<input inputmode="decimal" data-share="${m.id}" value="${esc(numStr(H.split.shares[m.id]))}" placeholder="ex. 60"></label>`).join('')}
-        <p class="small">Les parts sont ramenées à 100 % entre elles : 60 et 40 donnent le même résultat que 6 et 4.</p></div>
-      <p class="small">Répartition actuelle : ${members().map(m => `${esc(m.name)} ${pct(sh[m.id] || 0)}`).join(', ')}.</p>
-      ${H.split.mode === 'revenus' && members().some(m => !incomeOf(potMonth, m.id)) ? '<p class="err">Renseigne le revenu de chaque membre pour utiliser ce mode.</p>' : ''}
-      <button class="btn primary wide" type="submit">Enregistrer</button>
-      <button class="link" type="button" data-act="close">Annuler</button></form>`);
-}
 function sheetCharge(id) {
   const it = potOf(potMonth).items.find(x => x.id === id) || { id: null, n: '', a: null, by: 'moi' };
   openSheet(`<h2>${it.id ? 'Modifier la dépense' : 'Nouvelle dépense'}</h2>
@@ -1815,6 +1890,9 @@ function paintLines() {
 /* ---------- Actions ---------- */
 const ACT = {
   go: t => go(t.dataset.view),
+  gosub: t => goSub(t.dataset.v),
+  back: () => { subview = null; render(); window.scrollTo(0, 0); },
+  gofoyer: () => { compteTab = 'foyer'; go('comptes'); },
   mask: () => masked ? askUnmask() : setMasked(true),
   unmask: () => askUnmask(),
   comptetab: async t => {
@@ -1826,7 +1904,7 @@ const ACT = {
   chpw: () => sheetChangePw(),
   aiconf: () => sheetAI(),
   analyse: () => runAnalysis(resumeMonth),
-  aiclear: async () => { S.settings.ai = null; await save(); closeSheet(); render(); toast('Clé supprimée'); },
+  aiclear: async () => { S.settings.ai = null; await save(); render(); sheetSetPage('ai'); toast('Clé supprimée'); },
   moves: t => sheetMoves(t.dataset.id),
   tx: t => sheetTxImport(t.dataset.id),
   picktx: () => { const i = $('#txfile'); i.value = ''; i.click(); },
@@ -1858,8 +1936,8 @@ const ACT = {
       <p class="small">${i.src === 'env' ? 'Modifie le montant dans Saisie, ou décoche « ce compte sert aux charges communes » sur le compte.' : 'Pour la sortir des charges communes, reclasse-la en « hors charges » depuis Saisie > Opérations.'}</p>
       <button class="btn wide" data-act="close">Fermer</button>`);
   },
-  household: () => sheetHousehold(),
-  split: () => sheetSplit(),
+  household: () => sheetSetPage('foyer'),
+  split: () => sheetSetPage('foyer'),
   newcharge: () => sheetCharge(null),
   editcharge: t => sheetCharge(t.dataset.id),
   newtransfer: () => sheetTransfer(null),
@@ -1873,7 +1951,7 @@ const ACT = {
   },
   addmember: async () => {
     S.household.members.push({ id: uid(), name: 'Membre ' + (members().length + 1), income: null });
-    S.household.on = true; await save(); sheetHousehold(); render();
+    S.household.on = true; await save(); sheetSetPage('foyer'); render();
   },
   delmember: async t => {
     const m = memberOf(t.dataset.id);
@@ -1889,7 +1967,7 @@ const ACT = {
     S.household.members = members().filter(x => x.id !== m.id);
     delete S.household.split.shares[m.id];
     if (scope === m.id) scope = 'moi';
-    await save(); sheetHousehold(); render();
+    await save(); sheetSetPage('foyer'); render();
   },
   delcharge: async t => {
     const p = S.pot[potMonth]; p.items = p.items.filter(i => i.id !== t.dataset.id); delete p.from;
@@ -1957,7 +2035,7 @@ const ACT = {
   },
   pkdisable: async () => {
     if (!confirm('Désactiver le déverrouillage par Face ID ? Tu pourras ensuite supprimer la clé d’accès dans ton gestionnaire.')) return;
-    const { pk, ...rest } = slots; slots = rest; await save(); sheetSettings(); toast('Face ID désactivé');
+    const { pk, ...rest } = slots; slots = rest; await save(); sheetSetPage('secu'); toast('Face ID désactivé');
   },
   pkunlock: async t => {
     t.disabled = true;
@@ -1970,9 +2048,11 @@ const ACT = {
   },
   close: () => closeSheet(),
   settings: () => sheetSettings(),
+  setpage: t => sheetSetPage(t.dataset.p),
   newacc: () => sheetAccount(null),
+  accinfo: t => sheetAccountInfo(t.dataset.id),
   editacc: t => sheetAccount(t.dataset.id),
-  month: t => { const n = addMonths(saisieMonth, +t.dataset.d); if (n <= monthKey()) { saisieMonth = n; render(); } },
+  month: t => { const n = addMonths(saisieMonth, +t.dataset.d); if (n <= monthKey()) { saisieMonth = n; potMonth = n; render(); } },
   lock: () => {
     if (mode === 'demo') { if (confirm('Quitter la démo ? Les données fictives seront effacées.')) boot(); return; }
     lockNow();
@@ -2022,7 +2102,7 @@ const ACT = {
     }
     if (bad) { bad.focus(); toast('Vérifie les montants en rouge : un solde est requis pour chaque versement'); return; }
     if (Object.keys(out).length) S.entries[m] = out; else delete S.entries[m];
-    await save(); saisieMonth = monthKey(); toast(`${cap(monthName(m))} enregistré`); go('home');
+    await save(); toast(`${cap(monthName(m))} enregistré`); subview = null; render(); window.scrollTo(0, 0);
   },
   copy: async () => {
     const txt = summary(resumeMonth);
@@ -2160,7 +2240,7 @@ document.addEventListener('submit', async e => {
     busy('Vérification…');
     try { await openPwSlot(slots.pw, cur); } catch { return fail('Mot de passe actuel incorrect.'); }
     slots = { ...slots, pw: await makePwSlot(dekRaw, p1) };
-    S.settings.lastExport = null; await save(); sheetSettings(); render(); toast('Mot de passe modifié');
+    S.settings.lastExport = null; await save(); render(); sheetSetPage('secu'); toast('Mot de passe modifié');
   }
   else if (f.id === 'f-unmask') {
     busy('Vérification…');
@@ -2191,12 +2271,12 @@ document.addEventListener('submit', async e => {
     S.household.on = $('#h-on').checked;
     for (const el of $$('[data-mname]')) { const m = memberOf(el.dataset.mname); const v = el.value.trim(); if (v) m.name = v; }
     for (const el of $$('[data-mincome]')) { const m = memberOf(el.dataset.mincome); const v = num(el.value); m.income = Number.isNaN(v) ? null : v; }
-    await save(); closeSheet(); render(); toast('Foyer enregistré');
+    await save(); render(); sheetSetPage('foyer'); toast('Foyer enregistré');
   }
   else if (f.id === 'f-split') {
     S.household.split.mode = $('#s-mode').value;
     for (const el of $$('[data-share]')) { const v = num(el.value); S.household.split.shares[el.dataset.share] = Number.isNaN(v) ? null : v; }
-    await save(); closeSheet(); render(); toast('Répartition enregistrée');
+    await save(); render(); sheetSetPage('foyer'); toast('Répartition enregistrée');
   }
   else if (f.id === 'f-charge') {
     const n = $('#c-n').value.trim(), a = num($('#c-a').value);
@@ -2281,7 +2361,7 @@ async function exportBackup() {
     try { await navigator.share({ files: [file] }); ok = true; } catch (e) { if (e.name === 'AbortError') return; }
   }
   if (!ok) { const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
-  S.settings.lastExport = Date.now(); await save(); sheetSettings(); render(); toast('Sauvegarde exportée');
+  S.settings.lastExport = Date.now(); await save(); render(); sheetSetPage('backup'); toast('Sauvegarde exportée');
 }
 
 function lockNow() { masked = false; lockHasPk = !!slots?.pk; wipeKeys(); closeSheet(); renderLock('unlock'); }
