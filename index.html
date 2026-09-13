@@ -19,7 +19,7 @@
   --paper:#E9EEE8; --surface:#F7F9F5; --ink:#15201A; --muted:#5A675F; --line:#D1DAD2;
   --pine:#1E5540; --on-pine:#FFFFFF; --pine-soft:#DAE7DE;
   --amber:#9C6116; --amber-soft:#F2E4CB; --red:#A6423A; --red-soft:#F6DCD8;
-  --c-livrets:#9DC1A7; --c-bourse:#1E5540; --c-av:#4F8B6D; --c-retraite:#B38B3F; --c-salariale:#5E7F8C;
+  --c-livrets:#9DC1A7; --c-bourse:#1E5540; --c-av:#4F8B6D; --c-retraite:#B38B3F; --c-salariale:#5E7F8C; --c-courant:#8C7A5E;
   --num: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
   --txt: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
   --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
@@ -30,7 +30,7 @@
     --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E;
     --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24;
     --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220;
-    --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0;
+    --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F;
   }
 }
 *{box-sizing:border-box}
@@ -105,9 +105,14 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .update-title{font-weight:650}
 .progress{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:8px;width:140px}
 .progress i{display:block;height:100%;background:var(--pine);border-radius:9px}
+.chips{display:flex;gap:8px;margin-top:14px;overflow-x:auto;padding-bottom:2px}
+.chips button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:99px;padding:7px 15px;font-size:14px;font-weight:600}
+.chips button.on{background:var(--pine);color:var(--on-pine);border-color:var(--pine)}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface);border-radius:14px;padding:4px;margin-top:14px}
 .seg button{border:0;background:none;border-radius:11px;padding:9px 0;font-weight:600;font-size:15px;color:var(--muted)}
 .seg button.on{background:var(--pine);color:var(--on-pine)}
+.seg.seg3{grid-template-columns:1fr 1fr 1fr}
+.seg.seg3 button{font-size:14px}
 .acct{background:var(--surface);border-radius:20px;padding:16px;margin-bottom:12px}
 .acct header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
 .acct h3{font:650 17px var(--num);margin:0 0 2px}
@@ -119,6 +124,34 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .kv li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}
 .kv li:last-child{border-bottom:0}
 .kv li span:first-child{color:var(--muted)}
+.lines{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.lines ul{list-style:none;margin:8px 0 0;padding:0}
+.lines li{display:grid;grid-template-columns:1fr 46px 38px auto;gap:8px;align-items:center;padding:5px 0;font-size:14px}
+.lines .ln{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lines .lb{height:6px;border-radius:9px;background:var(--line);overflow:hidden}
+.lines .lb i{display:block;height:100%;background:var(--c-bourse);border-radius:9px}
+.lines .lp{color:var(--muted);text-align:right;font-size:13px}
+.txlist{list-style:none;margin:0;padding:0}
+.txrow{padding:10px 0;border-bottom:1px solid var(--line)}
+.txmain{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.txn{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.txsub{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px}
+.seg.mini{margin:0;padding:3px;gap:3px}
+.seg.mini button{font-size:13px;padding:6px 10px;white-space:nowrap}
+.txrow.cred{opacity:.65}
+.tbl{overflow-x:auto;margin-top:14px}
+.tbl table{border-collapse:collapse;width:100%;font-size:14px}
+.tbl th{font-weight:600;color:var(--muted);text-align:right;padding:6px 0 6px 10px;font-size:13px}
+.tbl th:first-child,.tbl td:first-child{text-align:left;padding-left:0}
+.tbl td{text-align:right;padding:8px 0 8px 10px;border-top:1px solid var(--line)}
+.settle{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.settle p{margin:0 0 10px}
+.mrow{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:4px;display:grid;gap:10px}
+.effort li{display:grid;gap:2px}
+.effort li span:last-child{color:var(--ink);font-size:13.5px}
+.linehint{margin:2px 0 0;font-size:13px}
+.linehint .check{padding:2px 0;font-size:14px}
+.linehint .muted{font-size:13px}
 .bullets{margin:10px 0 0;padding-left:20px;font-size:14.5px}
 .bullets li{margin:7px 0}
 .ech{list-style:none;margin:0;padding:0}
@@ -216,7 +249,8 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 <div id="layer"></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <input type="file" id="importfile" accept="application/json,.json" hidden>
-<input type="file" id="stmtfile" accept=".csv,.txt,.tsv,text/plain,text/csv" hidden>
+<input type="file" id="txfile" accept=".csv,.txt,.tsv,.html,.htm,.ofx,text/plain,text/csv,text/html" hidden>
+<input type="file" id="stmtfile" accept=".csv,.txt,.tsv,.html,.htm,text/plain,text/csv,text/html" hidden>
 <script>
 'use strict';
 
@@ -237,12 +271,13 @@ const TYPES = {
   per:     { label: 'PER', cat: 'retraite' },
   pee:     { label: 'PEE', cat: 'salariale' },
   percol:  { label: 'PERCOL', cat: 'retraite' },
+  courant: { label: 'Compte courant', cat: 'courant', cash: true },
 };
 const DEFAULTS = {
   livretA:{apport:true,retraite:false}, ldds:{apport:true,retraite:false}, lep:{apport:true,retraite:false},
   livret:{apport:true,retraite:false}, pea:{apport:true,retraite:false}, cto:{apport:true,retraite:false},
   av:{apport:true,retraite:false}, per:{apport:false,retraite:true}, pee:{apport:false,retraite:false},
-  percol:{apport:false,retraite:true},
+  percol:{apport:false,retraite:true}, courant:{apport:false,retraite:false},
 };
 // Repères fiscaux, à jour au 13 septembre 2026. Les règles changent chaque année :
 // l'écran Fiscalité renvoie vers service-public.fr pour vérification.
@@ -265,6 +300,7 @@ const CATS = {
   av:        { label: 'Assurance-vie', color: 'var(--c-av)' },
   retraite:  { label: 'Retraite (PER, PERCOL)', color: 'var(--c-retraite)' },
   salariale: { label: 'Épargne salariale', color: 'var(--c-salariale)' },
+  courant:   { label: 'Comptes courants', color: 'var(--c-courant)' },
 };
 
 /* ---------- Utilitaires ---------- */
@@ -530,10 +566,11 @@ function sheetCode() {
 
 /* ---------- État ---------- */
 let store, S = null, dek = null, dekRaw = null, slots = null, mode = 'boot', view = 'home', lockHasPk = false, pkPending = null;
-let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', rounding = true, hiddenAt = 0, pendingImport = null;
+let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', potMonth = monthKey(), scope = 'moi', rounding = true, hiddenAt = 0, pendingImport = null;
 
 const emptyData = () => ({
-  v: 1, accounts: [], entries: {},
+  v: 1, accounts: [], entries: {}, pot: {}, rules: {},
+  household: { on: false, members: [{ id: 'moi', name: 'Moi', income: null }], split: { mode: 'moitie', shares: {} } },
   settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null, ai: null },
   analyses: {},
   goals: { apport: { target: null, date: null }, rente: { birthYear: null, retireAge: 64, monthly: null, ret: 3, withdraw: 4 } },
@@ -545,6 +582,12 @@ function normalize(d) {
   d.accounts = (d.accounts || []).map(a => ({ owner: 'moi', ...a })); // « owner » : prévu pour la gestion familiale
   d.entries = d.entries || {};
   d.analyses = d.analyses || {};
+  d.pot = d.pot || {};
+  d.rules = d.rules || {};
+  const h = e.household;
+  d.household = { ...h, ...(d.household || {}) };
+  if (!d.household.members?.length) d.household.members = h.members;
+  d.household.split = { ...h.split, ...(d.household.split || {}) };
   return d;
 }
 async function save() {
@@ -554,6 +597,12 @@ async function save() {
 
 /* ---------- Calculs ---------- */
 const active = () => S.accounts.filter(a => !a.closed);
+// Un compte courant sert au fonctionnement du mois : il est suivi à part du patrimoine.
+const isCash = a => !!TYPES[a.type].cash;
+const cashAccounts = () => active().filter(isCash);
+const isSimple = a => isCash(a) && a.simple;          // enveloppe : on ne suit que ce qui est envoyé
+const dotOf = (m, a) => entry(m, a)?.dot || 0;
+const txOf = (m, a) => entry(m, a)?.tx || [];
 const months = () => Object.keys(S.entries).filter(k => Object.keys(S.entries[k]).length).sort();
 const entry = (m, a) => S.entries[m]?.[a.id];
 // Versement net du mois : somme des mouvements datés, ou le champ simple si aucun détail
@@ -574,7 +623,7 @@ function valueAt(a, m) {
   }
   return 0;
 }
-const totalAt = (m, f = () => true) => S.accounts.filter(f).reduce((s, a) => s + valueAt(a, m), 0);
+const totalAt = (m, f = () => true) => S.accounts.filter(a => !isCash(a) && f(a)).reduce((s, a) => s + valueAt(a, m), 0);
 
 // Décomposition de la variation d’un compte sur un mois : versements, entrée dans le suivi, performance
 function accBreak(a, m) {
@@ -589,14 +638,14 @@ function accBreak(a, m) {
 }
 function breakdown(m, f = () => true) {
   const r = { total: 0, prevTotal: 0, dep: 0, added: 0, perf: 0 };
-  for (const a of S.accounts.filter(f)) { const b = accBreak(a, m); r.total += b.v; r.prevTotal += b.p; r.dep += b.dep; r.added += b.added; r.perf += b.perf; }
+  for (const a of S.accounts.filter(a => !isCash(a) && f(a))) { const b = accBreak(a, m); r.total += b.v; r.prevTotal += b.p; r.dep += b.dep; r.added += b.added; r.perf += b.perf; }
   return r;
 }
-function timeline() {
+function timeline(f = () => true) {
   const ms = months(); if (!ms.length) return [];
   const out = []; let inv = 0;
   for (let k = ms[0]; k <= ms[ms.length - 1]; k = addMonths(k, 1)) {
-    const b = breakdown(k); inv += b.dep + b.added;
+    const b = breakdown(k, f); inv += b.dep + b.added;
     out.push({ k, t: b.total, inv });
   }
   return out;
@@ -605,7 +654,7 @@ function avgDep(upto, n, f = () => true) {
   const ms = months(); if (!ms.length || upto < ms[0]) return { avg: 0, n: 0 };
   let from = addMonths(upto, -(n - 1)); if (from < ms[0]) from = ms[0];
   let sum = 0, c = 0;
-  for (let k = from; k <= upto; k = addMonths(k, 1)) { c++; for (const a of S.accounts.filter(f)) sum += dep(k, a); }
+  for (let k = from; k <= upto; k = addMonths(k, 1)) { c++; for (const a of S.accounts.filter(a => !isCash(a) && f(a))) sum += dep(k, a); }
   return { avg: c ? sum / c : 0, n: c };
 }
 const focusMonth = () => { const ms = months(); return ms.length ? ms[ms.length - 1] : monthKey(); };
@@ -634,6 +683,57 @@ function goalRente(F) {
   if (target != null && n > 0) need = Math.max(0, r ? (target - C * G) * r / (G - 1) : (target - C) / n);
   return { C, m, n, fv, rente: fv * w / 12, target, need, age: g.retireAge };
 }
+
+/* ---------- Foyer : répartition des charges ---------- */
+const members = () => S.household.members;
+const memberOf = id => members().find(m => m.id === id) || members()[0];
+const mName = id => memberOf(id).name;
+// Étiquette neutre pour le résumé envoyé à l'IA : aucun prénom n'en sort
+const mLabel = id => id === 'moi' ? 'moi' : members().length === 2 ? 'mon conjoint' : 'membre ' + (members().findIndex(m => m.id === id) + 1);
+const potOf = m => S.pot[m] || { items: [], transfers: [] };
+// Dépenses communes du mois : saisies à la main, opérations de compte courant classées « charge », enveloppes
+function potItems(k) {
+  const out = potOf(k).items.map(i => ({ ...i }));
+  for (const a of cashAccounts().filter(x => x.potCharge)) {
+    if (isSimple(a)) { const d = dotOf(k, a); if (d > 0) out.push({ id: 'env:' + a.id, n: a.name, a: d, by: a.owner || 'moi', src: 'env', accId: a.id }); continue; }
+    for (const t of txOf(k, a)) if (t.c === 'charge' && t.a < 0) out.push({ id: 'tx:' + t.id, n: t.n, a: -t.a, by: a.owner || 'moi', src: 'tx', accId: a.id });
+  }
+  return out;
+}
+function shares() {
+  const H = S.household, ms = H.members;
+  const from = vals => { const t = vals.reduce((a, b) => a + b, 0); return t > 0 ? Object.fromEntries(ms.map((m, i) => [m.id, vals[i] / t])) : null; };
+  if (H.split.mode === 'revenus') { const r = from(ms.map(m => m.income || 0)); if (r) return r; }
+  if (H.split.mode === 'manuel') { const r = from(ms.map(m => H.split.shares[m.id] || 0)); if (r) return r; }
+  return Object.fromEntries(ms.map(m => [m.id, 1 / ms.length]));
+}
+function potStats(k) {
+  const p = potOf(k), sh = shares(), items = potItems(k);
+  const total = items.reduce((t, i) => t + i.a, 0);
+  const paid = {}, due = {}, net = {}, out = {}, inn = {};
+  for (const m of members()) {
+    paid[m.id] = items.filter(i => i.by === m.id).reduce((t, i) => t + i.a, 0);
+    out[m.id] = (p.transfers || []).filter(t => t.from === m.id).reduce((t, x) => t + x.a, 0);
+    inn[m.id] = (p.transfers || []).filter(t => t.to === m.id).reduce((t, x) => t + x.a, 0);
+    due[m.id] = total * (sh[m.id] || 0);
+    net[m.id] = paid[m.id] + out[m.id] - inn[m.id] - due[m.id];
+  }
+  return { p, items, total, paid, due, net, out, inn, sh };
+}
+// Qui doit combien à qui, une fois les charges et les virements pris en compte
+function settle(st) {
+  const pos = members().filter(m => st.net[m.id] > 0.5).sort((a, b) => st.net[b.id] - st.net[a.id]);
+  const neg = members().filter(m => st.net[m.id] < -0.5).sort((a, b) => st.net[a.id] - st.net[b.id]);
+  const res = []; const left = {};
+  pos.forEach(m => left[m.id] = st.net[m.id]); neg.forEach(m => left[m.id] = -st.net[m.id]);
+  for (const d of neg) for (const c of pos) {
+    if (left[d.id] < 0.5 || left[c.id] < 0.5) continue;
+    const a = Math.min(left[d.id], left[c.id]);
+    res.push({ from: d.id, to: c.id, a }); left[d.id] -= a; left[c.id] -= a;
+  }
+  return res;
+}
+const savedBy = (k, id) => S.accounts.filter(a => !isCash(a) && a.owner === id).reduce((t, a) => t + dep(k, a), 0);
 
 /* ---------- Points d’attention ---------- */
 function alerts(F, forSummary = false) {
@@ -681,6 +781,10 @@ function alerts(F, forSummary = false) {
   const withdrawMonths = [];
   for (let k = addMonths(F, -5); k <= F; k = addMonths(k, 1)) if (acc.some(a => movesOut(entry(k, a)) > 0)) withdrawMonths.push(k);
   if (withdrawMonths.length >= 3) out.push({ l: 'warn', t: `Reprises d’épargne sur ${withdrawMonths.length} des 6 derniers mois : le montant que tu mets de côté chaque mois est probablement trop ambitieux, ou l’épargne de précaution ne joue pas son rôle d’amortisseur.` });
+  for (const a of cashAccounts().filter(x => !isSimple(x))) {
+    const todo = txOf(F, a).filter(t => t.a < 0 && !t.c).length;
+    if (todo && !forSummary) out.push({ l: 'info', t: `${a.name} : ${plural(todo, 'opération non classée', 'opérations non classées')} en ${monthName(F)}. Classe-les pour que les charges communes soient justes.` });
+  }
   const ms = months();
   if (ms.length >= 3) {
     const b = breakdown(F), prev = avgDep(addMonths(F, -1), 6);
@@ -760,6 +864,40 @@ function summary(F) {
     let t = `- Retraite : capital actuel ${R(gr.C)}, versements ${R(gr.m)} par mois. Projection à ${gr.age} ans : ${R(gr.fv)} (hypothèse ${String(g.ret).replace('.', ',')} % par an net d’inflation, retrait ${String(g.withdraw).replace('.', ',')} % par an), soit une rente d’environ ${R(gr.rente)} par mois`;
     if (g.monthly) t += ` pour ${R(g.monthly)} visés`;
     L.push(t + '.');
+  }
+  if (S.household.on && members().length > 1) {
+    const st = potStats(F), SPL = { moitie: 'parts égales', revenus: 'au prorata des revenus', manuel: 'parts choisies' };
+    if (st.total > 0) {
+      L.push('', `Charges communes du foyer : ${R(st.total)}, réparties ${SPL[S.household.split.mode]}.`);
+      for (const m of members()) L.push(`- ${mLabel(m.id)} : part ${pct(st.sh[m.id] || 0)}, payé ${R(st.paid[m.id])}, dû ${R(st.due[m.id])}${m.income ? `, soit ${pct(st.due[m.id] / m.income)} de ses revenus` : ''}`);
+      const d = settle(st);
+      if (d.length) d.forEach(x => L.push(`- Régularisation attendue : ${mLabel(x.from)} doit ${R(x.a)} à ${mLabel(x.to)}`));
+      else L.push('- Comptes équilibrés entre les membres ce mois-ci.');
+    }
+    const others = members().filter(m => m.id !== 'moi');
+    if (others.some(m => totalAt(F, x => x.owner === m.id) > 0))
+      L.push('', `Patrimoine par personne : ${[['moi', totalAt(F, x => (x.owner || 'moi') === 'moi')], ...others.map(m => [mLabel(m.id), totalAt(F, x => x.owner === m.id)])].map(([n, v]) => `${n} ${R(v)}`).join(', ')}.`);
+  }
+  const cash = cashAccounts();
+  if (cash.length) {
+    const lines = [];
+    for (const a of cash.filter(x => !isSimple(x))) {
+      const deb = txOf(F, a).filter(t => t.a < 0); if (!deb.length) continue;
+      const ch = deb.filter(t => t.c === 'charge').reduce((t, x) => t - x.a, 0), ho = deb.filter(t => t.c === 'hors').reduce((t, x) => t - x.a, 0);
+      lines.push(`- Compte courant : ${R(ch + ho)} de dépenses réelles, dont ${R(ch)} de charges communes et ${R(ho)} hors charges (virements internes exclus)`);
+    }
+    const env = cash.filter(isSimple).map(a => ({ a, d: dotOf(F, a) })).filter(x => x.d > 0);
+    if (env.length) lines.push(`- Enveloppes envoyées : ${env.map(x => `${x.a.name} ${R(x.d)}`).join(', ')}`);
+    if (lines.length) { L.push('', 'Compte courant et enveloppes :'); lines.forEach(l => L.push(l)); }
+  }
+  const comp = active().filter(a => a.lines?.length && valueAt(a, F) > 0);
+  if (comp.length) {
+    L.push('', 'Composition des comptes (dernier relevé importé) :');
+    for (const a of comp) {
+      const tot = a.lines.reduce((t, l) => t + l.v, 0) || 1;
+      const top = a.lines.slice().sort((x, y) => y.v - x.v).slice(0, 8);
+      L.push(`- ${TYPES[a.type].label} : ${top.map(l => `${l.n} ${pct(l.v / tot)}`).join(', ')}`);
+    }
   }
   const ech = active().map(a => ({ a, m: maturityOf(a) })).filter(x => x.m && monthDiff(F, x.m.date) > 0 && monthDiff(F, x.m.date) <= 12);
   if (ech.length) { L.push('', 'Échéances fiscales dans les 12 mois :'); ech.forEach(({ a, m }) => L.push(`- ${TYPES[a.type].label} : ${m.years} ans en ${monthLabel(m.date)}`)); }
@@ -844,16 +982,24 @@ function vHidden(v) {
     <p class="muted">${v === 'saisie' ? 'La saisie affiche tes soldes : elle reste cachée tant que le masquage est actif.' : 'Le résumé contient tes montants détaillés : il reste caché tant que le masquage est actif.'}</p>
     <button class="btn primary" data-act="unmask">Afficher les montants</button></section>`;
 }
+const multi = () => S.household.on && members().length > 1;
+const scopeF = () => { const sc = scope; return sc === 'all' ? () => true : a => (a.owner || 'moi') === sc; };
+function scopeBar() {
+  if (!multi()) return '';
+  const opts = [...members().map(m => [m.id, m.name]), ['all', 'Foyer']];
+  return `<div class="chips">${opts.map(([v, l]) => `<button class="${scope === v ? 'on' : ''}" data-act="scope" data-s="${v}">${esc(l)}</button>`).join('')}</div>`;
+}
 function vHome() {
   if (!S.accounts.length) return emptyAccounts();
   const ms = months(), cur = monthKey();
   if (!ms.length) return `<section class="empty"><h2>Première saisie</h2><p class="muted">Indique le solde actuel de chaque compte pour démarrer le suivi.</p><button class="btn primary" data-act="go" data-view="saisie">Saisir ${monthName(cur)}</button></section>`;
-  const F = focusMonth(), b = breakdown(F), delta = b.total - b.prevTotal;
-  const acc = active(), missing = acc.filter(a => entry(cur, a)?.value == null), doneN = acc.length - missing.length;
-  const tl = timeline(), last = tl[tl.length - 1];
-  const cats = Object.entries(CATS).map(([c, C]) => ({ c, ...C, v: totalAt(F, a => TYPES[a.type].cat === c) })).filter(x => x.v > 0);
+  const f = scopeF();
+  const F = focusMonth(), b = breakdown(F, f), delta = b.total - b.prevTotal;
+  const acc = active().filter(f), missing = acc.filter(a => entry(cur, a)?.value == null), doneN = acc.length - missing.length;
+  const tl = timeline(f), last = tl[tl.length - 1];
+  const cats = Object.entries(CATS).map(([c, C]) => ({ c, ...C, v: totalAt(F, a => f(a) && TYPES[a.type].cat === c) })).filter(x => x.v > 0);
   const al = alerts(F);
-  return `
+  return `${scopeBar()}
     <section class="hero">
       <p class="hero-month">Fin ${monthLabel(F)}</p>
       <p class="hero-total num">${eur(b.total)}</p>
@@ -892,21 +1038,22 @@ function chart(tl) {
 const maturityOf = a => { const T = TYPES[a.type]; return T.maturite && a.open ? { date: addMonths(a.open, T.maturite * 12), years: T.maturite } : null; };
 function vComptes() {
   if (!S.accounts.length) return emptyAccounts();
-  return `<div class="seg" role="tablist">
-      <button class="${compteTab === 'detail' ? 'on' : ''}" data-act="comptetab" data-t="detail">Détail</button>
-      <button class="${compteTab === 'fisc' ? 'on' : ''}" data-act="comptetab" data-t="fisc">Fiscalité</button>
-    </div>${compteTab === 'detail' ? vComptesDetail() : vComptesFisc()}`;
+  const tabs = [['detail', 'Détail'], ['foyer', 'Foyer'], ['fisc', 'Fiscalité']];
+  return `<div class="seg seg3" role="tablist">${tabs.map(([v, l]) => `<button class="${compteTab === v ? 'on' : ''}" data-act="comptetab" data-t="${v}">${l}</button>`).join('')}</div>
+    ${compteTab === 'detail' ? vComptesDetail() : compteTab === 'foyer' ? vFoyer() : vComptesFisc()}`;
 }
 function vComptesDetail() {
-  const F = focusMonth(), total = totalAt(F), first = months()[0];
-  const acc = active().slice().sort((x, y) => valueAt(y, F) - valueAt(x, F));
+  const f = scopeF();
+  const F = focusMonth(), total = totalAt(F, f), first = months()[0];
+  const all = active().filter(f);
+  const cash = all.filter(isCash), acc = all.filter(a => !isCash(a)).slice().sort((x, y) => valueAt(y, F) - valueAt(x, F));
   const closed = S.accounts.filter(a => a.closed);
-  if (!acc.length) return '<section class="empty"><p class="muted">Tous tes comptes sont clôturés.</p><button class="btn primary" data-act="newacc">Ajouter un compte</button></section>';
+  if (!all.length) return '<section class="empty"><p class="muted">Aucun compte pour cette personne.</p><button class="btn primary" data-act="newacc">Ajouter un compte</button></section>';
   const card = a => {
     const T = TYPES[a.type], v = valueAt(a, F), b = accBreak(a, F), lu = lastUpdate(a), mat = maturityOf(a);
     const e = entry(F, a), moves = e?.moves?.length ? ` · ${plural(e.moves.length, 'mouvement', 'mouvements')}` : '';
     return `<article class="acct">
-      <header><div><h3>${esc(a.name)}</h3><p class="small">${T.label}${a.open ? ` · ouvert en ${monthLabel(a.open, { month: 'short', year: 'numeric' })}` : ''}</p></div>
+      <header><div><h3>${esc(a.name)}</h3><p class="small">${T.label}${multi() ? ' · ' + esc(mName(a.owner || 'moi')) : ''}${a.open ? ` · ouvert en ${monthLabel(a.open, { month: 'short', year: 'numeric' })}` : ''}</p></div>
         <div class="acct-v"><span class="num">${eur(v)}</span><span class="small">${total ? pct(v / total, 1) : '—'}</span></div></header>
       ${T.plafond ? `<div class="bar sm"><i style="width:${Math.min(100, v / T.plafond * 100)}%"></i></div>
         <p class="small">${v >= T.plafond ? 'Plafond atteint' : `${eur(T.plafond - v)} avant le plafond de ${eur(T.plafond)}`}</p>` : ''}
@@ -918,13 +1065,81 @@ function vComptesDetail() {
         <li><span>Compté pour</span><span>${[a.apport && 'apport', a.retraite && 'retraite'].filter(Boolean).join(', ') || 'aucun objectif'}</span></li>
         <li><span>Dernière mise à jour</span><span>${lu ? cap(monthLabel(lu)) : 'jamais'}</span></li>
       </ul>
+      ${a.lines?.length ? (() => {
+        const tot = a.lines.reduce((t, l) => t + l.v, 0) || 1;
+        const top = a.lines.slice().sort((x, y) => y.v - x.v);
+        return `<div class="lines"><p class="small">Composition${a.linesAt ? `, relevé de ${monthLabel(a.linesAt)}` : ''}</p>
+          <ul>${top.map(l => `<li><span class="ln">${esc(l.n)}</span><span class="lb"><i style="width:${Math.round(l.v / tot * 100)}%"></i></span><span class="lp">${pct(l.v / tot)}</span><span class="num">${eur(l.v)}</span></li>`).join('')}</ul></div>`;
+      })() : ''}
       <button class="link" data-act="editacc" data-id="${a.id}">Modifier ce compte</button></article>`;
   };
-  return `<section style="margin-top:16px"><p class="hero-month">Fin ${monthLabel(F)}</p><p class="hero-total num">${eur(total)}</p>
+  return `${scopeBar()}<section style="margin-top:16px"><p class="hero-month">Fin ${monthLabel(F)}</p><p class="hero-total num">${eur(total)}</p>
       <p class="muted" style="margin:0">${plural(acc.length, 'compte suivi', 'comptes suivis')}</p></section>
-    <section>${acc.map(card).join('')}</section>
+    ${acc.length ? `<section>${acc.map(card).join('')}</section>` : ''}
+    ${cash.length ? `<section><h2>Comptes de fonctionnement</h2>
+      <p class="muted" style="margin:-6px 0 12px;font-size:14px">Suivis à part : ils ne comptent pas dans le patrimoine.</p>
+      ${cash.map(a => {
+        const tx = txOf(F, a), deb = tx.filter(t => t.a < 0);
+        const ch = deb.filter(t => t.c === 'charge').reduce((s, t) => s - t.a, 0);
+        const ho = deb.filter(t => t.c === 'hors').reduce((s, t) => s - t.a, 0);
+        const vi = deb.filter(t => t.c === 'vir').reduce((s, t) => s - t.a, 0);
+        const todo = deb.filter(t => !t.c).length;
+        const hist = [3, 2, 1, 0].map(i => addMonths(F, -i));
+        return `<article class="acct"><header><div><h3>${esc(a.name)}</h3>
+            <p class="small">${isSimple(a) ? 'Enveloppe' : TYPES[a.type].label}${multi() ? ' · ' + esc(mName(a.owner || 'moi')) : ''}${a.potCharge ? ' · charges communes' : ''}</p></div>
+            <div class="acct-v"><span class="num">${eur(isSimple(a) ? dotOf(F, a) : valueAt(a, F))}</span><span class="small">${isSimple(a) ? 'envoyé ce mois' : 'solde'}</span></div></header>
+          ${isSimple(a) ? `<ul class="kv">${hist.map(k => `<li><span>${cap(monthLabel(k, { month: 'long' }))}</span><span class="num">${dotOf(k, a) ? eur(dotOf(k, a)) : '—'}</span></li>`).join('')}</ul>`
+            : tx.length ? `<ul class="kv"><li><span>Charges communes</span><span class="num">${eur(ch)}</span></li>
+              <li><span>Hors charges</span><span class="num">${eur(ho)}</span></li>
+              ${vi ? `<li><span>Virements vers tes comptes</span><span class="num">${eur(vi)}</span></li>` : ''}
+              <li><span>Opérations</span><span>${plural(tx.length, 'ligne', 'lignes')}${todo ? `, ${todo} à classer` : ''}</span></li></ul>`
+            : '<p class="small" style="margin-top:10px">Aucune opération importée pour ce mois.</p>'}
+          <button class="link" data-act="editacc" data-id="${a.id}">Modifier ce compte</button></article>`;
+      }).join('')}</section>` : ''}
     ${closed.length ? `<section><h2>Comptes clôturés</h2><ul class="list">${closed.map(a => `<li class="closed"><button data-act="editacc" data-id="${a.id}"><span>${esc(a.name)}<br><span class="small">${TYPES[a.type].label} · clôturé en ${monthLabel(a.closed)}</span></span><span></span></button></li>`).join('')}</ul></section>` : ''}
     <section><button class="btn wide" data-act="newacc">Ajouter un compte</button></section>`;
+}
+function vFoyer() {
+  const H = S.household;
+  if (!H.on) return `<section class="empty"><h2>Gérer les finances à deux</h2>
+    <p class="muted">Ajoute les membres de ton foyer pour suivre les charges communes, qui a payé quoi, et la répartition qui te convient.</p>
+    <button class="btn primary" data-act="household">Activer la gestion du foyer</button></section>`;
+  const k = potMonth, st = potStats(k), cur = monthKey(), ms = members();
+  const SPLIT = { moitie: 'Parts égales', revenus: 'Au prorata des revenus', manuel: 'Parts choisies' };
+  const dues = settle(st);
+  const rows = ms.map(m => {
+    const sav = savedBy(k, m.id), rev = m.income || 0;
+    return `<tr><td>${esc(m.name)}</td><td class="num">${pct(st.sh[m.id] || 0)}</td><td class="num">${eur(st.paid[m.id])}</td><td class="num">${eur(st.due[m.id])}</td>
+      <td class="num ${st.net[m.id] < -0.5 ? 'down' : st.net[m.id] > 0.5 ? 'up' : ''}">${signed(st.net[m.id])}</td></tr>`;
+  }).join('');
+  const effort = ms.filter(m => m.income > 0).map(m => {
+    const sav = savedBy(k, m.id);
+    return `<li><span>${esc(m.name)}</span><span>${pct(st.due[m.id] / m.income)} de charges · ${pct(Math.max(0, sav) / m.income)} d’épargne · reste ${eur(m.income - st.due[m.id] - Math.max(0, sav))}</span></li>`;
+  }).join('');
+  const items = st.items.slice().sort((a, b) => b.a - a.a);
+  const trs = (st.p.transfers || []);
+  return `
+    <div class="month-nav"><button data-act="potmonth" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(k))}</strong><button data-act="potmonth" data-d="1" aria-label="Mois suivant" ${k >= cur ? 'disabled' : ''}>›</button></div>
+    <section><div class="goal"><h2>Charges communes</h2>
+      <p class="big num">${eur(st.total)}</p>
+      <p class="small">${plural(items.length, 'dépense enregistrée', 'dépenses enregistrées')} · répartition : ${SPLIT[H.split.mode]}</p>
+      ${st.total ? `<div class="tbl"><table><thead><tr><th></th><th>Part</th><th>Payé</th><th>Dû</th><th>Solde</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
+      ${dues.length ? `<div class="settle">${dues.map(d => `<p><strong>${esc(mName(d.from))} doit ${eur(d.a)} à ${esc(mName(d.to))}</strong></p>
+        <button class="btn wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer ce virement</button>`).join('')}</div>`
+        : st.total ? '<p class="small" style="margin-top:12px">Comptes équilibrés entre vous.</p>' : ''}
+      <button class="btn ghost wide" style="margin-top:12px" data-act="split">Changer la répartition</button></div></section>
+    <section><h2>Dépenses du mois</h2>
+      ${items.length ? `<ul class="list">${items.map(i => `<li><button data-act="${i.src ? 'srcinfo' : 'editcharge'}" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : ''}</span></span><span class="num">${eur(i.a)}</span></button></li>`).join('')}</ul>`
+        : '<p class="muted">Aucune dépense commune enregistrée pour ce mois.</p>'}
+      <div class="actions"><button class="btn primary wide" data-act="newcharge">Ajouter une dépense</button>
+        ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre les dépenses de ${monthName(addMonths(k, -1))}</button>` : ''}</div></section>
+    <section><h2>Virements entre vous</h2>
+      ${trs.length ? `<ul class="list">${trs.map(t => `<li><button data-act="deltransfer" data-id="${t.id}"><span>${esc(mName(t.from))} → ${esc(mName(t.to))}${t.n ? `<br><span class="small">${esc(t.n)}</span>` : ''}</span><span class="num">${eur(t.a)}</span></button></li>`).join('')}</ul>
+        <p class="small">Touche un virement pour le supprimer.</p>` : '<p class="muted">Aucun virement ce mois-ci.</p>'}
+      <div class="actions"><button class="btn wide" data-act="newtransfer">Ajouter un virement</button></div></section>
+    ${effort ? `<section><h2>Reste à vivre</h2><ul class="kv effort">${effort}</ul>
+      <p class="small">Calculé sur les revenus renseignés, la part de charges due et l’épargne versée ce mois-ci.</p></section>` : ''}
+    <section><button class="btn ghost wide" data-act="household">Membres et revenus</button></section>`;
 }
 function vComptesFisc() {
   const F = focusMonth();
@@ -963,6 +1178,18 @@ function vSaisie() {
     <div id="saisie">${accs.map(a => {
       const e = entry(m, a) || {}, first = firstMonthOf(a), hasPrev = first && first < m, prev = hasPrev ? valueAt(a, addMonths(m, -1)) : null;
       const T = TYPES[a.type];
+      if (isSimple(a)) {
+        const last = dotOf(addMonths(m, -1), a);
+        return `<fieldset class="acc"><legend><span class="acc-name">${esc(a.name)}</span><span class="acc-type">enveloppe</span></legend>
+          <label>Envoyé ce mois<input inputmode="decimal" data-acc="${a.id}" data-f="dot" value="${esc(numStr(e.dot))}" placeholder="${last ? esc(numStr(last)) : '0'}" autocomplete="off"></label>
+          ${last ? `<p class="hint">Mois précédent : ${eur(last)}${a.potCharge ? ' · compté dans les charges communes' : ''}</p>` : a.potCharge ? '<p class="hint">Compté dans les charges communes</p>' : ''}</fieldset>`;
+      }
+      if (isCash(a)) {
+        const tx = txOf(m, a), todo = tx.filter(x => !x.c).length;
+        return `<fieldset class="acc"><legend><span class="acc-name">${esc(a.name)}</span><span class="acc-type">${T.label}</span></legend>
+          <label>Solde<input inputmode="decimal" data-acc="${a.id}" data-f="value" value="${esc(numStr(e.value))}" placeholder="${hasPrev ? esc(numStr(prev)) : 'ex. 1800'}" autocomplete="off"></label>
+          <button class="link" type="button" data-act="tx" data-id="${a.id}">${tx.length ? `Opérations : ${plural(tx.length, 'ligne', 'lignes')}${todo ? `, ${todo} à classer` : ', toutes classées'}` : 'Importer les opérations du mois'}</button></fieldset>`;
+      }
       return `<fieldset class="acc"><legend><span class="acc-name">${esc(a.name)}</span>${a.name.trim().toLowerCase() === T.label.toLowerCase() ? '' : `<span class="acc-type">${T.label}</span>`}</legend>
         <div class="acc-fields">
           <label>Solde<input inputmode="decimal" data-acc="${a.id}" data-f="value" value="${esc(numStr(e.value))}" placeholder="${hasPrev ? esc(numStr(prev)) : 'ex. 12500'}" autocomplete="off"></label>
@@ -1053,6 +1280,9 @@ function sheetSettings() {
     <h3>Sauvegarde</h3>
     <p class="small" style="margin:0 0 10px">${le ? `Dernière sauvegarde exportée le ${le}.` : 'Aucune sauvegarde exportée.'} Le fichier reste chiffré avec ton mot de passe : range-le dans iCloud Drive.</p>
     <div class="row2"><button class="btn" data-act="export">Exporter</button><button class="btn ghost" data-act="import">Restaurer</button></div>
+    <h3>Foyer</h3>
+    <p class="small" style="margin:0 0 10px">${S.household.on ? esc(members().map(m => m.name).join(', ')) + ' · charges réparties dans l’onglet Comptes > Foyer.' : 'Non activé : l’app suit uniquement tes finances.'}</p>
+    <button class="btn ghost wide" data-act="household">${S.household.on ? 'Membres et revenus' : 'Activer la gestion du foyer'}</button>
     <h3>Analyse par IA</h3>
     <p class="small" style="margin:0 0 10px">${st.ai?.key ? `Configurée : ${esc((AI[st.ai.provider] || AI.anthropic).label)}.` : 'Non configurée. L’app fonctionne entièrement hors ligne.'}</p>
     <button class="btn ghost wide" data-act="aiconf">${st.ai?.key ? 'Modifier' : 'Configurer'}</button>
@@ -1075,11 +1305,19 @@ function sheetAccount(id) {
   openSheet(`<h2>${a.id ? 'Modifier le compte' : 'Nouveau compte'}</h2>
     <form id="f-acc" class="stack-form" data-id="${a.id || ''}">
       <label>Nom (visible seulement ici)<input id="a-name" value="${esc(a.name)}" placeholder="ex. Livret A banque en ligne" required></label>
+      ${S.household.on && members().length > 1 ? `<label>Titulaire<select id="a-owner">${members().map(m => `<option value="${m.id}" ${m.id === (a.owner || 'moi') ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>` : ''}
       <label>Type<select id="a-type">${Object.entries(TYPES).map(([k, t]) => `<option value="${k}" ${k === a.type ? 'selected' : ''}>${t.label}</option>`).join('')}</select></label>
       <label id="a-open-wrap" ${T.maturite ? '' : 'hidden'}>Date d’ouverture (pour calculer l’échéance fiscale)<input id="a-open" type="month" value="${esc(a.open || '')}"></label>
-      <label class="check"><input type="checkbox" id="a-apport" ${a.apport ? 'checked' : ''}>Compter dans l’apport immobilier</label>
-      <label class="check"><input type="checkbox" id="a-retraite" ${a.retraite ? 'checked' : ''}>Compter pour la retraite</label>
+      <div id="a-cash" ${TYPES[a.type].cash ? '' : 'hidden'}>
+        <label class="check"><input type="checkbox" id="a-simple" ${a.simple ? 'checked' : ''}>Suivi simplifié : je note seulement ce que j’envoie dessus</label>
+        <label class="check"><input type="checkbox" id="a-potcharge" ${a.potCharge ? 'checked' : ''}>Ce compte sert aux charges communes du foyer</label>
+      </div>
+      <div id="a-inv" ${TYPES[a.type].cash ? 'hidden' : ''}>
+        <label class="check"><input type="checkbox" id="a-apport" ${a.apport ? 'checked' : ''}>Compter dans l’apport immobilier</label>
+        <label class="check"><input type="checkbox" id="a-retraite" ${a.retraite ? 'checked' : ''}>Compter pour la retraite</label>
+      </div>
       <button class="btn primary wide" type="submit">Enregistrer</button>
+      ${a.lines?.length ? `<button class="btn ghost wide" type="button" data-act="dellines" data-id="${a.id}">Supprimer le détail des lignes (${a.lines.length})</button>` : ''}
       ${a.id ? `<button class="btn ghost wide" type="button" data-act="closeacc" data-id="${a.id}">${a.closed ? 'Rouvrir le compte' : 'Clôturer le compte (garde l’historique)'}</button>
       <button class="btn danger wide" type="button" data-act="delacc" data-id="${a.id}">Supprimer le compte et son historique</button>` : ''}
       <button class="link" type="button" data-act="settings">Retour</button>
@@ -1190,6 +1428,144 @@ function sheetAI() {
     <p class="small">Crée la clé sur ${esc((AI[c.provider] || AI.anthropic).keyUrl)} et fixe-lui un plafond de dépense. Une analyse coûte quelques centimes. Tu peux la révoquer à tout moment.</p>`);
 }
 
+/* ---------- Compte courant : opérations ----------
+   Lecture du relevé sur l'iPhone, puis classement charge / hors charges.
+   Les intitulés déjà classés sont mémorisés pour les imports suivants. */
+const DATE_RE = /(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})|(\d{4})-(\d{2})-(\d{2})/;
+function parseDate(t) {
+  const m = String(t).trim().match(DATE_RE); if (!m) return null;
+  let y, mo, d;
+  if (m[4]) { y = +m[4]; mo = +m[5]; d = +m[6]; }
+  else { d = +m[1]; mo = +m[2]; y = +m[3]; if (y < 100) y += 2000; }
+  if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 2000 || y > 2100) return null;
+  return { k: `${y}-${pad(mo)}`, d };
+}
+function scanTx(txt) {
+  let rows;
+  if (/<\s*(table|tr|td|html|body|div|span)[\s>]/i.test(txt)) {
+    const h = htmlRows(txt);
+    rows = h.rows.length ? h.rows : h.text.split(/\r?\n/).map(l => [l]);
+  } else {
+    const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const d = [';', '\t', ',', '|'].map(c => [c, lines.reduce((n, l) => n + (l.split(c).length - 1), 0)]).sort((a, b) => b[1] - a[1])[0];
+    rows = d && d[1] >= lines.length ? lines.map(l => splitCsv(l, d[0])) : lines.map(l => [l]);
+  }
+  const head = rows.length > 1 && !rows[0].some(c => parseDate(c)) ? rows.shift().map(norm) : [];
+  const iDeb = head.findIndex(h => /^debit/.test(h)), iCre = head.findIndex(h => /^credit/.test(h));
+  const out = [];
+  for (const r of rows) {
+    let di = -1, dt = null;
+    for (let i = 0; i < r.length; i++) { const p = parseDate(r[i]); if (p) { dt = p; di = i; break; } }
+    if (!dt) continue;
+    let amt = null;
+    if (iDeb > -1 || iCre > -1) {
+      const deb = iDeb > -1 ? parseAmount(r[iDeb]) : null, cre = iCre > -1 ? parseAmount(r[iCre]) : null;
+      if (deb) amt = -Math.abs(deb); else if (cre) amt = Math.abs(cre);
+    }
+    if (amt == null) for (let i = r.length - 1; i > di; i--) { const v = parseAmount(r[i]); if (v != null && v !== 0) { amt = v; break; } }
+    if (amt == null || amt === 0) continue;
+    const label = r.filter((c, i) => i !== di && c && parseAmount(c) == null).join(' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (!label) continue;
+    const nl = norm(label);
+    let c = S?.rules?.[nl] || null;
+    if (!c && amt < 0 && S?.accounts?.some(x => x.name.length > 3 && nl.includes(norm(x.name)))) c = 'vir';
+    out.push({ id: uid(), d: dt.d, k: dt.k, n: label, a: amt, c });
+  }
+  return out;
+}
+let txDraft = null, txAcc = null;
+function sheetTxImport(id) {
+  txAcc = id;
+  const a = S.accounts.find(x => x.id === id), n = txOf(saisieMonth, a).length;
+  openSheet(`<h2>Opérations — ${esc(a.name)}</h2>
+    <p class="small" style="margin:0 0 14px">Relevé de ${monthLabel(saisieMonth)}. ${n ? `${plural(n, 'opération déjà enregistrée', 'opérations déjà enregistrées')}. Un nouvel import remplace les opérations du mois.` : ''} Tout est analysé sur cet iPhone.</p>
+    <button class="btn wide" data-act="picktx">Choisir un fichier</button>
+    ${n ? '<button class="btn ghost wide" style="margin-top:10px" data-act="classify">Reprendre le classement</button>' : ''}
+    <h3>Ou coller le relevé</h3>
+    <form id="f-tx" class="stack-form">
+      <textarea id="txin" rows="6" placeholder="Colle ici les lignes du relevé"></textarea>
+      <button class="btn primary wide" type="submit">Analyser</button>
+      <button class="link" type="button" data-act="close">Annuler</button></form>`);
+}
+function sheetClassify(list) {
+  const a = S.accounts.find(x => x.id === txAcc);
+  txDraft = list;
+  const deb = list.filter(t => t.a < 0), cre = list.filter(t => t.a > 0);
+  const sum = c => deb.filter(t => t.c === c).reduce((s, t) => s - t.a, 0);
+  const charge = sum('charge'), hors = sum('hors'), vir = sum('vir');
+  const todo = deb.filter(t => !t.c).length;
+  const CL = [['charge', 'Charge'], ['hors', 'Hors charges'], ['vir', 'Virement']];
+  const row = t => `<li class="txrow ${t.a > 0 ? 'cred' : ''}">
+    <div class="txmain"><span class="txn">${esc(t.n)}</span><span class="num ${t.a < 0 ? '' : 'up'}">${signed(t.a)}</span></div>
+    <p class="small" style="margin:4px 0 0">${t.d} ${monthName(t.k)}${t.a > 0 ? ' · crédit' : ''}</p>
+    ${t.a < 0 ? `<div class="seg mini seg3">${CL.map(([c, l]) => `<button type="button" class="${t.c === c ? 'on' : ''}" data-act="setc" data-id="${t.id}" data-c="${c}">${l}</button>`).join('')}</div>` : ''}</li>`;
+  openSheet(`<h2>Classer les opérations</h2>
+    <p class="small" style="margin:0 0 10px">${plural(list.length, 'opération', 'opérations')} · charges ${eur(charge)} · hors charges ${eur(hors)}${vir ? ` · virements ${eur(vir)}` : ''}${todo ? ` · ${todo} à classer` : ''}</p>
+    <p class="small" style="margin:0 0 12px">« Virement » sert aux mouvements vers tes autres comptes : ils ne sont comptés ni en charges ni en dépenses, pour éviter les doublons.</p>
+    ${a.potCharge ? '<p class="small" style="margin:0 0 12px">Les opérations classées « charge » alimentent les dépenses communes du foyer.</p>' : ''}
+    <div class="row2" style="margin-bottom:10px"><button class="btn" data-act="allc" data-c="charge">Tout en charge</button><button class="btn" data-act="allc" data-c="hors">Tout hors charges</button></div>
+    <p class="small" style="margin:-4px 0 10px">Ces boutons ne touchent pas aux opérations déjà classées en virement.</p>
+    <ul class="txlist">${list.map(row).join('')}</ul>
+    <button class="btn primary wide" style="margin-top:14px" data-act="savetx">Enregistrer</button>
+    <button class="link" data-act="close">Annuler</button>`);
+}
+
+/* ---------- Foyer : feuilles ---------- */
+function sheetHousehold() {
+  const H = S.household;
+  openSheet(`<h2>Foyer</h2>
+    <label class="check"><input type="checkbox" id="h-on" ${H.on ? 'checked' : ''}>Activer la gestion des finances communes</label>
+    <p class="small">Les comptes gardent un titulaire et les charges se répartissent entre les membres. Tout reste sur ton iPhone.</p>
+    <h3>Membres</h3>
+    <form id="f-members" class="stack-form">
+      ${H.members.map(m => `<div class="mrow"><label>Nom<input data-mname="${m.id}" value="${esc(m.name)}" ${m.id === 'moi' ? '' : ''}></label>
+        <label>Revenu net mensuel (€)<input inputmode="decimal" data-mincome="${m.id}" value="${esc(numStr(m.income))}"></label>
+        ${m.id === 'moi' ? '' : `<button class="link" type="button" data-act="delmember" data-id="${m.id}">Retirer ${esc(m.name)}</button>`}</div>`).join('')}
+      <button class="btn wide" type="button" data-act="addmember">Ajouter un membre</button>
+      <button class="btn primary wide" type="submit">Enregistrer</button>
+      <button class="link" type="button" data-act="close">Fermer</button></form>`);
+}
+function sheetSplit() {
+  const H = S.household, sh = shares();
+  openSheet(`<h2>Répartition des charges</h2>
+    <form id="f-split" class="stack-form">
+      <label>Mode<select id="s-mode">
+        <option value="moitie" ${H.split.mode === 'moitie' ? 'selected' : ''}>Parts égales</option>
+        <option value="revenus" ${H.split.mode === 'revenus' ? 'selected' : ''}>Au prorata des revenus</option>
+        <option value="manuel" ${H.split.mode === 'manuel' ? 'selected' : ''}>Parts choisies</option></select></label>
+      <div id="s-manual" ${H.split.mode === 'manuel' ? '' : 'hidden'}>
+        ${members().map(m => `<label>${esc(m.name)} — part<input inputmode="decimal" data-share="${m.id}" value="${esc(numStr(H.split.shares[m.id]))}" placeholder="ex. 60"></label>`).join('')}
+        <p class="small">Les parts sont ramenées à 100 % entre elles : 60 et 40 donnent le même résultat que 6 et 4.</p></div>
+      <p class="small">Répartition actuelle : ${members().map(m => `${esc(m.name)} ${pct(sh[m.id] || 0)}`).join(', ')}.</p>
+      ${H.split.mode === 'revenus' && members().some(m => !m.income) ? '<p class="err">Renseigne le revenu de chaque membre pour utiliser ce mode.</p>' : ''}
+      <button class="btn primary wide" type="submit">Enregistrer</button>
+      <button class="link" type="button" data-act="close">Annuler</button></form>`);
+}
+function sheetCharge(id) {
+  const it = potOf(potMonth).items.find(x => x.id === id) || { id: null, n: '', a: null, by: 'moi' };
+  openSheet(`<h2>${it.id ? 'Modifier la dépense' : 'Nouvelle dépense'}</h2>
+    <p class="small" style="margin:0 0 14px">Dépense commune de ${monthLabel(potMonth)}.</p>
+    <form id="f-charge" class="stack-form" data-id="${it.id || ''}">
+      <label>Libellé<input id="c-n" value="${esc(it.n)}" placeholder="ex. loyer, courses, énergie" required></label>
+      <label>Montant (€)<input id="c-a" inputmode="decimal" value="${esc(numStr(it.a))}" required></label>
+      <label>Payé par<select id="c-by">${members().map(m => `<option value="${m.id}" ${m.id === it.by ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
+      <button class="btn primary wide" type="submit">Enregistrer</button>
+      ${it.id ? `<button class="btn danger wide" type="button" data-act="delcharge" data-id="${it.id}">Supprimer</button>` : ''}
+      <button class="link" type="button" data-act="close">Annuler</button></form>`);
+}
+function sheetTransfer(pre) {
+  const ms = members();
+  openSheet(`<h2>Virement entre vous</h2>
+    <p class="small" style="margin:0 0 14px">Enregistré sur ${monthLabel(potMonth)}. Sert à régulariser qui a trop ou pas assez payé.</p>
+    <form id="f-transfer" class="stack-form">
+      <div class="row2"><label>De<select id="t-from">${ms.map(m => `<option value="${m.id}" ${m.id === pre?.from ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
+        <label>Vers<select id="t-to">${ms.map(m => `<option value="${m.id}" ${m.id === (pre?.to || ms[1]?.id) ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label></div>
+      <label>Montant (€)<input id="t-a" inputmode="decimal" value="${pre ? esc(numStr(Math.round(pre.a * 100) / 100)) : ''}" required></label>
+      <label>Motif (facultatif)<input id="t-n" maxlength="40" placeholder="ex. régularisation ${esc(monthName(potMonth))}"></label>
+      <button class="btn primary wide" type="submit">Enregistrer</button>
+      <button class="link" type="button" data-act="close">Annuler</button></form>`);
+}
+
 /* ---------- Mouvements du mois ---------- */
 function sheetMoves(id) {
   const a = S.accounts.find(x => x.id === id), m = saisieMonth, e = entry(m, a) || {};
@@ -1214,7 +1590,7 @@ function sheetMoves(id) {
    L'analyse se fait entièrement sur l'iPhone : le fichier n'est jamais envoyé. */
 const KEYS = ['valorisation', 'valeur', 'total', 'epargne', 'encours', 'montant', 'solde', 'rachat', 'atteinte', 'acquise', 'evaluation', 'contre-valeur', 'portefeuille', 'avoirs'];
 const norm = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
-const NOISE = /(\bnombre\b|\bquantit|\bparts?\b|\bcours\b|valeur liquidative|\bvl\b|\bdevise\b|\btaux\b|%|latente|\+\/-|\bisin\b|\bcode\b|\bfrais\b|\bdate\b)/;
+const NOISE = /(\bnombre\b|\bquantit|\bqte\b|\bqty\b|\bnb\b|\bparts?\b|\bcours\b|\bprix\b|valeur liquidative|\bvl\b|\bpru\b|\bdevise\b|\btaux\b|%|latente|\+\/-|\bisin\b|\bcode\b|\bfrais\b|\bdate\b)/;
 function parseAmount(raw) {
   let t = String(raw).replace(/\b(eur|euros?|usd|dollars?|chf)\b/gi, '').replace(/[\s\u00a0\u202f€$]/g, '');
   if (!/\d/.test(t)) return null;
@@ -1244,10 +1620,19 @@ function splitCsv(line, d) {
   return out.map(c => c.trim());
 }
 const scoreOf = txt => KEYS.reduce((sc, w, i) => norm(txt).includes(w) ? sc + (KEYS.length - i) : sc, 0);
+// Une page enregistrée ou copiée depuis le site de la banque : on lit les tableaux,
+// sinon le texte. DOMParser n'exécute aucun script contenu dans la page.
+function htmlRows(txt) {
+  const doc = new DOMParser().parseFromString(txt, 'text/html');
+  doc.querySelectorAll('script,style,noscript,svg,head').forEach(e => e.remove());
+  const rows = [];
+  for (const tr of doc.querySelectorAll('tr')) {
+    const cells = [...tr.children].map(td => td.textContent.replace(/\s+/g, ' ').trim());
+    if (cells.filter(Boolean).length > 1) rows.push(cells);
+  }
+  return { rows, text: (doc.body?.innerText || doc.body?.textContent || '').replace(/[ \t\u00a0]+/g, ' ') };
+}
 function scanStatement(txt) {
-  const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(l => l && l.length < 400);
-  const d = [';', '\t', ',', '|'].map(c => [c, lines.reduce((n, l) => n + (l.split(c).length - 1), 0)]).sort((a, b) => b[1] - a[1])[0];
-  const delim = d && d[1] >= lines.length ? d[0] : null;
   const seen = new Set(), out = [];
   const add = (label, amount, score) => {
     label = label.replace(/[.\u2026_]{3,}/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 70);
@@ -1255,8 +1640,7 @@ function scanStatement(txt) {
     const k = norm(label) + '|' + amount; if (seen.has(k)) return; seen.add(k);
     out.push({ label, amount, score });
   };
-  if (delim) {
-    const rows = lines.map(l => splitCsv(l, delim));
+  const fromRows = rows => {
     const numeric = r => r.filter(c => parseAmount(c) != null).length;
     const head = rows.length > 1 && numeric(rows[0]) === 0 ? rows.shift() : [];
     for (const r of rows) {
@@ -1268,7 +1652,8 @@ function scanStatement(txt) {
         add(col ? `${label} · ${col}` : label, v, scoreOf(label) * 2 + scoreOf(col) * 3);
       }
     }
-  } else {
+  };
+  const fromLines = lines => {
     for (const line of lines) {
       const m = line.match(/-?\(?\d[\d\s\u00a0\u202f.,]*\d\)?(?=\s*(?:€|eur|euros?)?\s*$)/i);
       if (!m) continue;
@@ -1279,8 +1664,26 @@ function scanStatement(txt) {
       if (NOISE.test(norm(label))) continue;
       add(label, v, scoreOf(label) * 2);
     }
+  };
+  const clean = t => t.split(/\r?\n/).map(l => l.trim()).filter(l => l && l.length < 400);
+  if (/<\s*(table|tr|td|html|body|div|span)[\s>]/i.test(txt)) {
+    const h = htmlRows(txt);
+    if (h.rows.length) fromRows(h.rows); else fromLines(clean(h.text));
+  } else {
+    const lines = clean(txt);
+    const d = [';', '\t', ',', '|'].map(c => [c, lines.reduce((n, l) => n + (l.split(c).length - 1), 0)]).sort((a, b) => b[1] - a[1])[0];
+    if (d && d[1] >= lines.length) fromRows(lines.map(l => splitCsv(l, d[0]))); else fromLines(lines);
   }
   return out.sort((x, y) => y.score - x.score || Math.abs(y.amount) - Math.abs(x.amount)).slice(0, 60);
+}
+// Lignes d'un compte : les montants restants, hors totaux, rattachés par leur intitulé
+const TOTALISH = /\btotaux?\b|\btotal\b|versements?|valeur atteinte|valorisation totale|epargne totale/;
+function linesFor(a, chosen, single) {
+  const rest = cands.map((c, i) => ({ c, i })).filter(({ c, i }) => !chosen.has(i) && c.amount > 0 && !TOTALISH.test(norm(c.label)));
+  const n = norm(a.name), t = norm(TYPES[a.type].label);
+  const own = rest.filter(({ c }) => { const l = norm(c.label); return l.includes(n) || (t.length > 2 && l.includes(t)); });
+  const list = single ? rest : own;
+  return list.map(({ c }) => ({ n: c.label.split(' · ')[0].trim().slice(0, 50), v: c.amount }));
 }
 function guessFor(a, cands) {
   if (a.imp) { const hit = cands.find(c => norm(c.label) === a.imp); if (hit) return cands.indexOf(hit); }
@@ -1291,14 +1694,14 @@ function guessFor(a, cands) {
 }
 function sheetImport() {
   openSheet(`<h2>Importer un relevé</h2>
-    <p class="small" style="margin:0 0 14px">Pour ${monthLabel(saisieMonth)}. Choisis un fichier CSV ou texte exporté par ta banque, ou colle le contenu d’un relevé. Tout est analysé sur cet iPhone, rien n’est envoyé.</p>
+    <p class="small" style="margin:0 0 14px">Pour ${monthLabel(saisieMonth)}. Choisis un fichier exporté par ta banque (CSV, texte ou page HTML enregistrée), ou colle le contenu d’un relevé. Tout est analysé sur cet iPhone, rien n’est envoyé.</p>
     <button class="btn wide" data-act="pickstmt">Choisir un fichier</button>
     <h3>Ou coller le texte</h3>
     <form id="f-stmt" class="stack-form">
       <textarea id="stmt" rows="6" placeholder="Colle ici le contenu du relevé"></textarea>
       <button class="btn primary wide" type="submit">Analyser</button>
       <button class="link" type="button" data-act="close">Annuler</button></form>
-    <p class="small">Pour un PDF : ouvre-le, sélectionne le texte, copie, puis colle-le ici.</p>`);
+    <p class="small">Depuis le site de ta banque : sélectionne le tableau de ton portefeuille, copie, puis colle ici. Pour un PDF : ouvre-le, sélectionne le texte, copie, colle.</p>`);
 }
 let cands = [];
 function sheetImportMap(list) {
@@ -1310,10 +1713,27 @@ function sheetImportMap(list) {
     <form id="f-map" class="stack-form">
       ${accs.map(a => { const g = guessFor(a, cands); return `<label>${esc(a.name)}<select data-map="${a.id}">
         <option value="">— ne pas modifier —</option>
-        ${cands.map((c, i) => `<option value="${i}" ${i === g ? 'selected' : ''}>${eur(c.amount)} — ${esc(c.label)}</option>`).join('')}</select></label>`; }).join('')}
+        ${cands.map((c, i) => `<option value="${i}" ${i === g ? 'selected' : ''}>${eur(c.amount)} — ${esc(c.label)}</option>`).join('')}</select></label>
+        <p class="linehint" data-for="${a.id}"></p>`; }).join('')}
       <button class="btn primary wide" type="submit">Appliquer</button>
       <button class="link" type="button" data-act="close">Annuler</button></form>
     <p class="small">L’app retiendra l’intitulé choisi pour préremplir les prochains imports.</p>`);
+  paintLines();
+}
+// Aperçu du détail des lignes, recalculé à chaque changement de sélection
+function paintLines() {
+  const sels = $$('#f-map select'), chosen = new Set(sels.filter(s => s.value !== '').map(s => +s.value));
+  const single = chosen.size === 1;
+  for (const sel of sels) {
+    const el = $(`.linehint[data-for="${sel.dataset.map}"]`); if (!el) continue;
+    const a = S.accounts.find(x => x.id === sel.dataset.map);
+    if (sel.value === '') { el.innerHTML = ''; continue; }
+    const lines = linesFor(a, chosen, single), sum = lines.reduce((t, l) => t + l.v, 0), tot = cands[+sel.value].amount;
+    if (!lines.length) { el.innerHTML = '<span class="muted">Aucune ligne de détail identifiée pour ce compte.</span>'; continue; }
+    const ok = Math.abs(sum - tot) <= Math.max(2, tot * 0.01);
+    el.innerHTML = `<label class="check"><input type="checkbox" data-lines="${a.id}" ${ok ? 'checked' : ''}>
+      Enregistrer le détail : ${plural(lines.length, 'ligne', 'lignes')}, ${eur(sum)}${ok ? '' : ` — attention, le total du compte est ${eur(tot)}`}</label>`;
+  }
 }
 
 /* ---------- Actions ---------- */
@@ -1322,11 +1742,88 @@ const ACT = {
   mask: () => masked ? askUnmask() : setMasked(true),
   unmask: () => askUnmask(),
   comptetab: t => { compteTab = t.dataset.t; render(); window.scrollTo(0, 0); },
+  scope: t => { scope = t.dataset.s; render(); },
   chpw: () => sheetChangePw(),
   aiconf: () => sheetAI(),
   analyse: () => runAnalysis(resumeMonth),
   aiclear: async () => { S.settings.ai = null; await save(); closeSheet(); render(); toast('Clé supprimée'); },
   moves: t => sheetMoves(t.dataset.id),
+  tx: t => sheetTxImport(t.dataset.id),
+  picktx: () => { const i = $('#txfile'); i.value = ''; i.click(); },
+  classify: () => sheetClassify(txOf(saisieMonth, S.accounts.find(x => x.id === txAcc)).map(t => ({ ...t, k: t.k || saisieMonth }))),
+  setc: t => {
+    const x = txDraft.find(y => y.id === t.dataset.id);
+    x.c = x.c === t.dataset.c ? null : t.dataset.c;
+    sheetClassify(txDraft);
+  },
+  allc: t => { txDraft.forEach(x => { if (x.a < 0 && x.c !== 'vir') x.c = t.dataset.c; }); sheetClassify(txDraft); },
+  savetx: async () => {
+    S.rules ||= {};
+    for (const t of txDraft) if (t.c) S.rules[norm(t.n)] = t.c;
+    const byMonth = {};
+    for (const t of txDraft) (byMonth[t.k] ||= []).push({ id: t.id, d: t.d, n: t.n, a: t.a, c: t.c });
+    for (const [k, list] of Object.entries(byMonth)) {
+      const e = (S.entries[k] ||= {})[txAcc] ||= {};
+      e.tx = list;
+      if (e.value == null) e.value = valueAt(S.accounts.find(x => x.id === txAcc), addMonths(k, -1));
+    }
+    await save(); closeSheet(); render();
+    toast(`${plural(txDraft.length, 'opération enregistrée', 'opérations enregistrées')}`);
+  },
+  srcinfo: t => {
+    const i = potItems(potMonth).find(x => x.id === t.dataset.id), a = S.accounts.find(x => x.id === i.accId);
+    openSheet(`<h2>${esc(i.n)}</h2><p>${eur(i.a)} · ${i.src === 'env' ? `enveloppe mensuelle envoyée sur ${esc(a.name)}` : `opération du relevé de ${esc(a.name)}`}, payée par ${esc(mName(i.by))}.</p>
+      <p class="small">${i.src === 'env' ? 'Modifie le montant dans Saisie, ou décoche « ce compte sert aux charges communes » sur le compte.' : 'Pour la sortir des charges communes, reclasse-la en « hors charges » depuis Saisie > Opérations.'}</p>
+      <button class="btn wide" data-act="close">Fermer</button>`);
+  },
+  household: () => sheetHousehold(),
+  split: () => sheetSplit(),
+  newcharge: () => sheetCharge(null),
+  editcharge: t => sheetCharge(t.dataset.id),
+  newtransfer: () => sheetTransfer(null),
+  settlenow: t => sheetTransfer({ from: t.dataset.from, to: t.dataset.to, a: +t.dataset.a }),
+  potmonth: t => { const n = addMonths(potMonth, +t.dataset.d); if (n <= monthKey()) { potMonth = n; render(); } },
+  addmember: async () => {
+    S.household.members.push({ id: uid(), name: 'Membre ' + (members().length + 1), income: null });
+    S.household.on = true; await save(); sheetHousehold(); render();
+  },
+  delmember: async t => {
+    const m = memberOf(t.dataset.id);
+    const used = S.accounts.filter(a => a.owner === m.id).length;
+    if (!confirm(`Retirer ${m.name} du foyer ?${used ? ` Ses ${used} compte(s) seront rattachés à toi.` : ''}`)) return;
+    S.accounts.forEach(a => { if (a.owner === m.id) a.owner = 'moi'; });
+    for (const k of Object.keys(S.pot)) {
+      const p = S.pot[k];
+      p.items = p.items.filter(i => i.by !== m.id);
+      p.transfers = (p.transfers || []).filter(x => x.from !== m.id && x.to !== m.id);
+    }
+    S.household.members = members().filter(x => x.id !== m.id);
+    delete S.household.split.shares[m.id];
+    if (scope === m.id) scope = 'moi';
+    await save(); sheetHousehold(); render();
+  },
+  delcharge: async t => {
+    const p = S.pot[potMonth]; p.items = p.items.filter(i => i.id !== t.dataset.id);
+    await save(); closeSheet(); render();
+  },
+  deltransfer: async t => {
+    const p = S.pot[potMonth];
+    if (!confirm('Supprimer ce virement ?')) return;
+    p.transfers = p.transfers.filter(x => x.id !== t.dataset.id);
+    await save(); render();
+  },
+  copycharges: async () => {
+    const prev = potOf(addMonths(potMonth, -1));
+    const p = (S.pot[potMonth] ||= { items: [], transfers: [] });
+    const have = new Set(p.items.map(i => norm(i.n)));
+    let n = 0;
+    for (const i of prev.items) if (!have.has(norm(i.n))) { p.items.push({ ...i, id: uid() }); n++; }
+    await save(); render(); toast(`${plural(n, 'dépense reprise', 'dépenses reprises')}`);
+  },
+  dellines: async t => {
+    const a = S.accounts.find(x => x.id === t.dataset.id);
+    delete a.lines; delete a.linesAt; await save(); sheetAccount(a.id); render(); toast('Détail supprimé');
+  },
   importstmt: () => sheetImport(),
   pickstmt: () => { const i = $('#stmtfile'); i.value = ''; i.click(); },
   delmove: async t => {
@@ -1401,6 +1898,7 @@ const ACT = {
   copyprev: () => {
     const prevM = addMonths(saisieMonth, -1);
     $$('#saisie input[data-f="value"]').forEach(i => { if (i.value.trim() === '') { const a = S.accounts.find(x => x.id === i.dataset.acc); if (firstMonthOf(a) && firstMonthOf(a) <= prevM) i.value = numStr(valueAt(a, prevM)); } });
+    $$('#saisie input[data-f="dot"]').forEach(i => { if (i.value.trim() === '') { const a = S.accounts.find(x => x.id === i.dataset.acc); const d = dotOf(prevM, a); if (d) i.value = numStr(d); } });
     toast('Soldes repris, ajuste ceux qui ont changé');
   },
   savesaisie: async () => {
@@ -1408,12 +1906,20 @@ const ACT = {
     const rows = {};
     $$('#saisie input').forEach(i => { i.classList.remove('bad'); (rows[i.dataset.acc] ||= {})[i.dataset.f] = i; });
     for (const [id, r] of Object.entries(rows)) {
+      if (r.dot) {
+        const dv = num(r.dot.value);
+        if (Number.isNaN(dv)) { r.dot.classList.add('bad'); bad ||= r.dot; continue; }
+        if (dv != null) out[id] = { dot: dv };
+        continue;
+      }
       const v = num(r.value.value), d = r.deposit ? num(r.deposit.value) : 0;
       if (Number.isNaN(v)) { r.value.classList.add('bad'); bad ||= r.value; continue; }
       if (Number.isNaN(d)) { r.deposit.classList.add('bad'); bad ||= r.deposit; continue; }
       if (v == null && d != null) { r.value.classList.add('bad'); bad ||= r.value; continue; }
-      const old = entry(m, S.accounts.find(x => x.id === id));
-      if (v != null) out[id] = old?.moves?.length ? { value: v, moves: old.moves } : { value: v, deposit: d || 0 };
+      const acc = S.accounts.find(x => x.id === id), old = entry(m, acc);
+      if (v == null) continue;
+      if (isCash(acc)) out[id] = old?.tx?.length ? { value: v, tx: old.tx } : { value: v };
+      else out[id] = old?.moves?.length ? { value: v, moves: old.moves } : { value: v, deposit: d || 0 };
     }
     if (bad) { bad.focus(); toast('Vérifie les montants en rouge : un solde est requis pour chaque versement'); return; }
     if (Object.keys(out).length) S.entries[m] = out; else delete S.entries[m];
@@ -1453,12 +1959,26 @@ document.addEventListener('change', async e => {
     const v = t.type === 'month' ? (t.value || null) : num(t.value);
     S.goals[g][k] = Number.isNaN(v) ? null : v; await save(); render();
   }
+  else if (t.id === 's-mode') $('#s-manual').hidden = t.value !== 'manuel';
   else if (t.id === 'ai-prov') { const P = AI[t.value]; $('#ai-model').placeholder = P.model; $('#ai-model').value = ''; }
+  else if (t.dataset.map) paintLines();
   else if (t.id === 'resmonth') { resumeMonth = t.value; render(); }
   else if (t.id === 'round') { rounding = t.checked; render(); }
   else if (t.id === 'a-type') {
     const T = TYPES[t.value]; $('#a-open-wrap').hidden = !T.maturite;
+    $('#a-cash').hidden = !T.cash; $('#a-inv').hidden = !!T.cash;
     if (!$('#f-acc').dataset.id) { $('#a-apport').checked = DEFAULTS[t.value].apport; $('#a-retraite').checked = DEFAULTS[t.value].retraite; if (!$('#a-name').value) $('#a-name').placeholder = `ex. ${T.label}`; }
+  }
+  else if (t.id === 'txfile' && t.files[0]) {
+    const file = t.files[0];
+    if (file.size > 4e6) return toast('Fichier trop volumineux');
+    try {
+      let txt = await file.text();
+      if (/\uFFFD/.test(txt.slice(0, 4000))) txt = new TextDecoder('windows-1252').decode(await file.arrayBuffer());
+      const list = scanTx(txt);
+      if (!list.length) return toast('Aucune opération datée reconnue dans ce fichier');
+      sheetClassify(list);
+    } catch { toast('Fichier illisible'); }
   }
   else if (t.id === 'stmtfile' && t.files[0]) {
     const file = t.files[0];
@@ -1542,6 +2062,43 @@ document.addEventListener('submit', async e => {
     S.settings.ai = key ? { provider: $('#ai-prov').value, key, model: $('#ai-model').value.trim() } : null;
     await save(); closeSheet(); render(); toast(key ? 'Analyse configurée' : 'Clé supprimée');
   }
+  else if (f.id === 'f-tx') {
+    const txt = $('#txin').value.trim();
+    if (!txt) return toast('Colle les lignes du relevé');
+    const list = scanTx(txt);
+    if (!list.length) return toast('Aucune opération datée reconnue dans ce relevé');
+    sheetClassify(list);
+  }
+  else if (f.id === 'f-members') {
+    S.household.on = $('#h-on').checked;
+    for (const el of $$('[data-mname]')) { const m = memberOf(el.dataset.mname); const v = el.value.trim(); if (v) m.name = v; }
+    for (const el of $$('[data-mincome]')) { const m = memberOf(el.dataset.mincome); const v = num(el.value); m.income = Number.isNaN(v) ? null : v; }
+    await save(); closeSheet(); render(); toast('Foyer enregistré');
+  }
+  else if (f.id === 'f-split') {
+    S.household.split.mode = $('#s-mode').value;
+    for (const el of $$('[data-share]')) { const v = num(el.value); S.household.split.shares[el.dataset.share] = Number.isNaN(v) ? null : v; }
+    await save(); closeSheet(); render(); toast('Répartition enregistrée');
+  }
+  else if (f.id === 'f-charge') {
+    const n = $('#c-n').value.trim(), a = num($('#c-a').value);
+    if (!n || !Number.isFinite(a) || a <= 0) return toast('Indique un libellé et un montant positif');
+    const p = (S.pot[potMonth] ||= { items: [], transfers: [] });
+    p.transfers ||= [];
+    const id = f.dataset.id;
+    if (id) Object.assign(p.items.find(i => i.id === id), { n, a, by: $('#c-by').value });
+    else p.items.push({ id: uid(), n, a, by: $('#c-by').value });
+    await save(); closeSheet(); render();
+  }
+  else if (f.id === 'f-transfer') {
+    const a = num($('#t-a').value), from = $('#t-from').value, to = $('#t-to').value;
+    if (!Number.isFinite(a) || a <= 0) return toast('Indique un montant positif');
+    if (from === to) return toast('Choisis deux membres différents');
+    const p = (S.pot[potMonth] ||= { items: [], transfers: [] });
+    p.transfers ||= [];
+    p.transfers.push({ id: uid(), from, to, a, n: $('#t-n').value.trim() || undefined });
+    await save(); closeSheet(); render();
+  }
   else if (f.id === 'f-move') {
     const a = S.accounts.find(x => x.id === f.dataset.id), m = saisieMonth;
     const d = Math.round(num($('#m-day').value)), amt = num($('#m-amt').value);
@@ -1567,6 +2124,12 @@ document.addEventListener('submit', async e => {
       const e = (S.entries[m] ||= {})[a.id] ||= {};
       e.value = c.amount; if (e.moves == null && e.deposit == null) e.deposit = 0;
       a.imp = norm(c.label); n++;
+      const box = $(`input[data-lines="${a.id}"]`);
+      if (box?.checked) {
+        const chosen = new Set($$('#f-map select').filter(x => x.value !== '').map(x => +x.value));
+        const lines = linesFor(a, chosen, chosen.size === 1);
+        if (lines.length) { a.lines = lines; a.linesAt = m; }
+      }
     }
     if (!n) { closeSheet(); return; }
     await save(); closeSheet(); render();
@@ -1574,7 +2137,11 @@ document.addEventListener('submit', async e => {
   }
   else if (f.id === 'f-acc') {
     const name = $('#a-name').value.trim(); if (!name) return;
-    const data = { name, type: $('#a-type').value, open: $('#a-open').value || null, apport: $('#a-apport').checked, retraite: $('#a-retraite').checked };
+    const type = $('#a-type').value, cash = !!TYPES[type].cash;
+    const data = { name, type, open: $('#a-open').value || null,
+      apport: !cash && $('#a-apport').checked, retraite: !cash && $('#a-retraite').checked,
+      simple: cash && $('#a-simple').checked, potCharge: cash && $('#a-potcharge').checked };
+    if ($('#a-owner')) data.owner = $('#a-owner').value;
     const id = f.dataset.id;
     if (id) Object.assign(S.accounts.find(a => a.id === id), data);
     else S.accounts.push({ id: uid(), owner: 'moi', ...data });
