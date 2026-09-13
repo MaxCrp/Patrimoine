@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -154,6 +154,12 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .small{font-size:13px;color:var(--muted)}
 
 /* Résumé */
+.analysis{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:4px 16px 14px;margin-bottom:14px}
+.analysis h3{font:650 16px var(--num);margin:16px 0 6px}
+.analysis p{margin:8px 0}
+.analysis ul{margin:8px 0;padding-left:20px}
+.analysis li{margin:6px 0}
+.analysis .small{color:var(--muted);margin-top:14px}
 .summary{white-space:pre-wrap;font:15px/1.55 var(--txt);background:var(--surface);border-radius:18px;padding:16px;margin:0;border:1px solid var(--line);user-select:text;-webkit-user-select:text}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
@@ -442,7 +448,8 @@ let saisieMonth = monthKey(), resumeMonth = null, rounding = true, hiddenAt = 0,
 
 const emptyData = () => ({
   v: 1, accounts: [], entries: {},
-  settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null },
+  settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null, ai: null },
+  analyses: {},
   goals: { apport: { target: null, date: null }, rente: { birthYear: null, retireAge: 64, monthly: null, ret: 3, withdraw: 4 } },
 });
 function normalize(d) {
@@ -451,6 +458,7 @@ function normalize(d) {
   d.goals = { apport: { ...e.goals.apport, ...(d.goals?.apport || {}) }, rente: { ...e.goals.rente, ...(d.goals?.rente || {}) } };
   d.accounts = (d.accounts || []).map(a => ({ owner: 'moi', ...a })); // « owner » : prévu pour la gestion familiale
   d.entries = d.entries || {};
+  d.analyses = d.analyses || {};
   return d;
 }
 async function save() {
@@ -852,12 +860,18 @@ function vResume() {
   const ms = months();
   if (!ms.length) return '<section class="empty"><h2>Pas encore de résumé</h2><p class="muted">Le résumé se génère à partir de ta saisie mensuelle.</p><button class="btn primary" data-act="go" data-view="saisie">Faire la saisie</button></section>';
   if (!resumeMonth || !ms.includes(resumeMonth)) resumeMonth = ms[ms.length - 1];
+  const an = S.analyses[resumeMonth];
+  const cfg = S.settings.ai;
   return `
     <section style="margin-top:14px"><label>Mois<select id="resmonth">${ms.slice().reverse().map(k => `<option value="${k}" ${k === resumeMonth ? 'selected' : ''}>${cap(monthLabel(k))}</option>`).join('')}</select></label>
       <label class="check"><input type="checkbox" id="round" ${rounding ? 'checked' : ''}>Arrondir les montants</label></section>
-    <section style="margin-top:14px"><pre class="summary" id="sumtext">${esc(summary(resumeMonth))}</pre>
-      <div class="row2" style="margin-top:12px"><button class="btn primary" data-act="copy">Copier</button><button class="btn" data-act="share">Partager</button></div>
-      <p class="explain">Colle ce résumé dans une conversation avec Claude pour obtenir des points de vigilance pour le mois suivant. Il ne contient ni nom de compte ni établissement.</p></section>`;
+    <section style="margin-top:14px">
+      ${an ? `<div class="analysis">${aiHtml(an.t)}<p class="small">Analyse du ${new Date(an.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}, sur ${plural(an.n, 'mois', 'mois')} d’historique. Indicatif : ce n’est pas un conseil financier.</p></div>` : ''}
+      <button class="btn ${an ? '' : 'primary'} wide" id="analyse-btn" data-act="analyse">${an ? 'Relancer l’analyse' : cfg?.key ? 'Analyser' : 'Configurer l’analyse par IA'}</button>
+      ${cfg?.key ? '<p class="explain">L’analyse envoie le résumé ci-dessous au service configuré, avec les mois précédents pour dégager des tendances.</p>' : '<p class="explain">Sans clé d’API, l’app reste entièrement hors ligne : copie le résumé et colle-le dans une conversation avec Claude.</p>'}</section>
+    <section style="margin-top:22px"><h2>Résumé envoyé</h2><pre class="summary" id="sumtext">${esc(summary(resumeMonth))}</pre>
+      <div class="row2" style="margin-top:12px"><button class="btn" data-act="copy">Copier</button><button class="btn" data-act="share">Partager</button></div>
+      <p class="explain">Il ne contient ni nom de compte ni établissement.</p></section>`;
 }
 
 /* ---------- Feuilles (réglages, compte, import) ---------- */
@@ -882,6 +896,9 @@ function sheetSettings() {
     <h3>Sauvegarde</h3>
     <p class="small" style="margin:0 0 10px">${le ? `Dernière sauvegarde exportée le ${le}.` : 'Aucune sauvegarde exportée.'} Le fichier reste chiffré avec ton mot de passe : range-le dans iCloud Drive.</p>
     <div class="row2"><button class="btn" data-act="export">Exporter</button><button class="btn ghost" data-act="import">Restaurer</button></div>
+    <h3>Analyse par IA</h3>
+    <p class="small" style="margin:0 0 10px">${st.ai?.key ? `Configurée : ${esc((AI[st.ai.provider] || AI.anthropic).label)}.` : 'Non configurée. L’app fonctionne entièrement hors ligne.'}</p>
+    <button class="btn ghost wide" data-act="aiconf">${st.ai?.key ? 'Modifier' : 'Configurer'}</button>
     <h3>Sécurité</h3>
     <div class="stack-form">
       ${pkAvailable() ? (slots?.pk ? `<p class="small" style="margin:0">Face ID activé le ${new Date(slots.pk.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}.</p><button class="btn ghost wide" data-act="pkdisable">Désactiver Face ID</button>` : '<button class="btn wide" data-act="pkenable">Activer Face ID</button>') : ''}
@@ -938,6 +955,83 @@ async function finishImport(o) {
   closeSheet(); enterApp(); toast('Sauvegarde restaurée');
 }
 const pkDone = after => { if (after === 'close') { closeSheet(); render(); } else sheetSettings(); toast('Face ID activé'); };
+
+/* ---------- Analyse par IA ----------
+   Le texte envoyé est exactement le résumé affiché : arrondi, sans nom d'établissement.
+   La clé est rangée dans le coffre chiffré, jamais dans le code de l'app.
+   La politique de sécurité du navigateur (CSP) limite les destinations possibles à ces deux API. */
+const AI = {
+  anthropic: {
+    label: 'Claude (Anthropic)', model: 'claude-sonnet-5', keyUrl: 'console.anthropic.com',
+    url: 'https://api.anthropic.com/v1/messages',
+    head: k => ({ 'content-type': 'application/json', 'x-api-key': k, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }),
+    body: (m, sys, txt) => ({ model: m, max_tokens: 900, system: sys, messages: [{ role: 'user', content: txt }] }),
+    read: d => (d.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n'),
+  },
+  mistral: {
+    label: 'Mistral (hébergé en Europe)', model: 'mistral-large-latest', keyUrl: 'console.mistral.ai',
+    url: 'https://api.mistral.ai/v1/chat/completions',
+    head: k => ({ 'content-type': 'application/json', authorization: 'Bearer ' + k }),
+    body: (m, sys, txt) => ({ model: m, max_tokens: 900, messages: [{ role: 'system', content: sys }, { role: 'user', content: txt }] }),
+    read: d => d.choices?.[0]?.message?.content || '',
+  },
+};
+const AI_SYS = `Tu aides un particulier français à suivre ses finances personnelles mois après mois. On te donne ses résumés mensuels, du plus ancien au plus récent.
+Réponds en français, en tutoyant, en 200 mots maximum, avec exactement ce format :
+## Tendance
+Deux à quatre phrases sur l'évolution observée sur la période, en citant des chiffres du résumé.
+## À surveiller le mois prochain
+Trois à cinq puces commençant par « - », concrètes et actionnables dans le mois.
+Concentre-toi sur les points de vigilance à court terme : régularité de l'épargne, plafonds, échéances fiscales, avance ou retard sur les objectifs. Ne recommande pas de produits financiers ni de gros arbitrages. N'invente aucun chiffre absent des résumés. Si une donnée manque pour conclure, dis-le en une phrase.`;
+
+function aiPayload(F, n = 6) {
+  const ms = months().filter(k => k <= F).slice(-n);
+  return ms.map(k => summary(k)).join('\n\n-----\n\n');
+}
+async function runAnalysis(F) {
+  const cfg = S.settings.ai;
+  if (!cfg?.key) { sheetAI(); return; }
+  const P = AI[cfg.provider] || AI.anthropic;
+  const btn = $('#analyse-btn'); if (btn) { btn.disabled = true; btn.textContent = 'Analyse en cours…'; }
+  const nb = months().filter(k => k <= F).slice(-6).length;
+  try {
+    const r = await fetch(P.url, { method: 'POST', headers: P.head(cfg.key), body: JSON.stringify(P.body(cfg.model || P.model, AI_SYS, aiPayload(F))) });
+    if (!r.ok) {
+      const msg = r.status === 401 || r.status === 403 ? 'Clé refusée par le service. Vérifie-la dans les réglages.'
+        : r.status === 429 ? 'Trop de requêtes ou crédit épuisé. Réessaie plus tard.'
+        : r.status >= 500 ? 'Le service est indisponible. Réessaie plus tard.' : `Erreur ${r.status}.`;
+      throw new Error(msg);
+    }
+    const txt = P.read(await r.json()).trim();
+    if (!txt) throw new Error('Réponse vide.');
+    S.analyses[F] = { t: txt, at: Date.now(), p: cfg.provider, n: nb, rounded: rounding };
+    await save(); render();
+  } catch (e) {
+    render();
+    toast(e.message && e.message.length < 90 ? e.message : 'Analyse impossible : vérifie ta connexion et ta clé');
+  }
+}
+function aiHtml(t) {
+  return esc(t).split(/\n/).map(l => l.trim()).filter(Boolean).map(l => {
+    l = l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    if (/^#{2,3}\s/.test(l)) return `<h3>${l.replace(/^#+\s/, '')}</h3>`;
+    if (/^[-•*]\s/.test(l)) return `<li>${l.replace(/^[-•*]\s/, '')}</li>`;
+    return `<p>${l}</p>`;
+  }).join('').replace(/(<li>.*?<\/li>)(?!<li>)/gs, m => m.includes('<ul>') ? m : m).replace(/(?:<li>.*?<\/li>)+/gs, m => `<ul>${m}</ul>`);
+}
+function sheetAI() {
+  const c = S.settings.ai || { provider: 'anthropic', key: '', model: '' };
+  openSheet(`<h2>Analyse par IA</h2>
+    <p class="small" style="margin:0 0 14px">L’app enverra le résumé affiché — arrondi, sans nom d’établissement — au service choisi. C’est le seul moment où des informations quittent ton iPhone. Sans clé, l’app reste entièrement hors ligne.</p>
+    <form id="f-ai" class="stack-form">
+      <label>Service<select id="ai-prov">${Object.entries(AI).map(([k, v]) => `<option value="${k}" ${k === c.provider ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
+      <label>Clé d’API<input type="password" id="ai-key" value="${esc(c.key || '')}" placeholder="colle ta clé ici" autocomplete="off"></label>
+      <label>Modèle (facultatif)<input id="ai-model" value="${esc(c.model || '')}" placeholder="${esc((AI[c.provider] || AI.anthropic).model)}" autocomplete="off"></label>
+      <button class="btn primary wide" type="submit">Enregistrer</button>
+      ${c.key ? '<button class="btn danger wide" type="button" data-act="aiclear">Supprimer la clé</button>' : ''}
+      <button class="link" type="button" data-act="close">Fermer</button></form>
+    <p class="small">Crée la clé sur ${esc((AI[c.provider] || AI.anthropic).keyUrl)} et fixe-lui un plafond de dépense. Une analyse coûte quelques centimes. Tu peux la révoquer à tout moment.</p>`);
+}
 
 /* ---------- Mouvements du mois ---------- */
 function sheetMoves(id) {
@@ -1068,6 +1162,9 @@ function sheetImportMap(list) {
 const ACT = {
   go: t => go(t.dataset.view),
   chpw: () => sheetChangePw(),
+  aiconf: () => sheetAI(),
+  analyse: () => runAnalysis(resumeMonth),
+  aiclear: async () => { S.settings.ai = null; await save(); closeSheet(); render(); toast('Clé supprimée'); },
   moves: t => sheetMoves(t.dataset.id),
   importstmt: () => sheetImport(),
   pickstmt: () => { const i = $('#stmtfile'); i.value = ''; i.click(); },
@@ -1188,6 +1285,7 @@ document.addEventListener('change', async e => {
     const v = t.type === 'month' ? (t.value || null) : num(t.value);
     S.goals[g][k] = Number.isNaN(v) ? null : v; await save(); render();
   }
+  else if (t.id === 'ai-prov') { const P = AI[t.value]; $('#ai-model').placeholder = P.model; $('#ai-model').value = ''; }
   else if (t.id === 'resmonth') { resumeMonth = t.value; render(); }
   else if (t.id === 'round') { rounding = t.checked; render(); }
   else if (t.id === 'a-type') {
@@ -1259,6 +1357,11 @@ document.addEventListener('submit', async e => {
     try { await openPwSlot(slots.pw, cur); } catch { return fail('Mot de passe actuel incorrect.'); }
     slots = { ...slots, pw: await makePwSlot(dekRaw, p1) };
     S.settings.lastExport = null; await save(); sheetSettings(); render(); toast('Mot de passe modifié');
+  }
+  else if (f.id === 'f-ai') {
+    const key = $('#ai-key').value.trim();
+    S.settings.ai = key ? { provider: $('#ai-prov').value, key, model: $('#ai-model').value.trim() } : null;
+    await save(); closeSheet(); render(); toast(key ? 'Analyse configurée' : 'Clé supprimée');
   }
   else if (f.id === 'f-move') {
     const a = S.accounts.find(x => x.id === f.dataset.id), m = saisieMonth;
