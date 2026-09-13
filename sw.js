@@ -10,8 +10,9 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
-  if (url.searchParams.has('fresh')) return; // contrôle d'empreinte : laissé passer au réseau
-  if (url.searchParams.has('u')) return;     // rechargement après mise à jour approuvée
+  // Le contrôle d'empreinte passe au réseau, mais jamais pour une navigation :
+  // une simple URL avec ?fresh permettrait sinon de charger du code non approuvé.
+  if (url.searchParams.has('fresh') && req.destination !== 'document' && req.mode !== 'navigate') return;
   const key = req.mode === 'navigate' ? new Request(new URL('./index.html', location.href).href) : req;
   e.respondWith(caches.match(key).then(r => r || fetch(req)));
 });

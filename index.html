@@ -254,6 +254,14 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 <script>
 'use strict';
 
+// L'app ne doit jamais s'afficher dans un cadre : une page tierce pourrait superposer
+// des éléments invisibles au-dessus du champ de mot de passe (clickjacking).
+// L'en-tête frame-ancestors n'étant pas utilisable en balise meta, on le vérifie ici.
+if (window.top !== window.self) {
+  document.documentElement.textContent = 'Cette application ne peut pas s’afficher dans un cadre. Ouvre-la directement depuis son adresse.';
+  throw new Error('framed');
+}
+
 /* ---------- Référentiel ---------- */
 const ITER = 600000;            // itérations PBKDF2
 const LOCK_MS = 2 * 60 * 1000;  // verrouillage après 2 min en arrière-plan
@@ -1474,7 +1482,7 @@ function sheetAI() {
     <p class="small" style="margin:0 0 14px">L’app enverra le résumé affiché — arrondi, sans nom d’établissement — au service choisi. C’est le seul moment où des informations quittent ton iPhone. Sans clé, l’app reste entièrement hors ligne.</p>
     <form id="f-ai" class="stack-form">
       <label>Service<select id="ai-prov">${Object.entries(AI).map(([k, v]) => `<option value="${k}" ${k === c.provider ? 'selected' : ''}>${v.label}</option>`).join('')}</select></label>
-      <label>Clé d’API<input type="password" id="ai-key" value="${esc(c.key || '')}" placeholder="colle ta clé ici" autocomplete="off"></label>
+      <label>Clé d’API<input type="password" id="ai-key" value="" placeholder="${c.key ? 'clé enregistrée — laisse vide pour la conserver' : 'colle ta clé ici'}" autocomplete="off"></label>
       <label>Modèle (facultatif)<input id="ai-model" value="${esc(c.model || '')}" placeholder="${esc((AI[c.provider] || AI.anthropic).model)}" autocomplete="off"></label>
       <button class="btn primary wide" type="submit">Enregistrer</button>
       ${c.key ? '<button class="btn danger wide" type="button" data-act="aiclear">Supprimer la clé</button>' : ''}
@@ -1498,9 +1506,9 @@ function scanTx(txt) {
   let rows;
   if (/<\s*(table|tr|td|html|body|div|span)[\s>]/i.test(txt)) {
     const h = htmlRows(txt);
-    rows = h.rows.length ? h.rows : h.text.split(/\r?\n/).map(l => [l]);
+    rows = (h.rows.length ? h.rows : h.text.split(/\r?\n/).map(l => [l])).slice(0, MAX_LINES);
   } else {
-    const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const lines = txt.split(/\r?\n/).slice(0, MAX_LINES).map(l => l.trim()).filter(Boolean);
     const d = [';', '\t', ',', '|'].map(c => [c, lines.reduce((n, l) => n + (l.split(c).length - 1), 0)]).sort((a, b) => b[1] - a[1])[0];
     rows = d && d[1] >= lines.length ? lines.map(l => splitCsv(l, d[0])) : lines.map(l => [l]);
   }
@@ -1699,6 +1707,7 @@ function htmlRows(txt) {
   }
   return { rows, text: (doc.body?.innerText || doc.body?.textContent || '').replace(/[ \t\u00a0]+/g, ' ') };
 }
+const MAX_LINES = 20000;   // garde-fou : un fichier anormalement gros ne doit pas figer l'app
 function scanStatement(txt) {
   const seen = new Set(), out = [];
   const add = (label, amount, score) => {
@@ -1732,10 +1741,10 @@ function scanStatement(txt) {
       add(label, v, scoreOf(label) * 2);
     }
   };
-  const clean = t => t.split(/\r?\n/).map(l => l.trim()).filter(l => l && l.length < 400);
+  const clean = t => t.split(/\r?\n/).slice(0, MAX_LINES).map(l => l.trim()).filter(l => l && l.length < 400);
   if (/<\s*(table|tr|td|html|body|div|span)[\s>]/i.test(txt)) {
     const h = htmlRows(txt);
-    if (h.rows.length) fromRows(h.rows); else fromLines(clean(h.text));
+    if (h.rows.length) fromRows(h.rows.slice(0, MAX_LINES)); else fromLines(clean(h.text));
   } else {
     const lines = clean(txt);
     const d = [';', '\t', ',', '|'].map(c => [c, lines.reduce((n, l) => n + (l.split(c).length - 1), 0)]).sort((a, b) => b[1] - a[1])[0];
@@ -1842,7 +1851,9 @@ const ACT = {
     toast(`${plural(txDraft.length, 'opération enregistrée', 'opérations enregistrées')}`);
   },
   srcinfo: t => {
-    const i = potItems(potMonth).find(x => x.id === t.dataset.id), a = S.accounts.find(x => x.id === i.accId);
+    const i = potItems(potMonth).find(x => x.id === t.dataset.id);
+    if (!i) return;
+    const a = S.accounts.find(x => x.id === i.accId) || { name: 'compte supprimé' };
     openSheet(`<h2>${esc(i.n)}</h2><p>${eur(i.a)} · ${i.src === 'env' ? `enveloppe mensuelle envoyée sur ${esc(a.name)}` : `opération du relevé de ${esc(a.name)}`}, payée par ${esc(mName(i.by))}.</p>
       <p class="small">${i.src === 'env' ? 'Modifie le montant dans Saisie, ou décoche « ce compte sert aux charges communes » sur le compte.' : 'Pour la sortir des charges communes, reclasse-la en « hors charges » depuis Saisie > Opérations.'}</p>
       <button class="btn wide" data-act="close">Fermer</button>`);
@@ -2163,9 +2174,11 @@ document.addEventListener('submit', async e => {
     }
   }
   else if (f.id === 'f-ai') {
-    const key = $('#ai-key').value.trim();
-    S.settings.ai = key ? { provider: $('#ai-prov').value, key, model: $('#ai-model').value.trim() } : null;
-    await save(); closeSheet(); render(); toast(key ? 'Analyse configurée' : 'Clé supprimée');
+    const typed = $('#ai-key').value.trim(), kept = S.settings.ai?.key || '';
+    const key = typed || kept;                     // champ laissé vide : on conserve la clé existante
+    if (!key) { closeSheet(); return toast('Colle une clé d’API pour activer l’analyse'); }
+    S.settings.ai = { provider: $('#ai-prov').value, key, model: $('#ai-model').value.trim() };
+    await save(); closeSheet(); render(); toast('Analyse configurée');
   }
   else if (f.id === 'f-tx') {
     const txt = $('#txin').value.trim();
