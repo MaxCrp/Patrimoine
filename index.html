@@ -700,21 +700,26 @@ function potItems(k) {
   }
   return out;
 }
-function shares() {
+// Revenu du mois : valeur saisie pour ce mois, sinon le revenu de référence du membre
+const incomeSet = (k, id) => S.pot[k]?.inc?.[id] != null;
+const incomeOf = (k, id) => (S.pot[k]?.inc?.[id] ?? memberOf(id).income) || 0;
+const incomeMissing = k => S.household.on && S.household.split.mode === 'revenus' && members().filter(m => !incomeSet(k, m.id));
+function shares(k) {
   const H = S.household, ms = H.members;
   const from = vals => { const t = vals.reduce((a, b) => a + b, 0); return t > 0 ? Object.fromEntries(ms.map((m, i) => [m.id, vals[i] / t])) : null; };
-  if (H.split.mode === 'revenus') { const r = from(ms.map(m => m.income || 0)); if (r) return r; }
+  if (H.split.mode === 'revenus') { const r = from(ms.map(m => incomeOf(k, m.id))); if (r) return r; }
   if (H.split.mode === 'manuel') { const r = from(ms.map(m => H.split.shares[m.id] || 0)); if (r) return r; }
   return Object.fromEntries(ms.map(m => [m.id, 1 / ms.length]));
 }
 function potStats(k) {
-  const p = potOf(k), sh = shares(), items = potItems(k);
+  const p = potOf(k), sh = shares(k), items = potItems(k);
   const total = items.reduce((t, i) => t + i.a, 0);
   const paid = {}, due = {}, net = {}, out = {}, inn = {};
   for (const m of members()) {
     paid[m.id] = items.filter(i => i.by === m.id).reduce((t, i) => t + i.a, 0);
-    out[m.id] = (p.transfers || []).filter(t => t.from === m.id).reduce((t, x) => t + x.a, 0);
-    inn[m.id] = (p.transfers || []).filter(t => t.to === m.id).reduce((t, x) => t + x.a, 0);
+    const regs = (p.transfers || []).filter(t => t.reg !== false);
+    out[m.id] = regs.filter(t => t.from === m.id).reduce((t, x) => t + x.a, 0);
+    inn[m.id] = regs.filter(t => t.to === m.id).reduce((t, x) => t + x.a, 0);
     due[m.id] = total * (sh[m.id] || 0);
     net[m.id] = paid[m.id] + out[m.id] - inn[m.id] - due[m.id];
   }
@@ -733,6 +738,12 @@ function settle(st) {
   }
   return res;
 }
+// Compte proposé par défaut pour un virement : le compte courant du membre
+function defaultAcc(id) {
+  const own = active().filter(a => (a.owner || 'moi') === id);
+  return (own.find(a => isCash(a) && !isSimple(a)) || own.find(isCash) || own[0])?.id || '';
+}
+const accName = id => S.accounts.find(a => a.id === id)?.name || '';
 const savedBy = (k, id) => S.accounts.filter(a => !isCash(a) && a.owner === id).reduce((t, a) => t + dep(k, a), 0);
 
 /* ---------- Points d’attention ---------- */
@@ -781,6 +792,9 @@ function alerts(F, forSummary = false) {
   const withdrawMonths = [];
   for (let k = addMonths(F, -5); k <= F; k = addMonths(k, 1)) if (acc.some(a => movesOut(entry(k, a)) > 0)) withdrawMonths.push(k);
   if (withdrawMonths.length >= 3) out.push({ l: 'warn', t: `Reprises d’épargne sur ${withdrawMonths.length} des 6 derniers mois : le montant que tu mets de côté chaque mois est probablement trop ambitieux, ou l’épargne de précaution ne joue pas son rôle d’amortisseur.` });
+  const miss = incomeMissing(F);
+  if (miss && miss.length && potStats(F).total > 0)
+    out.push({ l: 'warn', t: `Revenus de ${monthName(F)} non saisis pour ${forSummary ? miss.map(m => mLabel(m.id)).join(', ') : miss.map(m => m.name).join(', ')} : la répartition des charges utilise le revenu de référence.` });
   for (const a of cashAccounts().filter(x => !isSimple(x))) {
     const todo = txOf(F, a).filter(t => t.a < 0 && !t.c).length;
     if (todo && !forSummary) out.push({ l: 'info', t: `${a.name} : ${plural(todo, 'opération non classée', 'opérations non classées')} en ${monthName(F)}. Classe-les pour que les charges communes soient justes.` });
@@ -869,7 +883,7 @@ function summary(F) {
     const st = potStats(F), SPL = { moitie: 'parts égales', revenus: 'au prorata des revenus', manuel: 'parts choisies' };
     if (st.total > 0) {
       L.push('', `Charges communes du foyer : ${R(st.total)}, réparties ${SPL[S.household.split.mode]}.`);
-      for (const m of members()) L.push(`- ${mLabel(m.id)} : part ${pct(st.sh[m.id] || 0)}, payé ${R(st.paid[m.id])}, dû ${R(st.due[m.id])}${m.income ? `, soit ${pct(st.due[m.id] / m.income)} de ses revenus` : ''}`);
+      for (const m of members()) L.push(`- ${mLabel(m.id)} : part ${pct(st.sh[m.id] || 0)}, payé ${R(st.paid[m.id])}, dû ${R(st.due[m.id])}${incomeOf(F, m.id) ? `, soit ${pct(st.due[m.id] / incomeOf(F, m.id))} de ses revenus` : ''}`);
       const d = settle(st);
       if (d.length) d.forEach(x => L.push(`- Régularisation attendue : ${mLabel(x.from)} doit ${R(x.a)} à ${mLabel(x.to)}`));
       else L.push('- Comptes équilibrés entre les membres ce mois-ci.');
@@ -1108,18 +1122,24 @@ function vFoyer() {
   const SPLIT = { moitie: 'Parts égales', revenus: 'Au prorata des revenus', manuel: 'Parts choisies' };
   const dues = settle(st);
   const rows = ms.map(m => {
-    const sav = savedBy(k, m.id), rev = m.income || 0;
+    const sav = savedBy(k, m.id), rev = incomeOf(k, m.id);
     return `<tr><td>${esc(m.name)}</td><td class="num">${pct(st.sh[m.id] || 0)}</td><td class="num">${eur(st.paid[m.id])}</td><td class="num">${eur(st.due[m.id])}</td>
       <td class="num ${st.net[m.id] < -0.5 ? 'down' : st.net[m.id] > 0.5 ? 'up' : ''}">${signed(st.net[m.id])}</td></tr>`;
   }).join('');
-  const effort = ms.filter(m => m.income > 0).map(m => {
-    const sav = savedBy(k, m.id);
-    return `<li><span>${esc(m.name)}</span><span>${pct(st.due[m.id] / m.income)} de charges · ${pct(Math.max(0, sav) / m.income)} d’épargne · reste ${eur(m.income - st.due[m.id] - Math.max(0, sav))}</span></li>`;
+  const effort = ms.filter(m => incomeOf(k, m.id) > 0).map(m => {
+    const sav = savedBy(k, m.id), rev = incomeOf(k, m.id);
+    return `<li><span>${esc(m.name)}</span><span>${pct(st.due[m.id] / rev)} de charges · ${pct(Math.max(0, sav) / rev)} d’épargne · reste ${eur(rev - st.due[m.id] - Math.max(0, sav))}</span></li>`;
   }).join('');
+  const miss = incomeMissing(k) || [];
   const items = st.items.slice().sort((a, b) => b.a - a.a);
   const trs = (st.p.transfers || []);
   return `
     <div class="month-nav"><button data-act="potmonth" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(k))}</strong><button data-act="potmonth" data-d="1" aria-label="Mois suivant" ${k >= cur ? 'disabled' : ''}>›</button></div>
+    <section><div class="goal"><h2>Revenus de ${monthName(k)}</h2>
+      <p class="small" style="margin:0 0 12px">À renseigner chaque mois quand les revenus varient. Laisse vide pour reprendre le revenu de référence du membre.</p>
+      <div class="fields">${ms.map(m => `<label>${esc(m.name)}<input inputmode="decimal" data-inc="${m.id}" value="${esc(numStr(S.pot[k]?.inc?.[m.id]))}" placeholder="${esc(numStr(m.income) || '0')}"></label>`).join('')}</div>
+      <p class="small" style="margin-top:10px">Total du foyer : ${eur(ms.reduce((t, m) => t + incomeOf(k, m.id), 0))}${ms.some(m => !incomeSet(k, m.id)) ? ` · ${ms.filter(m => !incomeSet(k, m.id)).map(m => esc(m.name)).join(', ')} : revenu de référence` : ''}</p>
+      ${miss.length && S.household.split.mode === 'revenus' ? `<p class="hint">La répartition se fait au prorata des revenus : saisis ceux de ${miss.map(m => esc(m.name)).join(', ')} pour ${monthName(k)}.</p>` : ''}</div></section>
     <section><div class="goal"><h2>Charges communes</h2>
       <p class="big num">${eur(st.total)}</p>
       <p class="small">${plural(items.length, 'dépense enregistrée', 'dépenses enregistrées')} · répartition : ${SPLIT[H.split.mode]}</p>
@@ -1134,7 +1154,10 @@ function vFoyer() {
       <div class="actions"><button class="btn primary wide" data-act="newcharge">Ajouter une dépense</button>
         ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre les dépenses de ${monthName(addMonths(k, -1))}</button>` : ''}</div></section>
     <section><h2>Virements entre vous</h2>
-      ${trs.length ? `<ul class="list">${trs.map(t => `<li><button data-act="deltransfer" data-id="${t.id}"><span>${esc(mName(t.from))} → ${esc(mName(t.to))}${t.n ? `<br><span class="small">${esc(t.n)}</span>` : ''}</span><span class="num">${eur(t.a)}</span></button></li>`).join('')}</ul>
+      ${trs.length ? `<ul class="list">${trs.map(t => {
+        const detail = [t.fa || t.ta ? `${esc(accName(t.fa) || '?')} → ${esc(accName(t.ta) || '?')}` : '', t.reg === false ? 'hors régularisation' : '', t.n ? esc(t.n) : ''].filter(Boolean).join(' · ');
+        return `<li><button data-act="deltransfer" data-id="${t.id}"><span>${esc(mName(t.from))} → ${esc(mName(t.to))}${detail ? `<br><span class="small">${detail}</span>` : ''}</span><span class="num">${eur(t.a)}</span></button></li>`;
+      }).join('')}</ul>
         <p class="small">Touche un virement pour le supprimer.</p>` : '<p class="muted">Aucun virement ce mois-ci.</p>'}
       <div class="actions"><button class="btn wide" data-act="newtransfer">Ajouter un virement</button></div></section>
     ${effort ? `<section><h2>Reste à vivre</h2><ul class="kv effort">${effort}</ul>
@@ -1519,14 +1542,15 @@ function sheetHousehold() {
     <h3>Membres</h3>
     <form id="f-members" class="stack-form">
       ${H.members.map(m => `<div class="mrow"><label>Nom<input data-mname="${m.id}" value="${esc(m.name)}" ${m.id === 'moi' ? '' : ''}></label>
-        <label>Revenu net mensuel (€)<input inputmode="decimal" data-mincome="${m.id}" value="${esc(numStr(m.income))}"></label>
+        <label>Revenu de référence (€ par mois)<input inputmode="decimal" data-mincome="${m.id}" value="${esc(numStr(m.income))}"></label>
         ${m.id === 'moi' ? '' : `<button class="link" type="button" data-act="delmember" data-id="${m.id}">Retirer ${esc(m.name)}</button>`}</div>`).join('')}
+      <p class="small" style="margin:0">Le revenu de référence sert par défaut. Si les revenus varient, saisis-les mois par mois dans Comptes &gt; Foyer.</p>
       <button class="btn wide" type="button" data-act="addmember">Ajouter un membre</button>
       <button class="btn primary wide" type="submit">Enregistrer</button>
       <button class="link" type="button" data-act="close">Fermer</button></form>`);
 }
 function sheetSplit() {
-  const H = S.household, sh = shares();
+  const H = S.household, sh = shares(potMonth);
   openSheet(`<h2>Répartition des charges</h2>
     <form id="f-split" class="stack-form">
       <label>Mode<select id="s-mode">
@@ -1537,7 +1561,7 @@ function sheetSplit() {
         ${members().map(m => `<label>${esc(m.name)} — part<input inputmode="decimal" data-share="${m.id}" value="${esc(numStr(H.split.shares[m.id]))}" placeholder="ex. 60"></label>`).join('')}
         <p class="small">Les parts sont ramenées à 100 % entre elles : 60 et 40 donnent le même résultat que 6 et 4.</p></div>
       <p class="small">Répartition actuelle : ${members().map(m => `${esc(m.name)} ${pct(sh[m.id] || 0)}`).join(', ')}.</p>
-      ${H.split.mode === 'revenus' && members().some(m => !m.income) ? '<p class="err">Renseigne le revenu de chaque membre pour utiliser ce mode.</p>' : ''}
+      ${H.split.mode === 'revenus' && members().some(m => !incomeOf(potMonth, m.id)) ? '<p class="err">Renseigne le revenu de chaque membre pour utiliser ce mode.</p>' : ''}
       <button class="btn primary wide" type="submit">Enregistrer</button>
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
 }
@@ -1553,14 +1577,24 @@ function sheetCharge(id) {
       ${it.id ? `<button class="btn danger wide" type="button" data-act="delcharge" data-id="${it.id}">Supprimer</button>` : ''}
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
 }
+function accOptions(owner, sel) {
+  const own = active().filter(a => (a.owner || 'moi') === owner);
+  const list = own.length ? own : active();
+  return `<option value="">— non précisé —</option>` + list.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${esc(a.name)}${isCash(a) ? '' : ' (épargne)'}</option>`).join('');
+}
 function sheetTransfer(pre) {
   const ms = members();
+  const from = pre?.from || ms[0].id, to = pre?.to || ms.find(m => m.id !== from)?.id || ms[0].id;
   openSheet(`<h2>Virement entre vous</h2>
-    <p class="small" style="margin:0 0 14px">Enregistré sur ${monthLabel(potMonth)}. Sert à régulariser qui a trop ou pas assez payé.</p>
+    <p class="small" style="margin:0 0 14px">Enregistré sur ${monthLabel(potMonth)}.</p>
     <form id="f-transfer" class="stack-form">
-      <div class="row2"><label>De<select id="t-from">${ms.map(m => `<option value="${m.id}" ${m.id === pre?.from ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
-        <label>Vers<select id="t-to">${ms.map(m => `<option value="${m.id}" ${m.id === (pre?.to || ms[1]?.id) ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label></div>
+      <div class="row2"><label>De<select id="t-from">${ms.map(m => `<option value="${m.id}" ${m.id === from ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
+        <label>Vers<select id="t-to">${ms.map(m => `<option value="${m.id}" ${m.id === to ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label></div>
+      <label>Compte source<select id="t-fa">${accOptions(from, defaultAcc(from))}</select></label>
+      <label>Compte destinataire<select id="t-ta">${accOptions(to, defaultAcc(to))}</select></label>
       <label>Montant (€)<input id="t-a" inputmode="decimal" value="${pre ? esc(numStr(Math.round(pre.a * 100) / 100)) : ''}" required></label>
+      <label class="check"><input type="checkbox" id="t-reg" ${pre?.reg === false ? '' : 'checked'}>Régularise les charges du mois</label>
+      <p class="small" style="margin:0">Décoche pour un virement qui n’a rien à voir avec les charges, par exemple de ton épargne vers celle de ${esc(mName(to))} : il sera enregistré sans modifier les soldes.</p>
       <label>Motif (facultatif)<input id="t-n" maxlength="40" placeholder="ex. régularisation ${esc(monthName(potMonth))}"></label>
       <button class="btn primary wide" type="submit">Enregistrer</button>
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
@@ -1781,7 +1815,7 @@ const ACT = {
   newcharge: () => sheetCharge(null),
   editcharge: t => sheetCharge(t.dataset.id),
   newtransfer: () => sheetTransfer(null),
-  settlenow: t => sheetTransfer({ from: t.dataset.from, to: t.dataset.to, a: +t.dataset.a }),
+  settlenow: t => sheetTransfer({ from: t.dataset.from, to: t.dataset.to, a: +t.dataset.a, reg: true }),
   potmonth: t => { const n = addMonths(potMonth, +t.dataset.d); if (n <= monthKey()) { potMonth = n; render(); } },
   addmember: async () => {
     S.household.members.push({ id: uid(), name: 'Membre ' + (members().length + 1), income: null });
@@ -1961,6 +1995,16 @@ document.addEventListener('change', async e => {
   }
   else if (t.id === 's-mode') $('#s-manual').hidden = t.value !== 'manuel';
   else if (t.id === 'ai-prov') { const P = AI[t.value]; $('#ai-model').placeholder = P.model; $('#ai-model').value = ''; }
+  else if (t.id === 't-from' || t.id === 't-to') {
+    const which = t.id === 't-from' ? '#t-fa' : '#t-ta';
+    $(which).innerHTML = accOptions(t.value, defaultAcc(t.value));
+  }
+  else if (t.dataset.inc) {
+    const v = num(t.value), k = potMonth;
+    const p = (S.pot[k] ||= { items: [], transfers: [] }); p.inc ||= {};
+    if (v == null || Number.isNaN(v)) delete p.inc[t.dataset.inc]; else p.inc[t.dataset.inc] = v;
+    await save(); render();
+  }
   else if (t.dataset.map) paintLines();
   else if (t.id === 'resmonth') { resumeMonth = t.value; render(); }
   else if (t.id === 'round') { rounding = t.checked; render(); }
@@ -2096,7 +2140,8 @@ document.addEventListener('submit', async e => {
     if (from === to) return toast('Choisis deux membres différents');
     const p = (S.pot[potMonth] ||= { items: [], transfers: [] });
     p.transfers ||= [];
-    p.transfers.push({ id: uid(), from, to, a, n: $('#t-n').value.trim() || undefined });
+    p.transfers.push({ id: uid(), from, to, a, fa: $('#t-fa').value || undefined, ta: $('#t-ta').value || undefined,
+      reg: $('#t-reg').checked, n: $('#t-n').value.trim() || undefined });
     await save(); closeSheet(); render();
   }
   else if (f.id === 'f-move') {
