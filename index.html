@@ -189,7 +189,9 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .dot{width:10px;height:10px;border-radius:3px}
 .rep .p{color:var(--muted);min-width:44px;text-align:right}
 .alerts{list-style:none;padding:0;margin:0;display:grid;gap:10px}
-.alerts li{padding:12px 14px 12px 16px;border-radius:14px;background:var(--surface);border-left:4px solid var(--pine);font-size:15px}
+.alerts li{display:flex;align-items:flex-start;gap:8px;padding:12px 6px 12px 16px;border-radius:14px;background:var(--surface);border-left:4px solid var(--pine);font-size:15px;touch-action:pan-y;will-change:transform}
+.alerts .atxt{flex:1}
+.adismiss{flex:0 0 auto;width:30px;height:30px;border:0;border-radius:50%;background:none;color:var(--muted);font-size:19px;line-height:1;display:grid;place-items:center;margin:-3px 0 0}
 .alerts li.warn{border-left-color:var(--amber)}
 .alerts li.good{border-left-color:var(--c-av)}
 .empty{padding:26px 0}
@@ -599,7 +601,7 @@ let store, S = null, dek = null, dekRaw = null, slots = null, mode = 'boot', vie
 let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', subview = null, setPage = null, potMonth = monthKey(), scope = 'moi', rounding = true, hiddenAt = 0, pendingImport = null;
 
 const emptyData = () => ({
-  v: 1, accounts: [], entries: {}, pot: {}, rules: {},
+  v: 1, accounts: [], entries: {}, pot: {}, rules: {}, dismissed: {},
   household: { on: false, members: [{ id: 'moi', name: 'Moi', income: null }], split: { mode: 'moitie', shares: {} } },
   settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null, ai: null },
   analyses: {},
@@ -614,6 +616,7 @@ function normalize(d) {
   d.analyses = d.analyses || {};
   d.pot = d.pot || {};
   d.rules = d.rules || {};
+  d.dismissed = d.dismissed || {};
   const h = e.household;
   d.household = { ...h, ...(d.household || {}) };
   if (!d.household.members?.length) d.household.members = h.members;
@@ -811,18 +814,18 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
   const acc = active().filter(f);
   for (const a of acc) {
     const lu = lastUpdate(a);
-    if (lu && monthDiff(lu, cur) >= 2 && !forSummary) out.push({ l: 'warn', t: `${a.name} n’a pas été mis à jour depuis ${monthName(lu)}.` });
+    if (lu && monthDiff(lu, cur) >= 2 && !forSummary) out.push({ l: 'warn', k: `upd:${a.id}`, s: lu, t: `${a.name} n’a pas été mis à jour depuis ${monthName(lu)}.` });
   }
   for (const a of acc) {
     const T = TYPES[a.type]; if (!T.plafond) continue;
     const v = valueAt(a, F); const nm = forSummary ? T.label : a.name;
-    if (v >= T.plafond) out.push({ l: 'info', t: `${nm} a atteint son plafond de versement (${eur(T.plafond)}) : les prochains versements devront aller sur un autre support.` });
-    else if (v >= 0.9 * T.plafond) out.push({ l: 'info', t: `${nm} est rempli à ${pct(v / T.plafond)} : il reste ${eur(T.plafond - v)} avant le plafond.` });
+    if (v >= T.plafond) out.push({ l: 'info', k: `cap:${a.id}`, s: 'full', t: `${nm} a atteint son plafond de versement (${eur(T.plafond)}) : les prochains versements devront aller sur un autre support.` });
+    else if (v >= 0.9 * T.plafond) out.push({ l: 'info', k: `cap:${a.id}`, s: Math.round(v / T.plafond * 20), t: `${nm} est rempli à ${pct(v / T.plafond)} : il reste ${eur(T.plafond - v)} avant le plafond.` });
   }
   for (const a of acc.filter(a => a.type === 'pea')) {
     let versed = 0; const first = firstMonthOf(a);
     for (const k of months()) { if (k > F) break; const e = entry(k, a); if (!e) continue; versed += (k === first ? e.value : moveSum(e)); }
-    if (versed > 0.8 * 150000) out.push({ l: 'info', t: `${forSummary ? 'PEA' : a.name} : environ ${eur(versed)} versés sur 150 000 € autorisés (estimation depuis le début du suivi).` });
+    if (versed > 0.8 * 150000) out.push({ l: 'info', k: `peaverse:${a.id}`, s: Math.round(versed / 1000), t: `${forSummary ? 'PEA' : a.name} : environ ${eur(versed)} versés sur 150 000 € autorisés (estimation depuis le début du suivi).` });
   }
   const pers = acc.filter(a => a.type === 'per');
   if (pers.length && mm >= 9) {
@@ -830,13 +833,13 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
     const verse = months().filter(k => k.startsWith(y) && k <= F).reduce((s, k) => s + pers.reduce((t, a) => t + dep(k, a), 0), 0);
     if (S.settings.perPlafond) {
       const reste = S.settings.perPlafond - verse;
-      if (reste > 0) out.push({ l: 'info', t: `PER : environ ${E(reste)} de plafond de déduction encore utilisable avant le 31 décembre (${E(verse)} versés cette année).` });
-    } else if (!forSummary) out.push({ l: 'info', t: 'Renseigne ton plafond de déduction PER (sur ton avis d’impôt) dans les réglages pour suivre ce qu’il te reste à déduire cette année.' });
+      if (reste > 0) out.push({ l: 'info', k: 'perplafond', s: Math.round(reste / 100), t: `PER : environ ${E(reste)} de plafond de déduction encore utilisable avant le 31 décembre (${E(verse)} versés cette année).` });
+    } else if (!forSummary) out.push({ l: 'info', k: 'pernonrenseigne', s: 'x', t: 'Renseigne ton plafond de déduction PER (sur ton avis d’impôt) dans les réglages pour suivre ce qu’il te reste à déduire cette année.' });
   }
   if (S.settings.depenses && mine) {
     const liv = totalAt(F, a => f(a) && TYPES[a.type].cat === 'livrets'), n = liv / S.settings.depenses;
-    if (n < 3) out.push({ l: 'warn', t: `Épargne de précaution : ${n.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} mois de dépenses sur les livrets, sous les 3 à 6 mois généralement recommandés.` });
-    else if (n > 12) out.push({ l: 'info', t: `${Math.round(n)} mois de dépenses dorment sur les livrets, à rendement faible : vérifie que c’est voulu (apport à court terme, par exemple).` });
+    if (n < 3) out.push({ l: 'warn', k: 'precaution', s: n.toFixed(1), t: `Épargne de précaution : ${n.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} mois de dépenses sur les livrets, sous les 3 à 6 mois généralement recommandés.` });
+    else if (n > 12) out.push({ l: 'info', k: 'precaution', s: Math.round(n), t: `${Math.round(n)} mois de dépenses dorment sur les livrets, à rendement faible : vérifie que c’est voulu (apport à court terme, par exemple).` });
   }
   // Reprises d'épargne en cours de mois
   for (const a of acc) {
@@ -844,39 +847,53 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
     const out_ = movesOut(e); if (!out_) continue;
     const in_ = movesIn(e), last = e.moves.filter(m => m.a < 0).sort((x, y) => y.d - x.d)[0];
     const nm = forSummary ? TYPES[a.type].label : a.name;
-    if (in_ > 0) out.push({ l: 'warn', t: `${nm} : ${E(in_)} versés puis ${E(out_)} repris le ${dayLabel(F, last.d)}${!forSummary && last.n ? ` (${last.n})` : ''}. Épargne nette du mois : ${E(in_ - out_)}.` });
-    else out.push({ l: 'warn', t: `${nm} : retrait de ${E(out_)} le ${dayLabel(F, last.d)}${!forSummary && last.n ? ` (${last.n})` : ''}, sans versement ce mois-ci.` });
+    if (in_ > 0) out.push({ l: 'warn', k: `reprise:${a.id}`, s: `${Math.round(in_)}/${Math.round(out_)}`, t: `${nm} : ${E(in_)} versés puis ${E(out_)} repris le ${dayLabel(F, last.d)}${!forSummary && last.n ? ` (${last.n})` : ''}. Épargne nette du mois : ${E(in_ - out_)}.` });
+    else out.push({ l: 'warn', k: `reprise:${a.id}`, s: `0/${Math.round(out_)}`, t: `${nm} : retrait de ${E(out_)} le ${dayLabel(F, last.d)}${!forSummary && last.n ? ` (${last.n})` : ''}, sans versement ce mois-ci.` });
   }
   const withdrawMonths = [];
   for (let k = addMonths(F, -5); k <= F; k = addMonths(k, 1)) if (acc.some(a => movesOut(entry(k, a)) > 0)) withdrawMonths.push(k);
-  if (withdrawMonths.length >= 3) out.push({ l: 'warn', t: `Reprises d’épargne sur ${withdrawMonths.length} des 6 derniers mois : le montant que tu mets de côté chaque mois est probablement trop ambitieux, ou l’épargne de précaution ne joue pas son rôle d’amortisseur.` });
+  if (withdrawMonths.length >= 3) out.push({ l: 'warn', k: 'reprises6', s: withdrawMonths.length, t: `Reprises d’épargne sur ${withdrawMonths.length} des 6 derniers mois : le montant que tu mets de côté chaque mois est probablement trop ambitieux, ou l’épargne de précaution ne joue pas son rôle d’amortisseur.` });
   const miss = mine ? incomeMissing(F) : null;
   if (miss && miss.length && potStats(F).total > 0)
-    out.push({ l: 'warn', t: `Revenus de ${monthName(F)} non saisis pour ${forSummary ? miss.map(m => mLabel(m.id)).join(', ') : miss.map(m => m.name).join(', ')} : la répartition des charges utilise le revenu de référence.` });
+    out.push({ l: 'warn', k: 'revenusmanquants', s: miss.map(m => m.id).join(','), t: `Revenus de ${monthName(F)} non saisis pour ${forSummary ? miss.map(m => mLabel(m.id)).join(', ') : miss.map(m => m.name).join(', ')} : la répartition des charges utilise le revenu de référence.` });
   for (const a of cashAccounts().filter(x => !isSimple(x) && f(x))) {
     const todo = txOf(F, a).filter(t => t.a < 0 && !t.c).length;
-    if (todo && !forSummary) out.push({ l: 'info', t: `${a.name} : ${plural(todo, 'opération non classée', 'opérations non classées')} en ${monthName(F)}. Classe-les pour que les charges communes soient justes.` });
+    if (todo && !forSummary) out.push({ l: 'info', k: `txtodo:${a.id}`, s: todo, t: `${a.name} : ${plural(todo, 'opération non classée', 'opérations non classées')} en ${monthName(F)}. Classe-les pour que les charges communes soient justes.` });
   }
   const ms = months();
   if (ms.length >= 3) {
     const b = breakdown(F, f), prev = avgDep(addMonths(F, -1), 6, f);
-    if (b.dep < 0) out.push({ l: 'warn', t: `Retrait net de ${E(-b.dep)} en ${monthName(F)} : vérifie qu’il était prévu.` });
-    else if (prev.n >= 2 && prev.avg > 0 && b.dep < 0.7 * prev.avg) out.push({ l: 'warn', t: `Épargne de ${monthName(F)} : ${E(b.dep)}, sous ta moyenne récente (${E(prev.avg)} par mois).` });
-    else if (prev.n >= 2 && prev.avg > 0 && b.dep > 1.3 * prev.avg) out.push({ l: 'good', t: `Bon mois : ${E(b.dep)} épargnés, au-dessus de ta moyenne récente (${E(prev.avg)} par mois).` });
+    if (b.dep < 0) out.push({ l: 'warn', k: 'retraitnet', s: Math.round(-b.dep / 50), t: `Retrait net de ${E(-b.dep)} en ${monthName(F)} : vérifie qu’il était prévu.` });
+    else if (prev.n >= 2 && prev.avg > 0 && b.dep < 0.7 * prev.avg) out.push({ l: 'warn', k: 'epargnefaible', s: Math.round(b.dep / 50), t: `Épargne de ${monthName(F)} : ${E(b.dep)}, sous ta moyenne récente (${E(prev.avg)} par mois).` });
+    else if (prev.n >= 2 && prev.avg > 0 && b.dep > 1.3 * prev.avg) out.push({ l: 'good', k: 'epargneforte', s: Math.round(b.dep / 50), t: `Bon mois : ${E(b.dep)} épargnés, au-dessus de ta moyenne récente (${E(prev.avg)} par mois).` });
   }
   const ga = mine ? goalApport(F) : null;
-  if (ga && !ga.done && ga.late > 0) out.push({ l: 'warn', t: `Apport immobilier : au rythme actuel, objectif atteint en ${monthLabel(ga.reach)}, soit ${plural(ga.late, 'mois', 'mois')} après l’échéance.` });
-  if (ga && !ga.done && ga.pace <= 0 && ga.cur < S.goals.apport.target) out.push({ l: 'warn', t: 'Apport immobilier : aucun versement récent sur les comptes comptés pour l’apport.' });
+  if (ga && !ga.done && ga.late > 0) out.push({ l: 'warn', k: 'apportretard', s: ga.late, t: `Apport immobilier : au rythme actuel, objectif atteint en ${monthLabel(ga.reach)}, soit ${plural(ga.late, 'mois', 'mois')} après l’échéance.` });
+  if (ga && !ga.done && ga.pace <= 0 && ga.cur < S.goals.apport.target) out.push({ l: 'warn', k: 'apportzero', s: 'x', t: 'Apport immobilier : aucun versement récent sur les comptes comptés pour l’apport.' });
   const unlockable = acc.filter(a => ['pee', 'per', 'percol'].includes(a.type) && !a.apport);
   if (mine && S.goals.apport.target && unlockable.length && !forSummary)
-    out.push({ l: 'info', t: `${[...new Set(unlockable.map(a => TYPES[a.type].label))].join(', ')} : déblocage anticipé possible pour acheter ta résidence principale. Si c’est ton projet, compte-les dans l’apport depuis les réglages.` });
+    out.push({ l: 'info', k: 'deblocage', s: unlockable.length, t: `${[...new Set(unlockable.map(a => TYPES[a.type].label))].join(', ')} : déblocage anticipé possible pour acheter ta résidence principale. Si c’est ton projet, compte-les dans l’apport depuis les réglages.` });
   if (mode === 'app' && !forSummary && mine) {
     const le = S.settings.lastExport, days = le ? Math.floor((Date.now() - le) / 864e5) : null;
-    if (days == null) out.push({ l: 'warn', t: 'Aucune sauvegarde exportée : si tu perds ou changes d’iPhone, tes données seront perdues.' });
-    else if (days > 35) out.push({ l: 'warn', t: `Dernière sauvegarde il y a ${days} jours. Pense à en exporter une nouvelle.` });
+    if (days == null) out.push({ l: 'warn', k: 'sauvegarde', s: 'none', t: 'Aucune sauvegarde exportée : si tu perds ou changes d’iPhone, tes données seront perdues.' });
+    else if (days > 35) out.push({ l: 'warn', k: 'sauvegarde', s: Math.round(days / 7), t: `Dernière sauvegarde il y a ${days} jours. Pense à en exporter une nouvelle.` });
   }
   const order = { warn: 0, info: 1, good: 2 };
   return out.sort((a, b) => order[a.l] - order[b.l]);
+}
+
+// Un point d'attention masqué revient si sa situation change (signature différente),
+// si le mois suivi change, ou dès le 1er du mois civil suivant.
+function isHidden(x, F) {
+  const d = S.dismissed?.[x.k];
+  return !!d && d.s === String(x.s) && d.m === F && d.c === monthKey();
+}
+async function dismissAlert(k, sig) {
+  S.dismissed ||= {};
+  S.dismissed[k] = { s: String(sig), m: focusMonth(), c: monthKey() };
+  const old = addMonths(monthKey(), -2);
+  for (const [key, d] of Object.entries(S.dismissed)) if (d.c < old) delete S.dismissed[key];
+  await save(); render();
 }
 
 /* ---------- Résumé mensuel ---------- */
@@ -1080,7 +1097,9 @@ function vHome() {
   const acc = active().filter(f), missing = acc.filter(a => !done(a)), doneN = acc.length - missing.length;
   const tl = timeline(f), last = tl[tl.length - 1];
   const cats = Object.entries(CATS).map(([c, C]) => ({ c, ...C, v: totalAt(F, a => f(a) && TYPES[a.type].cat === c) })).filter(x => x.v > 0);
-  const al = alerts(F, false, f, scope === 'moi' || scope === 'all');
+  const allAl = alerts(F, false, f, scope === 'moi' || scope === 'all');
+  const al = allAl.filter(x => !isHidden(x, F));
+  const hiddenN = allAl.length - al.length;
   return `${scopeBar()}
     <section class="hero">
       <p class="hero-month">Fin ${monthLabel(F)}</p>
@@ -1097,7 +1116,12 @@ function vHome() {
       <div class="stack" role="img" aria-label="Répartition par type de placement">${cats.map(x => `<i style="width:${x.v / b.total * 100}%;background:${x.color}"></i>`).join('')}</div>
       <ul class="rep">${cats.map(x => `<li><span class="dot" style="background:${x.color}"></span><span>${x.label}</span><span class="p">${pct(x.v / b.total)}</span><span class="num">${eur(x.v)}</span></li>`).join('')}</ul></section>
     <section><h2>Points d’attention${multi() && scope !== 'moi' ? ` · ${esc(scope === 'all' ? 'foyer' : mName(scope))}` : ''}</h2>
-      ${al.length ? `<ul class="alerts">${al.map(x => `<li class="${x.l}">${esc(x.t)}</li>`).join('')}</ul>` : '<p class="muted">Rien à signaler ce mois-ci.</p>'}</section>`;
+      ${al.length ? `<ul class="alerts">${al.map(x => `<li class="${x.l}" data-k="${esc(x.k)}" data-s="${esc(x.s)}">
+        <span class="atxt">${esc(x.t)}</span>
+        <button class="adismiss" data-act="dismiss" data-k="${esc(x.k)}" data-s="${esc(x.s)}" aria-label="Masquer ce point d’attention">×</button></li>`).join('')}</ul>
+        <p class="small" style="margin-top:10px">Balaie une carte pour la masquer : elle revient si la situation change, sinon le mois prochain.</p>`
+        : `<p class="muted">${hiddenN ? 'Tout est masqué pour ce mois.' : 'Rien à signaler ce mois-ci.'}</p>`}
+      ${hiddenN ? `<button class="link" data-act="unhide">Réafficher ${plural(hiddenN, 'point masqué', 'points masqués')}</button>` : ''}</section>`;
 }
 
 function chart(tl) {
@@ -1911,6 +1935,8 @@ const ACT = {
     render(); window.scrollTo(0, 0);
   },
   scope: t => { scope = t.dataset.s; render(); },
+  dismiss: t => dismissAlert(t.dataset.k, t.dataset.s),
+  unhide: async () => { S.dismissed = {}; await save(); render(); },
   chpw: () => sheetChangePw(),
   aiconf: () => sheetAI(),
   analyse: () => runAnalysis(resumeMonth),
@@ -2150,6 +2176,38 @@ document.addEventListener('click', e => {
   ACT[t.dataset.act](t, e);
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+// Balayage horizontal pour masquer un point d'attention. Un mouvement vertical laisse défiler la page.
+let swipe = null;
+document.addEventListener('pointerdown', e => {
+  const li = e.target.closest('.alerts li[data-k]');
+  swipe = li ? { li, x: e.clientX, y: e.clientY, dx: 0, on: false } : null;
+});
+document.addEventListener('pointermove', e => {
+  if (!swipe) return;
+  const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+  if (!swipe.on) {
+    if (Math.abs(dx) < 12) return;
+    if (Math.abs(dy) > Math.abs(dx)) { swipe = null; return; }
+    swipe.on = true; swipe.li.style.transition = 'none';
+  }
+  swipe.dx = dx;
+  swipe.li.style.transform = `translateX(${dx}px)`;
+  swipe.li.style.opacity = String(Math.max(0.15, 1 - Math.abs(dx) / 240));
+});
+function endSwipe(cancel) {
+  if (!swipe) return;
+  const { li, dx, on } = swipe; swipe = null;
+  if (!on) return;
+  li.style.transition = 'transform .18s ease-out, opacity .18s ease-out';
+  if (!cancel && Math.abs(dx) > 90) {
+    li.style.transform = `translateX(${dx > 0 ? 420 : -420}px)`;
+    li.style.opacity = '0';
+    setTimeout(() => dismissAlert(li.dataset.k, li.dataset.s), 160);
+  } else { li.style.transform = ''; li.style.opacity = ''; }
+}
+document.addEventListener('pointerup', () => endSwipe(false));
+document.addEventListener('pointercancel', () => endSwipe(true));
 
 document.addEventListener('change', async e => {
   const t = e.target;
