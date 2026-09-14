@@ -251,8 +251,9 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 
 /* Feuille modale */
 .backdrop{position:fixed;inset:0;z-index:20;background:rgba(10,18,14,.38)}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-height:90dvh;overflow:auto;background:var(--paper);border-radius:24px 24px 0 0;padding:10px 20px calc(24px + var(--safe-b));max-width:560px;margin:0 auto;animation:up .22s ease-out}
-.sheet .grab{width:38px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;max-height:90dvh;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;will-change:transform;background:var(--paper);border-radius:24px 24px 0 0;padding:10px 20px calc(24px + var(--safe-b));max-width:560px;margin:0 auto;animation:up .22s ease-out}
+.sheet .grab{position:relative;height:22px;margin:-4px 0 6px;touch-action:none;cursor:grab}
+.sheet .grab::after{content:'';position:absolute;left:50%;top:8px;transform:translateX(-50%);width:40px;height:5px;border-radius:9px;background:var(--line)}
 .sheet h2{font:700 22px var(--num);margin:4px 0 14px}
 .sheet h3{font:650 16px var(--num);margin:26px 0 10px}
 .sheet .stack-form{display:grid;gap:12px}
@@ -1584,6 +1585,40 @@ function aiPayload(F, n = 6) {
   const ms = months().filter(k => k <= F).slice(-n);
   return ms.map(k => summary(k)).join('\n\n-----\n\n');
 }
+// Message d'erreur détaillé : le code HTTP seul ne dit pas si c'est la clé, la facturation ou le modèle
+async function apiError(r) {
+  let detail = '';
+  try {
+    const t = (await r.text()).slice(0, 400);
+    try { const j = JSON.parse(t); detail = j.error?.message || j.message || j.detail || ''; } catch { detail = t; }
+  } catch {}
+  detail = String(detail).replace(/\s+/g, ' ').trim().slice(0, 140);
+  const base = r.status === 401 ? 'Clé refusée (401). Elle est invalide, expirée, ou pas encore active : une clé fraîchement créée met parfois quelques minutes. Vérifie aussi qu’aucune espace ne s’est glissée au collage.'
+    : r.status === 402 ? 'Paiement requis (402) : le compte n’a pas d’abonnement ni de moyen de paiement actif.'
+    : r.status === 403 ? 'Accès refusé (403) : la clé est valide mais le compte n’a pas de plan actif, ou la clé n’a pas accès à ce modèle.'
+    : r.status === 404 ? 'Modèle introuvable (404) : vérifie le nom du modèle dans les réglages.'
+    : r.status === 429 ? 'Quota atteint (429) : trop de requêtes, ou crédit épuisé.'
+    : r.status >= 500 ? `Service indisponible (${r.status}). Réessaie plus tard.`
+    : `Erreur ${r.status}.`;
+  return detail ? `${base}\n\nRéponse du service : ${detail}` : base;
+}
+async function testKey() {
+  const cfg = S.settings.ai;
+  if (!cfg?.key) return sheetMsgLong('Test de la clé', 'Aucune clé enregistrée.');
+  const P = AI[cfg.provider] || AI.anthropic;
+  const btn = $('#ai-test'); if (btn) { btn.disabled = true; btn.textContent = 'Test en cours…'; }
+  try {
+    const body = P.body(cfg.model || P.model, 'Réponds par OK.', 'ping');
+    body.max_tokens = 5;
+    const r = await fetch(P.url, { method: 'POST', headers: P.head(cfg.key), body: JSON.stringify(body) });
+    if (!r.ok) return sheetMsgLong('Test de la clé', await apiError(r));
+    sheetMsgLong('Test de la clé', `La clé fonctionne avec ${P.label}, modèle ${cfg.model || P.model}.`);
+  } catch (e) {
+    sheetMsgLong('Test de la clé', 'Impossible de joindre le service. Vérifie ta connexion. Si le problème persiste, le service bloque peut-être les appels depuis un navigateur.');
+  }
+}
+const sheetMsgLong = (title, msg) => openSheet(`<h2>${esc(title)}</h2><p style="white-space:pre-wrap">${esc(msg)}</p>
+  <div class="stack-form"><button class="btn wide" data-act="setpage" data-p="ai">Retour</button></div>`);
 async function runAnalysis(F) {
   const cfg = S.settings.ai;
   if (!cfg?.key) { sheetAI(); return; }
@@ -1592,12 +1627,7 @@ async function runAnalysis(F) {
   const nb = months().filter(k => k <= F).slice(-6).length;
   try {
     const r = await fetch(P.url, { method: 'POST', headers: P.head(cfg.key), body: JSON.stringify(P.body(cfg.model || P.model, AI_SYS, aiPayload(F))) });
-    if (!r.ok) {
-      const msg = r.status === 401 || r.status === 403 ? 'Clé refusée par le service. Vérifie-la dans les réglages.'
-        : r.status === 429 ? 'Trop de requêtes ou crédit épuisé. Réessaie plus tard.'
-        : r.status >= 500 ? 'Le service est indisponible. Réessaie plus tard.' : `Erreur ${r.status}.`;
-      throw new Error(msg);
-    }
+    if (!r.ok) { render(); return sheetMsgLong('Analyse impossible', await apiError(r)); }
     const txt = P.read(await r.json()).trim();
     if (!txt) throw new Error('Réponse vide.');
     S.analyses[F] = { t: txt, at: Date.now(), p: cfg.provider, n: nb, rounded: rounding };
@@ -1624,6 +1654,7 @@ function sheetAI() {
       <label>Clé d’API<input type="password" id="ai-key" value="" placeholder="${c.key ? 'clé enregistrée — laisse vide pour la conserver' : 'colle ta clé ici'}" autocomplete="off"></label>
       <label>Modèle (facultatif)<input id="ai-model" value="${esc(c.model || '')}" placeholder="${esc((AI[c.provider] || AI.anthropic).model)}" autocomplete="off"></label>
       <button class="btn primary wide" type="submit">Enregistrer</button>
+      ${c.key ? '<button class="btn wide" type="button" id="ai-test" data-act="aitest">Tester la clé</button>' : ''}
       ${c.key ? '<button class="btn danger wide" type="button" data-act="aiclear">Supprimer la clé</button>' : ''}
       <button class="link" type="button" data-act="settings">Retour aux réglages</button></form>
     <p class="small">Crée la clé sur ${esc((AI[c.provider] || AI.anthropic).keyUrl)} et fixe-lui un plafond de dépense. Une analyse coûte quelques centimes. Tu peux la révoquer à tout moment.</p>`);
@@ -1939,6 +1970,7 @@ const ACT = {
   unhide: async () => { S.dismissed = {}; await save(); render(); },
   chpw: () => sheetChangePw(),
   aiconf: () => sheetAI(),
+  aitest: () => testKey(),
   analyse: () => runAnalysis(resumeMonth),
   aiclear: async () => { S.settings.ai = null; await save(); render(); sheetSetPage('ai'); toast('Clé supprimée'); },
   moves: t => sheetMoves(t.dataset.id),
@@ -2207,6 +2239,45 @@ function endSwipe(cancel) {
   } else { li.style.transform = ''; li.style.opacity = ''; }
 }
 document.addEventListener('pointerup', () => endSwipe(false));
+
+// Glisser une feuille vers le bas pour la fermer, comme le suggère la barre de préhension.
+// Le geste ne démarre que si le contenu est déjà en haut, pour ne pas gêner le défilement.
+let sheetDrag = null;
+document.addEventListener('pointerdown', e => {
+  const sh = e.target.closest('.sheet'); if (!sh) return;
+  const onGrab = !!e.target.closest('.grab');
+  if (!onGrab && (sh.scrollTop > 2 || e.target.closest('input, select, textarea'))) return;
+  sheetDrag = { sh, x: e.clientX, y: e.clientY, dy: 0, on: false };
+});
+document.addEventListener('pointermove', e => {
+  if (!sheetDrag) return;
+  const dy = e.clientY - sheetDrag.y, dx = e.clientX - sheetDrag.x;
+  if (!sheetDrag.on) {
+    if (dy < 10) { if (dy < -10 || Math.abs(dx) > 14) sheetDrag = null; return; }
+    if (Math.abs(dx) > dy) { sheetDrag = null; return; }
+    sheetDrag.on = true; sheetDrag.sh.style.transition = 'none';
+  }
+  sheetDrag.dy = Math.max(0, dy);
+  sheetDrag.sh.style.transform = `translateY(${sheetDrag.dy}px)`;
+  const bd = $('.backdrop'); if (bd) bd.style.opacity = String(Math.max(0, 1 - sheetDrag.dy / 420));
+});
+function endSheetDrag(cancel) {
+  if (!sheetDrag) return;
+  const { sh, dy, on } = sheetDrag; sheetDrag = null;
+  if (!on) return;
+  const bd = $('.backdrop');
+  sh.style.transition = 'transform .2s ease-out';
+  if (!cancel && dy > 110) {
+    sh.style.transform = 'translateY(105%)';
+    if (bd) { bd.style.transition = 'opacity .2s'; bd.style.opacity = '0'; }
+    setTimeout(closeSheet, 190);
+  } else {
+    sh.style.transform = '';
+    if (bd) { bd.style.transition = 'opacity .2s'; bd.style.opacity = ''; }
+  }
+}
+document.addEventListener('pointerup', () => endSheetDrag(false));
+document.addEventListener('pointercancel', () => endSheetDrag(true));
 document.addEventListener('pointercancel', () => endSwipe(true));
 
 document.addEventListener('change', async e => {
@@ -2326,10 +2397,11 @@ document.addEventListener('submit', async e => {
     }
   }
   else if (f.id === 'f-ai') {
-    const typed = $('#ai-key').value.trim(), kept = S.settings.ai?.key || '';
-    const key = typed || kept;                     // champ laissé vide : on conserve la clé existante
-    if (!key) { closeSheet(); return toast('Colle une clé d’API pour activer l’analyse'); }
-    S.settings.ai = { provider: $('#ai-prov').value, key, model: $('#ai-model').value.trim() };
+    const typed = $('#ai-key').value.trim(), prov = $('#ai-prov').value, prev = S.settings.ai;
+    const kept = prev && prev.provider === prov ? prev.key : '';   // changer de service exige sa propre clé
+    const key = typed || kept;
+    if (!key) { closeSheet(); return toast(prev ? 'Colle la clé du service choisi' : 'Colle une clé d’API pour activer l’analyse'); }
+    S.settings.ai = { provider: prov, key, model: $('#ai-model').value.trim() };
     await save(); closeSheet(); render(); toast('Analyse configurée');
   }
   else if (f.id === 'f-tx') {
