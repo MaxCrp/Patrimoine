@@ -640,6 +640,15 @@ const moveSum = e => e?.moves?.length ? e.moves.reduce((t, m) => t + m.a, 0) : (
 const movesIn = e => (e?.moves || []).filter(m => m.a > 0).reduce((t, m) => t + m.a, 0);
 const movesOut = e => (e?.moves || []).filter(m => m.a < 0).reduce((t, m) => t - m.a, 0);
 const dep = (m, a) => moveSum(entry(m, a));
+// Un mouvement met à jour le solde : en cours de mois tu vois ce qui reste disponible.
+// « auto » indique un solde calculé ; dès que tu saisis un solde différent, il devient manuel
+// et la mise à jour de début de mois absorbe les variations non maîtrisées (marchés, intérêts).
+function syncBalance(m, a, delta) {
+  const e = entry(m, a); if (!e) return;
+  const base = valueAt(a, addMonths(m, -1));
+  if (e.auto || e.value == null) { e.value = base + moveSum(e); e.auto = true; }
+  else e.value += delta;
+}
 const dayLabel = (mk, d) => `${d} ${monthName(mk)}`;
 function firstMonthOf(a) { for (const k of months()) if (S.entries[k][a.id]?.value != null) return k; return null; }
 function lastUpdate(a) { const ms = months(); for (let i = ms.length - 1; i >= 0; i--) if (S.entries[ms[i]][a.id]?.value != null) return ms[i]; return null; }
@@ -1258,7 +1267,7 @@ function vSoldes() {
           ${e.moves?.length ? `<label>Versé ce mois (net)<input value="${esc(eur(moveSum(e)))}" readonly data-acc="${a.id}" data-f="locked"></label>`
             : `<label>Versé ce mois<input inputmode="decimal" data-acc="${a.id}" data-f="deposit" value="${esc(numStr(e.deposit))}" placeholder="0" autocomplete="off"></label>`}</div>
         <button class="link" type="button" data-act="moves" data-id="${a.id}">${e.moves?.length ? `Détail : ${plural(e.moves.length, 'mouvement', 'mouvements')}${movesOut(e) ? `, dont ${eur(movesOut(e))} repris` : ''}` : 'Détailler les mouvements du mois'}</button>
-        ${hasPrev ? `<p class="hint">Mois précédent : ${eur(prev)}${T.plafond ? `, plafond ${eur(T.plafond)}` : ''}</p>` : T.plafond ? `<p class="hint">Plafond ${eur(T.plafond)}</p>` : ''}</fieldset>`;
+        <p class="hint">${[e.auto ? 'solde calculé depuis les mouvements' : '', hasPrev ? `mois précédent : ${eur(prev)}` : '', T.plafond ? `plafond ${eur(T.plafond)}` : ''].filter(Boolean).join(' · ') || ''}</p></fieldset>`;
     }).join('')}</div>
     <div class="actions">
       <button class="btn primary wide" data-act="savesaisie">Enregistrer ${monthName(m)}</button>
@@ -1722,9 +1731,10 @@ function sheetMoves(id) {
   const list = (e.moves || []).slice().sort((x, y) => x.d - y.d);
   const [, mo] = m.split('-').map(Number), lastDay = new Date(m.split('-')[0], mo, 0).getDate();
   openSheet(`<h2>${esc(a.name)}</h2>
-    <p class="small" style="margin:0 0 14px">Mouvements de ${monthLabel(m)}. Un versement est positif, une reprise est négative. Les intérêts et plus-values ne sont pas des mouvements : ils apparaissent seuls dans le solde.</p>
+    <p class="small" style="margin:0 0 14px">Mouvements de ${monthLabel(m)}. Chaque mouvement met à jour le solde du compte, ce qui te donne le disponible en cours de mois. Les intérêts et plus-values ne sont pas des mouvements : ils seront absorbés quand tu saisiras le solde réel au mois suivant.</p>
     ${list.length ? `<ul class="list">${list.map((mv, i) => `<li><button type="button" data-act="delmove" data-id="${a.id}" data-i="${i}"><span>${dayLabel(m, mv.d)}${mv.n ? `<br><span class="small">${esc(mv.n)}</span>` : ''}</span><span class="num ${mv.a < 0 ? 'down' : 'up'}">${signed(mv.a)}</span></button></li>`).join('')}</ul>
-      <p class="small" style="margin:10px 0 0">Versé ${eur(movesIn(e))}, repris ${eur(movesOut(e))}, net ${signed(moveSum(e))}. Touche une ligne pour la supprimer.</p>`
+      <p class="small" style="margin:10px 0 0">Versé ${eur(movesIn(e))}, repris ${eur(movesOut(e))}, net ${signed(moveSum(e))}. Touche une ligne pour la supprimer.</p>
+      <p class="small" style="margin:6px 0 0">Solde du compte : ${eur(valueAt(a, m))}${e.auto ? ', calculé depuis ces mouvements' : ', saisi manuellement'}.</p>`
       : '<p class="small" style="margin:0">Aucun mouvement enregistré pour ce mois.</p>'}
     <h3>Ajouter un mouvement</h3>
     <form id="f-move" class="stack-form" data-id="${a.id}">
@@ -1998,6 +2008,7 @@ const ACT = {
     const a = S.accounts.find(x => x.id === t.dataset.id), e = entry(saisieMonth, a);
     const sorted = (e.moves || []).slice().sort((x, y) => x.d - y.d), mv = sorted[+t.dataset.i];
     e.moves = e.moves.filter(x => x !== mv);
+    syncBalance(saisieMonth, a, -mv.a);
     if (!e.moves.length) { delete e.moves; e.deposit = 0; }
     await save(); sheetMoves(a.id); render();
   },
@@ -2095,10 +2106,13 @@ const ACT = {
       if (Number.isNaN(d)) { r.deposit.classList.add('bad'); bad ||= r.deposit; continue; }
       if (v == null) {
         if (d) { r.value.classList.add('bad'); bad ||= r.value; continue; }
-        if (old?.moves?.length) out[id] = { value: old.value ?? null, moves: old.moves };
+        if (old?.moves?.length) out[id] = old.auto ? { value: old.value ?? null, moves: old.moves, auto: true } : { value: old.value ?? null, moves: old.moves };
         continue;
       }
-      out[id] = old?.moves?.length ? { value: v, moves: old.moves } : { value: v, deposit: d || 0 };
+      if (old?.moves?.length) {
+        const auto = old.auto && v === old.value;   // solde inchangé : il reste calculé
+        out[id] = auto ? { value: v, moves: old.moves, auto: true } : { value: v, moves: old.moves };
+      } else out[id] = { value: v, deposit: d || 0 };
     }
     if (bad) { bad.focus(); toast('Vérifie les montants en rouge : un solde est requis pour chaque versement'); return; }
     if (Object.keys(out).length) S.entries[m] = out; else delete S.entries[m];
@@ -2307,9 +2321,12 @@ document.addEventListener('submit', async e => {
     if (!Number.isFinite(d) || d < 1 || d > lastDay) return toast(`Le jour doit être compris entre 1 et ${lastDay}`);
     if (!Number.isFinite(amt) || amt === 0) return toast('Indique un montant');
     const signedAmt = $('#m-out').checked ? -Math.abs(amt) : amt;
-    const e = (S.entries[m] ||= {})[a.id] ||= { value: valueAt(a, addMonths(m, -1)) };
+    const fresh = !S.entries[m]?.[a.id];
+    const e = (S.entries[m] ||= {})[a.id] ||= { value: valueAt(a, addMonths(m, -1)), auto: true };
+    if (fresh) e.auto = true;
     if (!e.moves) { e.moves = e.deposit ? [{ d: 1, a: e.deposit }] : []; delete e.deposit; }
     e.moves.push({ d, a: signedAmt, n: $('#m-note').value.trim() || undefined });
+    syncBalance(m, a, signedAmt);
     await save(); sheetMoves(a.id); render();
   }
   else if (f.id === 'f-stmt') {
