@@ -107,6 +107,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .update-title{font-weight:650}
 .progress{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:8px;width:140px}
 .progress i{display:block;height:100%;background:var(--pine);border-radius:9px}
+.chips.tight{margin-top:0}
 .chips{display:flex;gap:8px;margin-top:14px;overflow-x:auto;padding-bottom:2px}
 .chips button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:99px;padding:7px 15px;font-size:14px;font-weight:600}
 .chips button.on{background:var(--pine);color:var(--on-pine);border-color:var(--pine)}
@@ -604,14 +605,16 @@ let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', subview 
 const emptyData = () => ({
   v: 1, accounts: [], entries: {}, pot: {}, rules: {}, dismissed: {},
   household: { on: false, members: [{ id: 'moi', name: 'Moi', income: null }], split: { mode: 'moitie', shares: {} } },
-  settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null, ai: null },
+  settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null, ai: null, raise: { on: false, pct: 2 } },
   analyses: {},
-  goals: { apport: { target: null, date: null }, rente: { birthYear: null, retireAge: 64, monthly: null, ret: 3, withdraw: 4 } },
+  goals: { apport: { target: null, date: null }, rente: { birthYear: null, retireAge: 64, monthly: null, ret: 3, withdraw: 4 },
+    loan: { scope: 'foyer', duree: 25, taux: null, endettement: 35, assurance: 0.15, frais: 7.5 } },
 });
 function normalize(d) {
   const e = emptyData();
   d.settings = { ...e.settings, ...(d.settings || {}) };
-  d.goals = { apport: { ...e.goals.apport, ...(d.goals?.apport || {}) }, rente: { ...e.goals.rente, ...(d.goals?.rente || {}) } };
+  d.settings.raise = { ...e.settings.raise, ...(d.settings.raise || {}) };
+  d.goals = { apport: { ...e.goals.apport, ...(d.goals?.apport || {}) }, rente: { ...e.goals.rente, ...(d.goals?.rente || {}) }, loan: { ...e.goals.loan, ...(d.goals?.loan || {}) } };
   d.accounts = (d.accounts || []).map(a => ({ owner: 'moi', ...a })); // « owner » : prévu pour la gestion familiale
   d.entries = d.entries || {};
   d.analyses = d.analyses || {};
@@ -704,6 +707,29 @@ function avgDep(upto, n, f = () => true) {
 }
 const focusMonth = () => { const ms = months(); return ms.length ? ms[ms.length - 1] : monthKey(); };
 
+// Taux moyens des courtiers (Meilleurtaux, Pretto, Cafpi, Empruntis, Vousfinancer), septembre 2026, hors assurance
+const LOAN_RATES = { 15: { min: 3.23, max: 3.43, def: 3.35 }, 20: { min: 3.40, max: 3.54, def: 3.47 }, 25: { min: 3.50, max: 3.61, def: 3.55 } };
+const LOAN_SRC = 'Moyennes des courtiers au 16 septembre 2026, hors assurance. Les barèmes changent tous les quinze jours et varient selon la région et le profil.';
+const loanCfg = () => S.goals.loan;
+const tx2 = v => Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function loanIncome(F, scope) {
+  if (!S.household.on || members().length < 2) return S.settings.revenus || 0;
+  if (scope === 'foyer') return members().reduce((t, m) => t + incomeOf(F, m.id), 0);
+  return incomeOf(F, scope) || 0;
+}
+// Capacité d'emprunt : mensualité maximale = revenus × taux d'endettement,
+// dont il faut retrancher l'assurance, proportionnelle au capital emprunté.
+function loanCapacity(revenus, g) {
+  const M = Math.max(0, revenus * (g.endettement || 35) / 100);
+  const n = (g.duree || 25) * 12;
+  const taux = g.taux != null ? g.taux : LOAN_RATES[g.duree || 25].def;
+  const i = taux / 100 / 12, a = (g.assurance || 0) / 100 / 12;
+  const f = (i > 0 ? i / (1 - Math.pow(1 + i, -n)) : 1 / n) + a;
+  const C = f > 0 ? M / f : 0;
+  const mensCredit = C * (i > 0 ? i / (1 - Math.pow(1 + i, -n)) : 1 / n);
+  return { M, C, taux, n, mensCredit, mensAssur: C * a, cout: mensCredit * n - C, coutAssur: C * a * n };
+}
+const loanPrice = (C, apport, g) => (C + apport) / (1 + (g.frais || 0) / 100);
 function goalApport(F) {
   const g = S.goals.apport; if (!g.target) return null;
   const f = a => a.apport;
@@ -1348,9 +1374,66 @@ function vObjectifs() {
         ${inp('rente.monthly', 'Rente visée par mois (€ d’aujourd’hui)', g.rente.monthly, 'inputmode="decimal" full')}
         ${inp('rente.ret', 'Rendement annuel (%, net d’inflation)', numStr(g.rente.ret), 'inputmode="decimal"')}${inp('rente.withdraw', 'Retrait annuel (%)', numStr(g.rente.withdraw), 'inputmode="decimal"')}
       </div>${rr}</div></section>
-    <p class="explain">Les comptes pris en compte se choisissent dans les réglages, compte par compte.</p>`;
+    ${vLoan(F, ga)}
+    <p class="explain">Les comptes pris en compte pour l’apport et la retraite se choisissent dans la fiche de chaque compte.</p>`;
 }
 
+function vLoan(F, ga) {
+  const g = loanCfg(), R = LOAN_RATES[g.duree] || LOAN_RATES[25];
+  const rev = loanIncome(F, g.scope);
+  const hh = S.household.on && members().length > 1;
+  const scopes = hh ? [['foyer', 'Foyer'], ...members().map(m => [m.id, m.name])] : [];
+  if (!rev) return `<section><div class="goal"><h2>Emprunt immobilier</h2>
+    <p class="muted">Renseigne ${hh ? 'les revenus du foyer dans Comptes &gt; Foyer' : 'tes revenus nets mensuels dans Réglages &gt; Budget de référence'} pour estimer ta capacité d’emprunt.</p></div></section>`;
+  const c = loanCapacity(rev, g);
+  const apport = ga ? ga.cur : 0;
+  const prix = loanPrice(c.C, apport, g);
+  // Projection à l'objectif : apport visé, et revenus éventuellement revalorisés
+  const rz = S.settings.raise || {};
+  const nMois = S.goals.apport.date ? Math.max(0, monthDiff(F, S.goals.apport.date)) : 0;
+  const revObj = rz.on && rz.pct ? rev * Math.pow(1 + rz.pct / 100, nMois / 12) : rev;
+  const cObj = loanCapacity(revObj, g);
+  const apportObj = S.goals.apport.target || 0;
+  const prixObj = loanPrice(cObj.C, apportObj, g);
+  const durees = [15, 20, 25];
+  return `<section><div class="goal"><h2>Emprunt immobilier</h2>
+    ${hh ? `<div class="chips tight">${scopes.map(([v, l]) => `<button class="${g.scope === v ? 'on' : ''}" data-act="loanscope" data-s="${v}">${esc(l)}</button>`).join('')}</div>` : ''}
+    <div class="seg seg3" style="margin-top:10px">${durees.map(d => `<button class="${g.duree === d ? 'on' : ''}" data-act="loandur" data-d="${d}">${d} ans</button>`).join('')}</div>
+    <p class="small" style="margin:10px 0 0">Taux moyens sur ${g.duree} ans en septembre 2026 : de ${tx2(R.min)} % à ${tx2(R.max)} %.</p>
+    <div class="fields" style="margin-top:12px">
+      <label>Taux du prêt (%)<input inputmode="decimal" data-loan="taux" value="${esc(numStr(g.taux))}" placeholder="${tx2(R.def)}"></label>
+      <label>Assurance (% par an)<input inputmode="decimal" data-loan="assurance" value="${esc(numStr(g.assurance))}"></label>
+      <label>Taux d’endettement (%)<input inputmode="decimal" data-loan="endettement" value="${esc(numStr(g.endettement))}"></label>
+      <label>Frais de notaire (%)<input inputmode="decimal" data-loan="frais" value="${esc(numStr(g.frais))}"></label>
+    </div>
+    <div class="result">
+      <p class="small" style="margin:0">Revenus pris en compte : ${eur(rev)} par mois${hh ? ` · ${esc(g.scope === 'foyer' ? 'foyer' : mName(g.scope))}` : ''}</p>
+      <p class="big num" style="margin:8px 0 2px">${eur(c.C)}</p>
+      <p class="small">capacité d’emprunt sur ${g.duree} ans à ${tx2(c.taux)} %</p>
+      <ul class="kv">
+        <li><span>Mensualité maximale</span><span class="num">${eur(c.M)}</span></li>
+        <li><span>dont assurance</span><span class="num">${eur(c.mensAssur)}</span></li>
+        <li><span>Coût total du crédit</span><span class="num">${eur(c.cout + c.coutAssur)}</span></li>
+        <li><span>Apport disponible</span><span class="num">${eur(apport)}</span></li>
+      </ul>
+      <p class="big num" style="margin:14px 0 2px">${eur(prix)}</p>
+      <p class="small">prix d’achat accessible aujourd’hui, frais de notaire de ${numStr(g.frais)} % inclus</p>
+    </div>
+    <div class="result">
+      <h3 style="font:650 16px var(--num);margin:0 0 8px">Avec ton apport visé${apportObj ? ` de ${eur(apportObj)}` : ''}</h3>
+      ${apportObj ? `<ul class="kv">
+        ${rz.on && rz.pct && nMois ? `<li><span>Revenus projetés dans ${plural(Math.round(nMois / 12), 'an', 'ans')}</span><span class="num">${eur(revObj)}</span></li>` : ''}
+        <li><span>Capacité d’emprunt</span><span class="num">${eur(cObj.C)}</span></li>
+        <li><span>Prix d’achat accessible</span><span class="num">${eur(prixObj)}</span></li>
+        <li><span>Gain par rapport à aujourd’hui</span><span class="num up">${signed(prixObj - prix)}</span></li>
+      </ul>
+      ${rz.on && rz.pct ? `<p class="small">Hypothèse d’augmentation de ${numStr(rz.pct)} % par an, activée dans les réglages.</p>`
+        : '<p class="small">Tu peux tenir compte d’une augmentation de salaire moyenne dans Réglages &gt; Budget de référence.</p>'}`
+      : '<p class="small">Renseigne un montant d’apport visé plus haut pour voir ce que ton projet deviendrait.</p>'}
+    </div>
+    <p class="small">${esc(LOAN_SRC)} Estimation indicative : seule une banque engage un accord.</p>
+  </div></section>`;
+}
 function vResume() {
   const ms = months();
   if (!ms.length) return '<section class="empty"><h2>Pas encore de résumé</h2><p class="muted">Le résumé se génère à partir de ta saisie mensuelle.</p><button class="btn primary" data-act="go" data-view="saisie">Faire la saisie</button></section>';
@@ -1426,6 +1509,10 @@ function sheetSetPage(k) {
       <label>Revenus nets mensuels (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="revenus" value="${esc(numStr(st.revenus))}"`}></label>
       <label>Plafond de déduction PER de l’année (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="perPlafond" value="${esc(numStr(st.perPlafond))}"`}></label>
       <p class="small" style="margin:0">Le plafond PER figure sur ton avis d’impôt.</p>
+      <h3>Évolution des revenus</h3>
+      <label class="check"><input type="checkbox" data-set2="raise.on" ${st.raise?.on ? 'checked' : ''}>Tenir compte d’une augmentation de salaire moyenne</label>
+      <label>Augmentation annuelle (%)<input inputmode="decimal" data-set2="raise.pct" value="${esc(numStr(st.raise?.pct))}" placeholder="2"></label>
+      <p class="small" style="margin:0">Utilisée pour projeter ta capacité d’emprunt à l’échéance de ton objectif d’apport.</p>
       ${setBack}</div>`);
   if (k === 'ai') return sheetAI();
   if (k === 'secu') return openSheet(`${head}
@@ -1966,6 +2053,8 @@ const ACT = {
     render(); window.scrollTo(0, 0);
   },
   scope: t => { scope = t.dataset.s; render(); },
+  loanscope: async t => { S.goals.loan.scope = t.dataset.s; await save(); render(); },
+  loandur: async t => { S.goals.loan.duree = +t.dataset.d; S.goals.loan.taux = null; await save(); render(); },
   dismiss: t => dismissAlert(t.dataset.k, t.dataset.s),
   unhide: async () => { S.dismissed = {}; await save(); render(); },
   chpw: () => sheetChangePw(),
@@ -2282,7 +2371,18 @@ document.addEventListener('pointercancel', () => endSwipe(true));
 
 document.addEventListener('change', async e => {
   const t = e.target;
-  if (t.dataset.set) { const v = num(t.value); S.settings[t.dataset.set] = Number.isNaN(v) ? null : v; await save(); render(); }
+  if (t.dataset.set2) {
+    const [g, k] = t.dataset.set2.split('.');
+    S.settings[g] ||= {};
+    S.settings[g][k] = t.type === 'checkbox' ? t.checked : (Number.isNaN(num(t.value)) ? null : num(t.value));
+    await save(); render();
+  }
+  else if (t.dataset.set) { const v = num(t.value); S.settings[t.dataset.set] = Number.isNaN(v) ? null : v; await save(); render(); }
+  else if (t.dataset.loan) {
+    const v = num(t.value);
+    S.goals.loan[t.dataset.loan] = v == null || Number.isNaN(v) ? (t.dataset.loan === 'taux' ? null : 0) : v;
+    await save(); render();
+  }
   else if (t.dataset.goal) {
     const [g, k] = t.dataset.goal.split('.');
     const v = t.type === 'month' ? (t.value || null) : num(t.value);
