@@ -247,6 +247,9 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(6px + var(--safe-b));background:color-mix(in srgb,var(--surface) 90%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--line)}
 .tab{position:relative;border:0;background:none;display:grid;justify-items:center;gap:2px;padding:6px 0;font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:-.01em}
 .tab svg{width:24px;height:24px}
+.tabs.six{grid-template-columns:1fr 1fr 62px 1fr 1fr 1fr}
+.tab.plus{align-self:center;width:46px;height:46px;border-radius:50%;background:var(--pine);color:var(--on-pine);justify-self:center;display:grid;place-items:center;margin-top:-10px;box-shadow:0 2px 10px rgba(30,85,64,.28)}
+.tab.plus svg{width:26px;height:26px;stroke-width:2.2}
 .tab.on{color:var(--pine)}
 .badge{position:absolute;top:5px;left:calc(50% + 8px);width:9px;height:9px;border-radius:50%;background:var(--amber)}
 
@@ -1033,6 +1036,7 @@ const ICON = {
   wallet: svg('<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M16.5 14.5h.01"/>'),
   target: svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>'),
   doc: svg('<path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 16h6"/>'),
+  plus: svg('<path d="M12 5v14M5 12h14"/>'),
   back: svg('<path d="M15 5l-7 7 7 7"/>'),
   eye: svg('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>'),
   eyeOff: svg('<path d="M4 4l16 16"/><path d="M9.9 5.9A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.3 4"/><path d="M6.3 8.1A16.8 16.8 0 0 0 2.5 12S6 18.5 12 18.5c1.2 0 2.3-.3 3.3-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
@@ -1093,7 +1097,10 @@ function render() {
         <button class="icon-btn" data-act="settings" aria-label="Réglages">${ICON.gear}</button></div></header>
     ${mode === 'demo' ? '<p class="banner">Données fictives : rien n’est enregistré. Touche le cadenas pour créer ton coffre.</p>' : !persistent ? '<p class="banner">Aperçu : rien n’est conservé dans cet environnement.</p>' : ''}
     <main class="view">${body}</main>
-    <nav class="tabs" aria-label="Navigation">${tabs.map(([v, l, i]) => `<button class="tab ${view === v ? 'on' : ''}" data-act="go" data-view="${v}" ${view === v ? 'aria-current="page"' : ''}>${i}<span>${l}</span>${v === 'saisie' && todo ? '<i class="badge" aria-label="mise à jour à faire"></i>' : ''}</button>`).join('')}</nav>`;
+    <nav class="tabs six" aria-label="Navigation">${tabs.map(([v, l, i], n) => {
+      const btn = `<button class="tab ${view === v ? 'on' : ''}" data-act="go" data-view="${v}" ${view === v ? 'aria-current="page"' : ''}>${i}<span>${l}</span>${v === 'saisie' && todo ? '<i class="badge" aria-label="mise à jour à faire"></i>' : ''}</button>`;
+      return n === 2 ? `<button class="tab plus" data-act="quick" aria-label="Raccourci : solde ou mouvement">${ICON.plus}</button>` + btn : btn;
+    }).join('')}</nav>`;
 }
 function go(v) { view = v; subview = null; render(); window.scrollTo(0, 0); }
 function goSub(v) { subview = v; render(); window.scrollTo(0, 0); }
@@ -1867,6 +1874,64 @@ function sheetTransfer(pre) {
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
 }
 
+/* ---------- Raccourci : membre, puis compte, puis action ---------- */
+let quick = null;
+function sheetQuick(step) {
+  const cur = monthKey();
+  quick = { ...(quick || {}), ...(step || {}) };
+  const hh = S.household.on && members().length > 1;
+  if (!quick.member) quick.member = hh ? null : 'moi';
+  const back = label => `<button class="link" data-act="quickback">‹ ${label}</button>`;
+  const head = t => `<h2>${t}</h2><p class="small" style="margin:0 0 14px">${cap(monthLabel(cur))}</p>`;
+
+  if (hh && !quick.member) {
+    return openSheet(`${head('Qui ?')}
+      <ul class="list">${members().map(m => {
+        const n = active().filter(a => (a.owner || 'moi') === m.id).length;
+        return `<li><button data-act="quickm" data-id="${m.id}"><span>${esc(m.name)}<br><span class="small">${plural(n, 'compte', 'comptes')}</span></span><span class="chev">›</span></button></li>`;
+      }).join('')}</ul>
+      <button class="btn wide" style="margin-top:14px" data-act="close">Annuler</button>`);
+  }
+  if (!quick.accId) {
+    const own = active().filter(a => (a.owner || 'moi') === quick.member);
+    if (!own.length) return openSheet(`${head('Aucun compte')}<p class="muted">Ajoute d’abord un compte dans l’onglet Comptes.</p>
+      <button class="btn wide" data-act="close">Fermer</button>`);
+    const row = a => `<li><button data-act="quicka" data-id="${a.id}"><span>${esc(a.name)}${(() => { const l = isSimple(a) ? 'Enveloppe' : TYPES[a.type].label; return a.name.trim().toLowerCase() === l.toLowerCase() ? '' : `<br><span class="small">${l}</span>`; })()}</span>
+      <span class="num">${eur(isSimple(a) ? dotOf(cur, a) : valueAt(a, cur))}</span><span class="chev">›</span></button></li>`;
+    const pat = own.filter(a => !isCash(a)), cash = own.filter(isCash);
+    return openSheet(`${head('Quel compte ?')}
+      ${pat.length ? `<ul class="list">${pat.map(row).join('')}</ul>` : ''}
+      ${cash.length ? `<h3>Comptes de fonctionnement</h3><ul class="list">${cash.map(row).join('')}</ul>` : ''}
+      ${hh ? back(esc(mName(quick.member))) : ''}
+      <button class="btn wide" style="margin-top:10px" data-act="close">Annuler</button>`);
+  }
+  const a = S.accounts.find(x => x.id === quick.accId);
+  if (!a) { quick = null; return closeSheet(); }
+  if (!quick.action) {
+    const acts = isSimple(a) ? [['solde', 'Modifier le montant envoyé']]
+      : isCash(a) ? [['solde', 'Modifier le solde'], ['tx', 'Importer ou classer les opérations']]
+      : [['move', 'Ajouter un mouvement'], ['solde', 'Corriger le solde']];
+    return openSheet(`${head(esc(a.name))}
+      <p class="small" style="margin:-8px 0 14px">${isSimple(a) ? 'Envoyé ce mois' : 'Solde'} : ${eur(isSimple(a) ? dotOf(cur, a) : valueAt(a, cur))}</p>
+      <div class="stack-form">${acts.map(([k, l], i) => `<button class="btn ${i === 0 ? 'primary' : ''} wide" data-act="quickact" data-k="${k}">${l}</button>`).join('')}</div>
+      ${back('Changer de compte')}`);
+  }
+  if (quick.action === 'solde') {
+    const val = isSimple(a) ? dotOf(cur, a) : valueAt(a, cur);
+    const e = entry(cur, a);
+    return openSheet(`${head(esc(a.name))}
+      <form id="f-quick" class="stack-form">
+        <label>${isSimple(a) ? 'Montant envoyé ce mois' : 'Solde du compte'} (€)<input id="q-val" inputmode="decimal" value="${esc(numStr(val))}" required></label>
+        ${!isSimple(a) && e?.auto ? '<p class="small" style="margin:0">Ce solde est actuellement calculé depuis tes mouvements. Le corriger le fige jusqu’à ta prochaine saisie.</p>' : ''}
+        <button class="btn primary wide" type="submit">Enregistrer</button>
+        ${back('Retour')}</form>`);
+  }
+  closeSheet();
+  saisieMonth = cur;
+  if (quick.action === 'move') sheetMoves(a.id); else sheetTxImport(a.id);
+  quick = null;
+}
+
 /* ---------- Mouvements du mois ---------- */
 function sheetMoves(id) {
   const a = S.accounts.find(x => x.id === id), m = saisieMonth, e = entry(m, a) || {};
@@ -2062,6 +2127,16 @@ const ACT = {
   aitest: () => testKey(),
   analyse: () => runAnalysis(resumeMonth),
   aiclear: async () => { S.settings.ai = null; await save(); render(); sheetSetPage('ai'); toast('Clé supprimée'); },
+  quick: () => { quick = null; saisieMonth = monthKey(); sheetQuick(); },
+  quickm: t => sheetQuick({ member: t.dataset.id }),
+  quicka: t => sheetQuick({ accId: t.dataset.id }),
+  quickact: t => sheetQuick({ action: t.dataset.k }),
+  quickback: () => {
+    if (quick?.action) quick.action = null;
+    else if (quick?.accId) quick.accId = null;
+    else if (quick) quick.member = null;
+    sheetQuick();
+  },
   moves: t => sheetMoves(t.dataset.id),
   tx: t => sheetTxImport(t.dataset.id),
   picktx: () => { const i = $('#txfile'); i.value = ''; i.click(); },
@@ -2543,6 +2618,18 @@ document.addEventListener('submit', async e => {
     p.transfers.push({ id: uid(), from, to, a, fa: $('#t-fa').value || undefined, ta: $('#t-ta').value || undefined,
       reg: $('#t-reg').checked, n: $('#t-n').value.trim() || undefined });
     await save(); closeSheet(); render();
+  }
+  else if (f.id === 'f-quick') {
+    const cur = monthKey(), a = S.accounts.find(x => x.id === quick.accId), v = num($('#q-val').value);
+    if (!Number.isFinite(v)) return toast('Indique un montant');
+    const e = (S.entries[cur] ||= {})[a.id] ||= {};
+    if (isSimple(a)) e.dot = v;
+    else {
+      e.value = v; delete e.auto;
+      if (!isCash(a) && e.moves == null && e.deposit == null) e.deposit = 0;
+    }
+    await save(); closeSheet(); quick = null; render();
+    toast(`${esc(a.name)} mis à jour`);
   }
   else if (f.id === 'f-move') {
     const a = S.accounts.find(x => x.id === f.dataset.id), m = saisieMonth;
