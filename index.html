@@ -224,6 +224,8 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 
 /* Objectifs */
 .goal{padding:18px;border-radius:22px;background:var(--surface)}
+.goal.carry{background:var(--amber-soft)}
+.goal.carry p{margin:0 0 6px}
 .goal .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px 10px;align-items:end}
 .goal .fields .full{grid-column:1/-1}
 .result{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
@@ -247,7 +249,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(6px + var(--safe-b));background:color-mix(in srgb,var(--surface) 90%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--line)}
 .tab{position:relative;border:0;background:none;display:grid;justify-items:center;gap:2px;padding:6px 0;font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:-.01em}
 .tab svg{width:24px;height:24px}
-.tabs.six{grid-template-columns:1fr 1fr 62px 1fr 1fr 1fr}
+.tabs.six{grid-template-columns:1fr 1fr 1fr 1fr 1fr 58px;padding-right:8px}
 .tab.plus{align-self:center;width:46px;height:46px;border-radius:50%;background:var(--pine);color:var(--on-pine);justify-self:center;display:grid;place-items:center;margin-top:-10px;box-shadow:0 2px 10px rgba(30,85,64,.28)}
 .tab.plus svg{width:26px;height:26px;stroke-width:2.2}
 .tab.on{color:var(--pine)}
@@ -810,11 +812,17 @@ function potStats(k) {
     out[m.id] = regs.filter(t => t.from === m.id).reduce((t, x) => t + x.a, 0);
     inn[m.id] = regs.filter(t => t.to === m.id).reduce((t, x) => t + x.a, 0);
     due[m.id] = total * (sh[m.id] || 0);
-    net[m.id] = paid[m.id] + out[m.id] - inn[m.id] - due[m.id];
+    net[m.id] = paid[m.id] + out[m.id] - inn[m.id] - due[m.id] + (p.carry?.[m.id] || 0);
   }
   return { p, items, total, paid, due, net, out, inn, sh };
 }
 // Qui doit combien à qui, une fois les charges et les virements pris en compte
+// Écart laissé par le mois précédent, faute de virement de régularisation
+function prevGap(k) {
+  const st = potStats(addMonths(k, -1));
+  return members().some(m => Math.abs(st.net[m.id]) >= 1) ? st : null;
+}
+const carryPending = k => S.household.on && members().length > 1 && !S.pot[k]?.carryDecided && !!prevGap(k);
 function settle(st) {
   const pos = members().filter(m => st.net[m.id] > 0.5).sort((a, b) => st.net[b.id] - st.net[a.id]);
   const neg = members().filter(m => st.net[m.id] < -0.5).sort((a, b) => st.net[a.id] - st.net[b.id]);
@@ -1099,8 +1107,8 @@ function render() {
     <main class="view">${body}</main>
     <nav class="tabs six" aria-label="Navigation">${tabs.map(([v, l, i], n) => {
       const btn = `<button class="tab ${view === v ? 'on' : ''}" data-act="go" data-view="${v}" ${view === v ? 'aria-current="page"' : ''}>${i}<span>${l}</span>${v === 'saisie' && todo ? '<i class="badge" aria-label="mise à jour à faire"></i>' : ''}</button>`;
-      return n === 2 ? `<button class="tab plus" data-act="quick" aria-label="Raccourci : solde ou mouvement">${ICON.plus}</button>` + btn : btn;
-    }).join('')}</nav>`;
+      return btn;
+    }).join('')}<button class="tab plus" data-act="quick" aria-label="Raccourci : solde, mouvement ou dépense commune">${ICON.plus}</button></nav>`;
 }
 function go(v) { view = v; subview = null; render(); window.scrollTo(0, 0); }
 function goSub(v) { subview = v; render(); window.scrollTo(0, 0); }
@@ -1238,9 +1246,17 @@ function vFoyer() {
   }).join('');
   const miss = incomeMissing(k) || [];
   const items = st.items.slice().sort((a, b) => b.a - a.a);
+  const prevK = addMonths(k, -1), gap = carryPending(k) ? prevGap(k) : null;
+  const gapTxt = gap ? settle(gap).map(d => `${esc(mName(d.from))} devait ${eur(d.a)} à ${esc(mName(d.to))}`).join(', ') : '';
+  const carried = st.p.carry && Object.values(st.p.carry).some(v => Math.abs(v) >= 1);
   const trs = (st.p.transfers || []);
   return `
     <div class="month-nav"><button data-act="potmonth" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(k))}</strong><button data-act="potmonth" data-d="1" aria-label="Mois suivant" ${k >= cur ? 'disabled' : ''}>›</button></div>
+    ${gap ? `<section><div class="goal carry"><h2>Écart de ${monthName(prevK)}</h2>
+      <p>${cap(monthName(prevK))} s’est terminé sans régularisation : ${gapTxt}.</p>
+      <p class="small">Tu peux reporter cet écart sur ${monthName(k)}, il s’ajoutera aux soldes du mois, ou repartir de zéro si vous avez réglé autrement.</p>
+      <div class="row2" style="margin-top:12px"><button class="btn primary" data-act="carry" data-v="1">Reporter</button><button class="btn" data-act="carry" data-v="0">Repartir à zéro</button></div>
+    </div></section>` : ''}
     <section><div class="goal"><h2>Revenus de ${monthName(k)}</h2>
       <p class="small" style="margin:0 0 12px">À renseigner chaque mois quand les revenus varient. Laisse vide pour reprendre le revenu de référence du membre.</p>
       <div class="fields">${ms.map(m => `<label>${esc(m.name)}<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-inc="${m.id}" value="${esc(numStr(S.pot[k]?.inc?.[m.id]))}" placeholder="${esc(numStr(m.income) || '0')}"`}></label>`).join('')}</div>
@@ -1249,10 +1265,11 @@ function vFoyer() {
     <section><div class="goal"><h2>Charges communes</h2>
       <p class="big num">${eur(st.total)}</p>
       <p class="small">${plural(items.length, 'dépense enregistrée', 'dépenses enregistrées')} · répartition : ${SPLIT[H.split.mode]}</p>
-      ${st.total ? `<div class="tbl"><table><thead><tr><th></th><th>Part</th><th>Payé</th><th>Dû</th><th>Solde</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
+      ${st.total || carried ? `<div class="tbl"><table><thead><tr><th></th><th>Part</th><th>Payé</th><th>Dû</th><th>Solde</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
+      ${carried ? `<p class="small" style="margin-top:8px">Solde incluant le report de ${monthName(prevK)} : ${members().map(m => `${esc(m.name)} ${signed(st.p.carry[m.id] || 0)}`).join(', ')}. <button class="inline" data-act="uncarry">Annuler le report</button></p>` : ''}
       ${dues.length ? `<div class="settle">${dues.map(d => `<p><strong>${esc(mName(d.from))} doit ${eur(d.a)} à ${esc(mName(d.to))}</strong></p>
         <button class="btn wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer ce virement</button>`).join('')}</div>`
-        : st.total ? '<p class="small" style="margin-top:12px">Comptes équilibrés entre vous.</p>' : ''}
+        : st.total || carried ? '<p class="small" style="margin-top:12px">Comptes équilibrés entre vous.</p>' : ''}
       <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>
     <section><h2>Dépenses du mois</h2>
       ${st.p.from && st.p.items.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Dépenses fixes reprises de ${monthLabel(st.p.from)} : vérifie les montants qui ont changé.</p>` : ''}
@@ -1285,7 +1302,9 @@ function vMois() {
   const steps = [
     { k: 'soldes', t: 'Soldes des comptes', d: `${doneN} sur ${accs.length} à jour`, ok: doneN === accs.length, act: 'sub', v: 'soldes' },
     ...(cashDet.length ? [{ k: 'operations', t: 'Opérations du mois', d: !txAll.length ? 'aucun relevé importé' : txTodo ? `${plural(txTodo, 'ligne', 'lignes')} à classer` : `${plural(txAll.length, 'ligne classée', 'lignes classées')}`, ok: txAll.length > 0 && !txTodo, act: 'sub', v: 'operations' }] : []),
-    ...(S.household.on && members().length > 1 ? [{ k: 'foyer', t: 'Revenus et charges du foyer', d: !st.total ? 'aucune dépense enregistrée' : `${eur(st.total)} de charges${incOk ? '' : ', revenus à saisir'}`, ok: st.total > 0 && incOk, act: 'foyer' }] : []),
+    ...(S.household.on && members().length > 1 ? [{ k: 'foyer', t: 'Revenus et charges du foyer',
+      d: carryPending(m) ? `écart de ${monthName(addMonths(m, -1))} à reporter ou effacer` : !st.total ? 'aucune dépense enregistrée' : `${eur(st.total)} de charges${incOk ? '' : ', revenus à saisir'}`,
+      ok: st.total > 0 && incOk && !carryPending(m), act: 'foyer' }] : []),
   ];
   const allOk = steps.every(x => x.ok);
   return `
@@ -1890,7 +1909,8 @@ function sheetQuick(step) {
         const n = active().filter(a => (a.owner || 'moi') === m.id).length;
         return `<li><button data-act="quickm" data-id="${m.id}"><span>${esc(m.name)}<br><span class="small">${plural(n, 'compte', 'comptes')}</span></span><span class="chev">›</span></button></li>`;
       }).join('')}</ul>
-      <button class="btn wide" style="margin-top:14px" data-act="close">Annuler</button>`);
+      <button class="btn primary wide" style="margin-top:16px" data-act="quickcharge">Ajouter une dépense commune</button>
+      <button class="btn wide" style="margin-top:10px" data-act="close">Annuler</button>`);
   }
   if (!quick.accId) {
     const own = active().filter(a => (a.owner || 'moi') === quick.member);
@@ -2118,6 +2138,16 @@ const ACT = {
     render(); window.scrollTo(0, 0);
   },
   scope: t => { scope = t.dataset.s; render(); },
+  carry: async t => {
+    const k = potMonth, p = (S.pot[k] ||= { items: [], transfers: [] });
+    p.transfers ||= [];
+    if (t.dataset.v === '1') { const g = prevGap(k); p.carry = g ? Object.fromEntries(members().map(m => [m.id, Math.round(g.net[m.id] * 100) / 100])) : {}; }
+    else delete p.carry;
+    p.carryDecided = true;
+    await save(); render();
+    toast(t.dataset.v === '1' ? 'Écart reporté' : 'Nouveau départ à zéro');
+  },
+  uncarry: async () => { const p = S.pot[potMonth]; delete p.carry; delete p.carryDecided; await save(); render(); },
   loanscope: async t => { S.goals.loan.scope = t.dataset.s; await save(); render(); },
   loandur: async t => { S.goals.loan.duree = +t.dataset.d; S.goals.loan.taux = null; await save(); render(); },
   dismiss: t => dismissAlert(t.dataset.k, t.dataset.s),
@@ -2129,6 +2159,11 @@ const ACT = {
   aiclear: async () => { S.settings.ai = null; await save(); render(); sheetSetPage('ai'); toast('Clé supprimée'); },
   quick: () => { quick = null; saisieMonth = monthKey(); sheetQuick(); },
   quickm: t => sheetQuick({ member: t.dataset.id }),
+  quickcharge: async () => {
+    quick = null; potMonth = monthKey();
+    if (mode === 'app') await seedMonth(potMonth);
+    sheetCharge(null);
+  },
   quicka: t => sheetQuick({ accId: t.dataset.id }),
   quickact: t => sheetQuick({ action: t.dataset.k }),
   quickback: () => {
