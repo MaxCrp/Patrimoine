@@ -19,7 +19,7 @@
   --paper:#E9EEE8; --surface:#F7F9F5; --ink:#15201A; --muted:#5A675F; --line:#D1DAD2;
   --pine:#1E5540; --on-pine:#FFFFFF; --pine-soft:#DAE7DE;
   --amber:#9C6116; --amber-soft:#F2E4CB; --red:#A6423A; --red-soft:#F6DCD8;
-  --c-livrets:#9DC1A7; --c-bourse:#1E5540; --c-av:#4F8B6D; --c-retraite:#B38B3F; --c-salariale:#5E7F8C; --c-courant:#8C7A5E;
+  --c-livrets:#9DC1A7; --c-bourse:#1E5540; --c-av:#4F8B6D; --c-retraite:#B38B3F; --c-salariale:#5E7F8C; --c-courant:#8C7A5E; --v1:#2F8A5C; --v2:#3F6FC4;
   --num: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
   --txt: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
   --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
@@ -30,7 +30,7 @@
     --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E;
     --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24;
     --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220;
-    --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F;
+    --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#3AA06C; --v2:#5C8BDE;
   }
 }
 *{box-sizing:border-box}
@@ -108,6 +108,37 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .progress{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:8px;width:140px}
 .progress i{display:block;height:100%;background:var(--pine);border-radius:9px}
 .chips.tight{margin-top:0}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.tile{background:var(--surface);border-radius:16px;padding:12px 14px}
+.tile .tl{margin:0;font-size:13px;color:var(--muted)}
+.tile .tv{margin:4px 0 2px;font:700 22px/1.15 var(--num);letter-spacing:-.01em}
+.tile .ts{margin:0;font-size:12.5px;color:var(--muted)}
+.tile .ts.up{color:var(--pine)} .tile .ts.down{color:var(--red)}
+.schart{position:relative;touch-action:pan-y}
+.schart svg{width:100%;height:auto;display:block;overflow:visible}
+.sc-grid{stroke:var(--line);stroke-width:1}
+.sc-grid.zero{stroke:var(--muted);stroke-opacity:.5}
+.sc-lbl{fill:var(--muted);font:11px var(--txt)}
+.sc-bar{fill:var(--v1)}
+.sc-bar.neg{fill:var(--red)}
+.sc-bar.hl{opacity:.72}
+.sc-line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.sc-line.v1{stroke:var(--v1)} .sc-line.v2{stroke:var(--v2)}
+.sc-area{stroke:none;opacity:.1} .sc-area.v1{fill:var(--v1)}
+.sc-dot{stroke:var(--surface);stroke-width:2} .sc-dot.v1{fill:var(--v1)} .sc-dot.v2{fill:var(--v2)}
+.sc-ref{stroke:var(--ink);stroke-width:1.5}
+.sc-reflbl{fill:var(--ink);font:600 11px var(--txt)}
+.sc-cross{stroke:var(--muted);stroke-width:1}
+.sc-tip{position:absolute;top:-6px;transform:translateY(-100%);background:var(--ink);color:var(--paper);border-radius:10px;padding:8px 10px;font-size:13px;pointer-events:none;white-space:nowrap;z-index:2}
+.sc-tip .th{font-size:12px;opacity:.75;margin-bottom:3px}
+.sc-tip .tr{display:flex;align-items:center;gap:6px}
+.sc-tip b{font-weight:700}
+.key.bar{width:10px;height:10px;border:0;border-radius:3px;background:var(--v1)}
+.key.v1{border-top-color:var(--v1)} .key.v2{border-top:2px solid var(--v2)} .key.ref{border-top:1.5px solid var(--ink)}
+.sc-tip .key{width:12px;margin:0}
+.sc-tip .key.bar{background:var(--v1)} .sc-tip .key.ref{border-top-color:var(--paper)}
+.sc-data{margin-top:8px}
+.sc-data summary{font-size:14px;color:var(--pine);font-weight:600;cursor:pointer;padding:6px 0}
 .chips{display:flex;gap:8px;margin-top:14px;overflow-x:auto;padding-bottom:2px}
 .chips button{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:99px;padding:7px 15px;font-size:14px;font-weight:600}
 .chips button.on{background:var(--pine);color:var(--on-pine);border-color:var(--pine)}
@@ -605,6 +636,7 @@ function sheetCode() {
 
 /* ---------- État ---------- */
 let store, S = null, dek = null, dekRaw = null, slots = null, mode = 'boot', view = 'home', lockHasPk = false, pkPending = null;
+let resTab = 'resume', statN = 12, statW = 3, statGoal = 'all';
 let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', subview = null, setPage = null, potMonth = monthKey(), scope = 'moi', rounding = true, hiddenAt = 0, pendingImport = null;
 
 const emptyData = () => ({
@@ -1089,7 +1121,7 @@ function render() {
   const cur = monthKey();
   const filled = a => isSimple(a) ? entry(cur, a)?.dot != null : entry(cur, a)?.value != null;
   const todo = active().some(a => !filled(a));
-  const titles = { home: 'Patrimoine', comptes: 'Mes comptes', saisie: 'Ce mois', objectifs: 'Objectifs', resume: 'Résumé' };
+  const titles = { home: 'Patrimoine', comptes: 'Mes comptes', saisie: 'Ce mois', objectifs: 'Objectifs', resume: resTab === 'stats' ? 'Statistiques' : 'Résumé' };
   const subs = { soldes: 'Soldes des comptes', operations: 'Opérations du mois' };
   const sub = view === 'saisie' ? subview : null;
   const hidden = masked && (view === 'saisie' || view === 'resume');
@@ -1460,8 +1492,188 @@ function vLoan(F, ga) {
     <p class="small">${esc(LOAN_SRC)} Estimation indicative : seule une banque engage un accord.</p>
   </div></section>`;
 }
+/* ---------- Statistiques ----------
+   Graphiques SVG faits main : barres à bouts arrondis, lignes de 2 px, un seul axe,
+   info-bulle au survol ou au toucher, et le tableau des données sous chaque graphique. */
+const CHARTS = {};
+function niceStep(range, n = 4) {
+  const raw = range / n || 1, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+}
+const eurC = v => masked ? MASK : Math.abs(v) >= 10000 ? (v / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' k€' : fmtE.format(Math.round(v));
+// cfg : { id, labels, bars:{vals,name,neg}, lines:[{vals,name,cls,area}], ref:{v,label}, fmt }
+function svgChart(cfg) {
+  const W = 340, H = 190, pl = 44, pr = 8, pt = 12, pb = 24;
+  const n = cfg.labels.length, all = [];
+  if (cfg.bars) all.push(...cfg.bars.vals);
+  (cfg.lines || []).forEach(l => all.push(...l.vals.filter(v => v != null)));
+  if (cfg.ref?.v != null) all.push(cfg.ref.v);
+  let lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+  if (cfg.fromMin && !cfg.bars) { const mn = Math.min(...all); lo = Math.max(0, mn - (hi - mn) * 0.15); }
+  const step = niceStep(hi - lo || 1);
+  lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step || step;
+  const iw = W - pl - pr, ih = H - pt - pb, band = iw / n;
+  const x = i => pl + band * (i + 0.5), y = v => pt + ih * (1 - (v - lo) / (hi - lo));
+  let g = '';
+  for (let v = lo; v <= hi + 1e-9; v += step) {
+    g += `<line class="sc-grid${Math.abs(v) < 1e-9 ? ' zero' : ''}" x1="${pl}" x2="${W - pr}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/>`;
+    g += `<text class="sc-lbl" x="${pl - 6}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${esc(eurC(v))}</text>`;
+  }
+  const ticks = n <= 1 ? [0] : [...new Set([0, Math.round((n - 1) / 2), n - 1])];
+  ticks.forEach(i => { g += `<text class="sc-lbl" x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="${i === 0 && n > 1 ? 'start' : i === n - 1 && n > 1 ? 'end' : 'middle'}">${esc(cfg.labels[i])}</text>`; });
+  if (cfg.bars) {
+    const bw = Math.min(22, band * 0.62), r = Math.min(4, bw / 2), y0 = y(0);
+    cfg.bars.vals.forEach((v, i) => {
+      const yv = y(v), h = Math.abs(y0 - yv); if (h < 0.5) return;
+      const x0 = x(i) - bw / 2, cls = v < 0 && cfg.bars.neg ? 'sc-bar neg' : 'sc-bar';
+      const d = v >= 0
+        ? `M${x0},${y0}V${yv + r}Q${x0},${yv} ${x0 + r},${yv}H${x0 + bw - r}Q${x0 + bw},${yv} ${x0 + bw},${yv + r}V${y0}Z`
+        : `M${x0},${y0}V${yv - r}Q${x0},${yv} ${x0 + r},${yv}H${x0 + bw - r}Q${x0 + bw},${yv} ${x0 + bw},${yv - r}V${y0}Z`;
+      g += `<path class="${cls}" data-i="${i}" d="${d}"/>`;
+    });
+  }
+  (cfg.lines || []).forEach(l => {
+    const pts = l.vals.map((v, i) => v == null ? null : [x(i), y(v)]);
+    let d = '', started = false;
+    pts.forEach(p => { if (!p) { started = false; return; } d += `${started ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`; started = true; });
+    if (l.area && pts.every(Boolean)) g += `<path class="sc-area ${l.cls}" d="${d}L${pts[n - 1][0].toFixed(1)},${y(Math.max(lo, 0)).toFixed(1)}L${pts[0][0].toFixed(1)},${y(Math.max(lo, 0)).toFixed(1)}Z"/>`;
+    g += `<path class="sc-line ${l.cls}" d="${d}"/>`;
+    const last = pts.map((p, i) => [p, i]).filter(([p]) => p).pop();
+    if (last) g += `<circle class="sc-dot ${l.cls}" cx="${last[0][0].toFixed(1)}" cy="${last[0][1].toFixed(1)}" r="4"/>`;
+  });
+  if (cfg.ref?.v != null) {
+    const yr = y(cfg.ref.v).toFixed(1);
+    g += `<line class="sc-ref" x1="${pl}" x2="${W - pr}" y1="${yr}" y2="${yr}"/>`;
+    g += `<text class="sc-reflbl" x="${W - pr}" y="${(yr - 5).toFixed(1)}" text-anchor="end">${esc(cfg.ref.label)}</text>`;
+  }
+  g += `<line class="sc-cross" x1="0" x2="0" y1="${pt}" y2="${H - pb}" style="display:none"/>`;
+  CHARTS[cfg.id] = { cfg, pl, band, W };
+  const legend = [cfg.bars && !cfg.bars.solo ? `<span><i class="key bar"></i>${esc(cfg.bars.name)}</span>` : '',
+    ...(cfg.lines || []).filter(l => !l.solo).map(l => `<span><i class="key ${l.cls}${l.dash ? ' dash' : ''}"></i>${esc(l.name)}</span>`),
+    cfg.ref?.v != null ? `<span><i class="key ref"></i>${esc(cfg.ref.name || 'Objectif')}</span>` : ''].filter(Boolean);
+  const rows = cfg.labels.map((lb, i) => `<tr><td>${esc(cfg.full[i])}</td>${cfg.bars ? `<td class="num">${esc(eur(cfg.bars.vals[i]))}</td>` : ''}${(cfg.lines || []).map(l => `<td class="num">${l.vals[i] == null ? '—' : esc(eur(l.vals[i]))}</td>`).join('')}</tr>`).reverse().join('');
+  return `<div class="schart" data-chart="${cfg.id}">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(cfg.aria)}">${g}</svg>
+      <div class="sc-tip" hidden></div></div>
+    ${legend.length > 1 || cfg.ref?.v != null ? `<div class="legend">${legend.join('')}</div>` : ''}
+    <details class="sc-data"><summary>Voir les données</summary><div class="tbl"><table><thead><tr><th>Mois</th>${cfg.bars ? `<th>${esc(cfg.bars.name)}</th>` : ''}${(cfg.lines || []).map(l => `<th>${esc(l.name)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></details>`;
+}
+function chartHover(el, clientX) {
+  const C = CHARTS[el.dataset.chart]; if (!C) return;
+  const svg = el.querySelector('svg'), rect = svg.getBoundingClientRect();
+  const vx = (clientX - rect.left) * C.W / rect.width;
+  const n = C.cfg.labels.length, i = Math.max(0, Math.min(n - 1, Math.floor((vx - C.pl) / C.band)));
+  const cx = C.pl + C.band * (i + 0.5);
+  const cross = svg.querySelector('.sc-cross'); cross.style.display = ''; cross.setAttribute('x1', cx); cross.setAttribute('x2', cx);
+  svg.querySelectorAll('.sc-bar').forEach(b => b.classList.toggle('hl', +b.dataset.i === i));
+  const tip = el.querySelector('.sc-tip'); tip.textContent = '';
+  const add = (val, name, cls) => {
+    const r = document.createElement('div'); r.className = 'tr';
+    const k = document.createElement('i'); k.className = 'key ' + cls; r.append(k);
+    const b = document.createElement('b'); b.textContent = val; r.append(b);
+    const s2 = document.createElement('span'); s2.textContent = ' ' + name; r.append(s2);
+    tip.append(r);
+  };
+  const h = document.createElement('div'); h.className = 'th'; h.textContent = C.cfg.full[i]; tip.append(h);
+  if (C.cfg.bars) add(eur(C.cfg.bars.vals[i]), C.cfg.bars.name, 'bar');
+  (C.cfg.lines || []).forEach(l => { if (l.vals[i] != null) add(eur(l.vals[i]), l.name, l.cls); });
+  if (C.cfg.ref?.v != null) add(eur(C.cfg.ref.v), C.cfg.ref.name || 'Objectif', 'ref');
+  tip.hidden = false;
+  const left = (cx / C.W) * rect.width, tw = tip.offsetWidth;
+  tip.style.left = Math.max(0, Math.min(rect.width - tw, left - tw / 2)) + 'px';
+}
+function chartLeave(el) {
+  el.querySelector('.sc-tip').hidden = true;
+  const c = el.querySelector('.sc-cross'); if (c) c.style.display = 'none';
+  el.querySelectorAll('.sc-bar.hl').forEach(b => b.classList.remove('hl'));
+}
+document.addEventListener('pointermove', e => { const el = e.target.closest?.('.schart'); if (el) chartHover(el, e.clientX); });
+document.addEventListener('pointerdown', e => { const el = e.target.closest?.('.schart'); if (el) chartHover(el, e.clientX); });
+document.addEventListener('pointerout', e => { const el = e.target.closest?.('.schart'); if (el && !el.contains(e.relatedTarget)) chartLeave(el); });
+
+function statTile(label, value, sub, cls = '') {
+  return `<div class="tile"><p class="tl">${label}</p><p class="tv num">${value}</p>${sub ? `<p class="ts ${cls}">${sub}</p>` : ''}</div>`;
+}
+function vStats() {
+  const F = focusMonth(), f = scopeF(), N = statN, Wn = statW;
+  const pm = patMonths(); if (!pm.length) return '<section class="empty"><p class="muted">Les statistiques apparaîtront après ta première saisie.</p></section>';
+  const first = pm[0], span = monthDiff(first, F) + 1, n = Math.min(N, span);
+  const ks = Array.from({ length: n }, (_, i) => addMonths(F, i - n + 1));
+  const lbl = ks.map(k => monthShort(k)), full = ks.map(k => cap(monthLabel(k)));
+  // Objectif choisi : il définit à la fois les comptes comptés et le montant mensuel visé
+  const ga = goalApport(F), gr = goalRente(F);
+  const goals = [['all', 'Tout'], ['apport', 'Apport'], ['rente', 'Retraite']];
+  const gf = statGoal === 'apport' ? a => a.apport : statGoal === 'rente' ? a => a.retraite : () => true;
+  const acc = a => f(a) && gf(a);
+  const need = statGoal === 'apport' ? ga?.need : statGoal === 'rente' ? gr?.need
+    : (ga?.need != null || gr?.need != null ? (ga?.need || 0) + (gr?.need || 0) : null);
+  const saved = k => k < first ? 0 : breakdown(k, acc).dep;
+  const dep = ks.map(saved);
+  const smooth = ks.map((k, i) => { const w = Array.from({ length: Wn }, (_, j) => addMonths(k, -j)).filter(m => m >= first); return w.length ? w.reduce((t, m) => t + saved(m), 0) / w.length : null; });
+  const avg = dep.reduce((t, v) => t + v, 0) / n;
+  const hit = need != null ? dep.filter(v => v >= need).length : null;
+  const best = Math.max(...dep), bestK = ks[dep.indexOf(best)];
+  const rev = S.settings.revenus;
+  // Patrimoine et performance sur la même période
+  const tl = timeline(f).filter(p => ks.includes(p.k));
+  const perf = ks.map(k => k <= first ? 0 : breakdown(k, f).perf);
+  const perfTot = perf.reduce((t, v) => t + v, 0), start = tl[0];
+  const sumDepAll = ks.reduce((t, k) => t + (k < first ? 0 : breakdown(k, f).dep), 0);
+  const growth = tl.length > 1 ? tl[tl.length - 1].t - tl[0].t : 0;
+  const goalName = { all: 'l’épargne totale', apport: 'l’apport immobilier', rente: 'la retraite' }[statGoal];
+  const needTxt = need != null ? `Objectif : ${eur(need)} par mois pour ${goalName}` : null;
+  const hh = S.household.on && members().length > 1;
+  let html = `${scopeBar()}
+    <div class="chips" role="group" aria-label="Période">${[6, 12, 24].map(v => `<button class="${N === v ? 'on' : ''}" data-act="statn" data-v="${v}">${v} mois</button>`).join('')}</div>
+    <div class="tiles">
+      ${statTile(`Épargne moyenne sur ${plural(n, 'mois', 'mois')}`, eur(avg), need != null ? (avg >= need ? `au-dessus de l’objectif de ${eur(need)}` : `${eur(need - avg)} sous l’objectif`) : 'par mois', need != null ? (avg >= need ? 'up' : 'down') : '')}
+      ${statTile('Mois à l’objectif', hit != null ? `${hit} / ${n}` : '—', hit != null ? 'mois où l’épargne a atteint l’objectif' : 'aucun objectif chiffré')}
+      ${statTile('Meilleur mois', eur(best), cap(monthLabel(bestK)))}
+      ${statTile(rev ? 'Taux d’épargne moyen' : 'Gain des marchés', rev ? pct(Math.max(0, avg) / rev) : signed(perfTot), rev ? `sur ${eur(rev)} de revenus` : `sur ${plural(n, 'mois', 'mois')}`, rev ? '' : perfTot >= 0 ? 'up' : 'down')}
+    </div>
+    <section><h2>Argent mis de côté</h2>
+      <div class="chips tight" role="group" aria-label="Objectif">${goals.map(([v, l]) => `<button class="${statGoal === v ? 'on' : ''}" data-act="statgoal" data-v="${v}">${l}</button>`).join('')}</div>
+      <p class="small" style="margin:8px 0 10px">${needTxt || (statGoal === 'all' ? 'Renseigne un objectif d’apport ou de rente pour afficher la ligne d’objectif.' : `Renseigne l’objectif ${statGoal === 'apport' ? 'd’apport (montant et échéance)' : 'de rente'} dans l’onglet Objectifs pour afficher la ligne.`)}</p>
+      ${svgChart({ id: 'sav', labels: lbl, full, aria: `Épargne mensuelle sur ${n} mois${need != null ? `, objectif ${eur(need)} par mois` : ''}`,
+        bars: { vals: dep, name: 'Épargne du mois', neg: true },
+        lines: [{ vals: smooth, name: `Moyenne lissée ${Wn} mois`, cls: 'v2' }],
+        ref: need != null ? { v: need, label: `objectif ${eurC(need)}`, name: 'Objectif mensuel' } : null })
+        .replace('<details', `<div class="chips tight" role="group" aria-label="Lissage" style="margin-top:10px">${[3, 6].map(v => `<button class="${Wn === v ? 'on' : ''}" data-act="statw" data-v="${v}">Lissage ${v} mois</button>`).join('')}</div><details`)}
+    </section>`;
+  if (tl.length > 1) html += `<section><h2>Patrimoine</h2>
+      <p class="small" style="margin:-6px 0 10px">${signed(growth)} sur la période, dont ${signed(sumDepAll)} versés et ${signed(perfTot)} de gains.</p>
+      ${svgChart({ id: 'pat', labels: lbl, full, aria: `Patrimoine de ${eur(tl[0].t)} à ${eur(tl[tl.length - 1].t)}`, fromMin: true,
+        lines: [{ vals: ks.map(k => tl.find(p => p.k === k)?.t ?? null), name: 'Valeur', cls: 'v1', area: true },
+                { vals: ks.map(k => tl.find(p => p.k === k)?.inv ?? null), name: 'Argent versé', cls: 'v2' }] })}</section>`;
+  if (ks.some(k => k > first)) html += `<section><h2>Performance des marchés</h2>
+      <p class="small" style="margin:-6px 0 10px">Variation hors versements : intérêts, dividendes et évolution des cours.</p>
+      ${svgChart({ id: 'perf', labels: lbl, full, aria: `Performance mensuelle, total ${signed(perfTot)}`, bars: { vals: perf, name: 'Performance', neg: true, solo: true } })}</section>`;
+  if (ga && S.goals.apport.target) {
+    const ap = ks.map(k => k < first ? null : totalAt(k, a => f(a) && a.apport));
+    html += `<section><h2>Progression de l’apport</h2>
+      <p class="small" style="margin:-6px 0 10px">${pct(ga.prog)} de ${eur(S.goals.apport.target)}${ga.reach ? `, objectif atteint vers ${monthLabel(ga.reach)} au rythme actuel` : ''}.</p>
+      ${svgChart({ id: 'app', labels: lbl, full, aria: `Apport disponible, objectif ${eur(S.goals.apport.target)}`,
+        lines: [{ vals: ap, name: 'Apport disponible', cls: 'v1', area: true, solo: true }],
+        ref: { v: S.goals.apport.target, label: `objectif ${eurC(S.goals.apport.target)}`, name: 'Apport visé' } })}</section>`;
+  }
+  if (hh) {
+    const ch = ks.map(k => potStats(k).total), chAvg = ch.reduce((t, v) => t + v, 0) / n;
+    if (ch.some(v => v > 0)) html += `<section><h2>Charges communes</h2>
+      <p class="small" style="margin:-6px 0 10px">Moyenne de ${eur(chAvg)} par mois sur la période.</p>
+      ${svgChart({ id: 'chg', labels: lbl, full, aria: `Charges communes par mois, moyenne ${eur(chAvg)}`,
+        bars: { vals: ch, name: 'Charges du mois', solo: true },
+        ref: { v: chAvg, label: `moyenne ${eurC(chAvg)}`, name: 'Moyenne' } })}</section>`;
+  }
+  return html + `<p class="explain">Touche un graphique pour lire les valeurs d’un mois. Les montants suivent ${esc(scope === 'all' ? 'tout le foyer' : scope === 'moi' ? 'tes comptes' : 'les comptes de ' + mName(scope))}.</p>`;
+}
+
 function vResume() {
   const ms = months();
+  const seg = ms.length ? `<div class="seg" role="tablist"><button class="${resTab === 'resume' ? 'on' : ''}" data-act="restab" data-t="resume">Résumé</button><button class="${resTab === 'stats' ? 'on' : ''}" data-act="restab" data-t="stats">Statistiques</button></div>` : '';
+  if (ms.length && resTab === 'stats') return seg + vStats();
+  return seg + vResumeText(ms);
+}
+function vResumeText(ms) {
   if (!ms.length) return '<section class="empty"><h2>Pas encore de résumé</h2><p class="muted">Le résumé se génère à partir de ta saisie mensuelle.</p><button class="btn primary" data-act="go" data-view="saisie">Faire la saisie</button></section>';
   if (!resumeMonth || !ms.includes(resumeMonth)) resumeMonth = ms[ms.length - 1];
   const an = S.analyses[resumeMonth];
@@ -1654,7 +1866,7 @@ function offerPasskey() {
 const sheetMsg = msg => openSheet(`<h2>Face ID</h2><p>${esc(msg)}</p><button class="btn wide" data-act="setpage" data-p="secu">Retour</button>`);
 function enterApp() {
   view = 'home'; compteTab = 'detail';
-  saisieMonth = monthKey(); potMonth = monthKey(); resumeMonth = null;
+  saisieMonth = monthKey(); potMonth = monthKey(); resumeMonth = null; resTab = 'resume';
   scope = members().some(m => m.id === scope) ? scope : 'moi';
   masked = !!S.settings.masked;
   render(); window.scrollTo(0, 0);
@@ -2138,6 +2350,10 @@ const ACT = {
     render(); window.scrollTo(0, 0);
   },
   scope: t => { scope = t.dataset.s; render(); },
+  restab: t => { resTab = t.dataset.t; render(); window.scrollTo(0, 0); },
+  statn: t => { statN = +t.dataset.v; render(); },
+  statw: t => { statW = +t.dataset.v; render(); },
+  statgoal: t => { statGoal = t.dataset.v; render(); },
   carry: async t => {
     const k = potMonth, p = (S.pot[k] ||= { items: [], transfers: [] });
     p.transfers ||= [];
