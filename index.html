@@ -16,23 +16,25 @@
 <title>Patrimoine</title>
 <style>
 :root{
-  --paper:#E9EEE8; --surface:#F7F9F5; --ink:#15201A; --muted:#5A675F; --line:#D1DAD2;
-  --pine:#1E5540; --on-pine:#FFFFFF; --pine-soft:#DAE7DE;
-  --amber:#9C6116; --amber-soft:#F2E4CB; --red:#A6423A; --red-soft:#F6DCD8;
-  --c-livrets:#9DC1A7; --c-bourse:#1E5540; --c-av:#4F8B6D; --c-retraite:#B38B3F; --c-salariale:#5E7F8C; --c-courant:#8C7A5E; --v1:#2F8A5C; --v2:#3F6FC4;
+  --paper:#E9EEE8; --surface:#F7F9F5; --ink:#15201A; --muted:#5A675F; --line:#D1DAD2; --pine:#1E5540; --on-pine:#FFFFFF; --pine-soft:#DAE7DE; --pos:#1E5540; --amber:#9C6116; --amber-soft:#F2E4CB; --red:#A6423A; --red-soft:#F6DCD8; --c-livrets:#9DC1A7; --c-bourse:#1E5540; --c-av:#4F8B6D; --c-retraite:#B38B3F; --c-salariale:#5E7F8C; --c-courant:#8C7A5E; --v1:#2F8A5C; --v2:#3F6FC4;
   --num: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
   --txt: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
   --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
   color-scheme: light dark;
 }
-@media (prefers-color-scheme: dark){
-  :root{
-    --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E;
-    --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24;
-    --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220;
-    --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#3AA06C; --v2:#5C8BDE;
-  }
-}
+/* Thème Forêt en sombre : suit le système, sauf si un mode est imposé dans les réglages */
+@media (prefers-color-scheme: dark){ :root:not([data-mode="light"]){ --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E; --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24; --pos:#7DC4A0; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#3AA06C; --v2:#5C8BDE; } }
+:root[data-mode="dark"]{ --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E; --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24; --pos:#7DC4A0; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#3AA06C; --v2:#5C8BDE; color-scheme:dark; }
+:root[data-mode="light"]{ color-scheme:light; }
+:root[data-theme="marine"]{ --paper:#ECEFF4; --surface:#F9FAFC; --ink:#131A2B; --muted:#586178; --line:#D2D8E3; --pine:#1F3A6B; --on-pine:#FFFFFF; --pine-soft:#DCE3F0; --pos:#24734F; --amber:#93650F; --amber-soft:#F2E6CA; --red:#A33A3A; --red-soft:#F5DADA; --c-livrets:#A8B8D6; --c-bourse:#1F3A6B; --c-av:#4A6FA5; --c-retraite:#B08A3E; --c-salariale:#6B7F99; --c-courant:#8C7F6A; --v1:#3F62A2; --v2:#906106; }
+@media (prefers-color-scheme: dark){ :root[data-theme="marine"]:not([data-mode="light"]){ --paper:#0D1220; --surface:#161D2E; --ink:#E2E7F1; --muted:#8D97AC; --line:#263049; --pine:#94B3EA; --on-pine:#0D1220; --pine-soft:#1B2640; --pos:#6CC79A; --amber:#E0B25A; --amber-soft:#322A17; --red:#E58080; --red-soft:#3A2224; --c-livrets:#2E4570; --c-bourse:#94B3EA; --c-av:#5E86C8; --c-retraite:#CFA756; --c-salariale:#7F93B0; --c-courant:#A8987E; --v1:#5679BB; --v2:#9C721C; } }
+:root[data-theme="marine"][data-mode="dark"]{ --paper:#0D1220; --surface:#161D2E; --ink:#E2E7F1; --muted:#8D97AC; --line:#263049; --pine:#94B3EA; --on-pine:#0D1220; --pine-soft:#1B2640; --pos:#6CC79A; --amber:#E0B25A; --amber-soft:#322A17; --red:#E58080; --red-soft:#3A2224; --c-livrets:#2E4570; --c-bourse:#94B3EA; --c-av:#5E86C8; --c-retraite:#CFA756; --c-salariale:#7F93B0; --c-courant:#A8987E; --v1:#5679BB; --v2:#9C721C; }
+:root[data-theme="ardoise"]{ --paper:#E9ECED; --surface:#F8F9F9; --ink:#171C1F; --muted:#5B6469; --line:#D2D8DA; --pine:#0E6A70; --on-pine:#FFFFFF; --pine-soft:#D3E7E8; --pos:#1F7A4D; --amber:#94640F; --amber-soft:#F1E5CC; --red:#A63E3A; --red-soft:#F6DAD8; --c-livrets:#9CCACB; --c-bourse:#0E6A70; --c-av:#3D8F94; --c-retraite:#B38B3F; --c-salariale:#66808A; --c-courant:#8A7D68; --v1:#2695AC; --v2:#B97340; }
+@media (prefers-color-scheme: dark){ :root[data-theme="ardoise"]:not([data-mode="light"]){ --paper:#0F1214; --surface:#191E21; --ink:#E3E8EA; --muted:#8B969B; --line:#283135; --pine:#5FC3C6; --on-pine:#0F1214; --pine-soft:#183034; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#285A5D; --c-bourse:#5FC3C6; --c-av:#3A9EA3; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#139CB6; --v2:#BB7B4E; } }
+:root[data-theme="ardoise"][data-mode="dark"]{ --paper:#0F1214; --surface:#191E21; --ink:#E3E8EA; --muted:#8B969B; --line:#283135; --pine:#5FC3C6; --on-pine:#0F1214; --pine-soft:#183034; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#285A5D; --c-bourse:#5FC3C6; --c-av:#3A9EA3; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#139CB6; --v2:#BB7B4E; }
+:root[data-theme="bordeaux"]{ --paper:#F1ECE3; --surface:#FBF8F2; --ink:#261C18; --muted:#6B5E55; --line:#DDD3C4; --pine:#74283A; --on-pine:#FFFFFF; --pine-soft:#EEDADC; --pos:#2B7440; --amber:#8E6113; --amber-soft:#F1E3C6; --red:#B03A2E; --red-soft:#F6D9D3; --c-livrets:#D9B9BE; --c-bourse:#74283A; --c-av:#A8566A; --c-retraite:#B08A3E; --c-salariale:#7A7F8C; --c-courant:#8C7A5E; --v1:#2B7440; --v2:#2A669F; }
+@media (prefers-color-scheme: dark){ :root[data-theme="bordeaux"]:not([data-mode="light"]){ --paper:#16110F; --surface:#211A17; --ink:#EEE6DC; --muted:#A3968B; --line:#382C27; --pine:#E59AAA; --on-pine:#16110F; --pine-soft:#3A2229; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08A6E; --red-soft:#3E241D; --c-livrets:#5A3540; --c-bourse:#E59AAA; --c-av:#B86B7F; --c-retraite:#C9A45A; --c-salariale:#9A9FAC; --c-courant:#B09A7F; --v1:#448C56; --v2:#437EB9; } }
+:root[data-theme="bordeaux"][data-mode="dark"]{ --paper:#16110F; --surface:#211A17; --ink:#EEE6DC; --muted:#A3968B; --line:#382C27; --pine:#E59AAA; --on-pine:#16110F; --pine-soft:#3A2229; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08A6E; --red-soft:#3E241D; --c-livrets:#5A3540; --c-bourse:#E59AAA; --c-av:#B86B7F; --c-retraite:#C9A45A; --c-salariale:#9A9FAC; --c-courant:#B09A7F; --v1:#448C56; --v2:#437EB9; }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--txt);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
@@ -99,7 +101,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .hero-month{margin:0;color:var(--muted);font-size:15px}
 .hero-total{margin:2px 0 4px;font:700 46px/1.05 var(--num);letter-spacing:-.025em}
 .hero-delta{margin:0;font-size:15px;font-weight:600}
-.up{color:var(--pine)} .down{color:var(--red)}
+.up{color:var(--pos)} .down{color:var(--red)}
 .update{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 16px 16px 18px;border-radius:20px;background:var(--pine-soft)}
 .update.done{background:transparent;border:1px solid var(--line)}
 .update p{margin:0}
@@ -109,11 +111,14 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .progress i{display:block;height:100%;background:var(--pine);border-radius:9px}
 .chips.tight{margin-top:0}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.view section.statsec{margin-top:40px;padding-top:24px;border-top:1px solid var(--line)}
+.statsec > h2{font-size:21px}
+.statsec section{margin-top:28px}
 .tile{background:var(--surface);border-radius:16px;padding:12px 14px}
 .tile .tl{margin:0;font-size:13px;color:var(--muted)}
 .tile .tv{margin:4px 0 2px;font:700 22px/1.15 var(--num);letter-spacing:-.01em}
 .tile .ts{margin:0;font-size:12.5px;color:var(--muted)}
-.tile .ts.up{color:var(--pine)} .tile .ts.down{color:var(--red)}
+.tile .ts.up{color:var(--pos)} .tile .ts.down{color:var(--red)}
 .schart{position:relative;touch-action:pan-y}
 .schart svg{width:100%;height:auto;display:block;overflow:visible}
 .sc-grid{stroke:var(--line);stroke-width:1}
@@ -133,6 +138,14 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .key.ref.mid{border-top:1.5px dashed var(--muted)}
 .sc-tip .key.ref.mid{border-top-color:var(--paper);opacity:.7}
 .midin{margin-top:12px;font-size:13px}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.theme{display:grid;gap:4px;align-content:start;text-align:left;padding:10px;border-radius:16px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
+.theme.on{border-color:var(--pine)}
+.tsw{display:flex;gap:5px;align-items:flex-end;height:46px;border-radius:10px;padding:8px;border:1px solid var(--line)}
+.tsw i{flex:1;border-radius:4px 4px 0 0}
+.tsw i:nth-child(1){height:100%} .tsw i:nth-child(2){height:70%} .tsw i:nth-child(3){height:45%}
+.tname{font-weight:650;font-size:15px;margin-top:4px}
+.tdesc{font-size:12.5px;color:var(--muted);line-height:1.3}
 .sc-cross{stroke:var(--muted);stroke-width:1}
 .sc-tip{position:absolute;top:-6px;transform:translateY(-100%);background:var(--ink);color:var(--paper);border-radius:10px;padding:8px 10px;font-size:13px;pointer-events:none;white-space:nowrap;z-index:2}
 .sc-tip .th{font-size:12px;opacity:.75;margin-bottom:3px}
@@ -204,7 +217,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .ech{list-style:none;margin:0;padding:0}
 .ech li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--surface);border-left:4px solid var(--line);margin-bottom:8px}
 .ech li.soon{border-left-color:var(--amber)}
-.ech li.done{border-left-color:var(--pine)}
+.ech li.done{border-left-color:var(--pos)}
 .ech strong{font-weight:650}
 .ech .small{margin:2px 0 0;color:var(--muted);font-size:13px}
 .tag{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
@@ -240,6 +253,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .steps li.ok button{background:transparent;border:1px solid var(--line)}
 .stepno{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--pine-soft);color:var(--pine);font-weight:700;font-size:15px}
 .steps li.ok .stepno{background:var(--pine);color:var(--on-pine)}
+.steps li.off button{opacity:.55;cursor:default}
 .stepmain{flex:1;display:grid;gap:2px;min-width:0}
 .stept{font-weight:650;font-size:16px}
 .stepd{color:var(--muted);font-size:14px}
@@ -558,6 +572,23 @@ function sheetUnmask(err) {
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
 }
 
+const THEMES = {"foret": {"label": "Forêt", "desc": "Vert sapin, l’épargne qui pousse", "sw": ["#E9EEE8", "#1E5540", "#2F8A5C", "#3F6FC4"], "swd": ["#0E1512", "#7DC4A0", "#3AA06C", "#5C8BDE"]}, "marine": {"label": "Banque privée", "desc": "Bleu marine et or, le registre du gestionnaire", "sw": ["#ECEFF4", "#1F3A6B", "#3F62A2", "#906106"], "swd": ["#0D1220", "#94B3EA", "#5679BB", "#9C721C"]}, "ardoise": {"label": "Salle des marchés", "desc": "Graphite et bleu canard, l’écran du trader", "sw": ["#E9ECED", "#0E6A70", "#2695AC", "#B97340"], "swd": ["#0F1214", "#5FC3C6", "#139CB6", "#BB7B4E"]}, "bordeaux": {"label": "Registre", "desc": "Papier de grand livre et encre bordeaux", "sw": ["#F1ECE3", "#74283A", "#2B7440", "#2A669F"], "swd": ["#16110F", "#E59AAA", "#448C56", "#437EB9"]}};
+// Préférences d'apparence : non sensibles, stockées hors du coffre pour colorer aussi l'écran de verrouillage
+let ui = { theme: 'foret', mode: 'auto' };
+function applyTheme() {
+  const r = document.documentElement;
+  if (ui.theme && ui.theme !== 'foret') r.dataset.theme = ui.theme; else delete r.dataset.theme;
+  if (ui.mode === 'light' || ui.mode === 'dark') r.dataset.mode = ui.mode; else delete r.dataset.mode;
+  const paper = getComputedStyle(r).getPropertyValue('--paper').trim();
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', paper));
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => applyTheme());
+async function setUi(patch) {
+  ui = { ...ui, ...patch };
+  try { await store.set('ui', ui); } catch {}
+  applyTheme(); render(); sheetSetPage('apparence');
+}
+
 /* ---------- Vérification du code de l'app ----------
    Le service worker sert toujours la version mise en cache : le code ne change
    jamais tout seul. À chaque démarrage, l'app calcule l'empreinte du code servi,
@@ -641,7 +672,7 @@ function sheetCode() {
 
 /* ---------- État ---------- */
 let store, S = null, dek = null, dekRaw = null, slots = null, mode = 'boot', view = 'home', lockHasPk = false, pkPending = null;
-let resTab = 'resume', statN = 12, statW = 3, statGoal = 'all';
+let statN = 12, statW = 3, statGoal = 'all';
 let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', subview = null, setPage = null, potMonth = monthKey(), scope = 'moi', rounding = true, hiddenAt = 0, pendingImport = null;
 
 const emptyData = () => ({
@@ -650,14 +681,14 @@ const emptyData = () => ({
   settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null, ai: null, raise: { on: false, pct: 2 } },
   analyses: {},
   goals: { apport: { target: null, date: null }, rente: { birthYear: null, retireAge: 64, monthly: null, ret: 3, withdraw: 4 },
-    loan: { scope: 'foyer', duree: 25, taux: null, endettement: 35, assurance: 0.15, frais: 7.5 },
+    loan: { v: 2, scope: 'moi', duree: 25, taux: null, endettement: 35, assurance: 0.15, frais: 7.5 },
     inter: { all: null, apport: null, rente: null, apportPalier: null } },
 });
 function normalize(d) {
   const e = emptyData();
   d.settings = { ...e.settings, ...(d.settings || {}) };
   d.settings.raise = { ...e.settings.raise, ...(d.settings.raise || {}) };
-  d.goals = { apport: { ...e.goals.apport, ...(d.goals?.apport || {}) }, rente: { ...e.goals.rente, ...(d.goals?.rente || {}) }, loan: { ...e.goals.loan, ...(d.goals?.loan || {}) }, inter: { ...e.goals.inter, ...(d.goals?.inter || {}) } };
+  d.goals = { apport: { ...e.goals.apport, ...(d.goals?.apport || {}) }, rente: { ...e.goals.rente, ...(d.goals?.rente || {}) }, loan: { ...e.goals.loan, ...(d.goals?.loan || {}), ...(d.goals?.loan && d.goals.loan.v !== 2 ? { scope: 'moi', v: 2 } : {}) }, inter: { ...e.goals.inter, ...(d.goals?.inter || {}) } };
   d.accounts = (d.accounts || []).map(a => ({ owner: 'moi', ...a })); // « owner » : prévu pour la gestion familiale
   d.entries = d.entries || {};
   d.analyses = d.analyses || {};
@@ -751,14 +782,22 @@ function avgDep(upto, n, f = () => true) {
 const focusMonth = () => { const ms = months(); return ms.length ? ms[ms.length - 1] : monthKey(); };
 
 // Taux moyens des courtiers (Meilleurtaux, Pretto, Cafpi, Empruntis, Vousfinancer), septembre 2026, hors assurance
-const LOAN_RATES = { 15: { min: 3.23, max: 3.43, def: 3.35 }, 20: { min: 3.40, max: 3.54, def: 3.47 }, 25: { min: 3.50, max: 3.61, def: 3.55 } };
-const LOAN_SRC = 'Moyennes des courtiers au 16 septembre 2026, hors assurance. Les barèmes changent tous les quinze jours et varient selon la région et le profil.';
+const LOAN_RATES = { 15: { min: 3.40, max: 3.50, def: 3.45 }, 20: { min: 3.50, max: 3.66, def: 3.58 }, 25: { min: 3.60, max: 3.75, def: 3.68 } };
+const LOAN_SRC = 'Moyennes des courtiers début octobre 2026 (Meilleurtaux, Pretto), hors assurance, en hausse depuis septembre. Les barèmes changent tous les quinze jours et varient selon la région et le profil.';
 const loanCfg = () => S.goals.loan;
 const tx2 = v => Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// Revenu retenu par la banque pour un membre : la moyenne des revenus saisis sur les 12 derniers mois
+// (un revenu variable ne doit pas faire bondir la capacité d'un mois à l'autre), sinon son revenu de référence.
+function memberLoanIncome(F, id) {
+  const ks = Array.from({ length: 12 }, (_, i) => addMonths(F, -i)).filter(k => incomeSet(k, id));
+  if (!ks.length) return { v: memberOf(id).income || 0, n: 0 };
+  return { v: ks.reduce((t, k) => t + S.pot[k].inc[id], 0) / ks.length, n: ks.length };
+}
 function loanIncome(F, scope) {
-  if (!S.household.on || members().length < 2) return S.settings.revenus || 0;
-  if (scope === 'foyer') return members().reduce((t, m) => t + incomeOf(F, m.id), 0);
-  return incomeOf(F, scope) || 0;
+  if (!S.household.on || members().length < 2) return { total: S.settings.revenus || 0, parts: [] };
+  const ids = scope === 'foyer' ? members().map(m => m.id) : [scope];
+  const parts = ids.map(id => ({ id, ...memberLoanIncome(F, id) }));
+  return { total: parts.reduce((t, p) => t + p.v, 0), parts };
 }
 // Capacité d'emprunt : mensualité maximale = revenus × taux d'endettement,
 // dont il faut retrancher l'assurance, proportionnelle au capital emprunté.
@@ -1127,7 +1166,7 @@ function render() {
   const cur = monthKey();
   const filled = a => isSimple(a) ? entry(cur, a)?.dot != null : entry(cur, a)?.value != null;
   const todo = active().some(a => !filled(a));
-  const titles = { home: 'Patrimoine', comptes: 'Mes comptes', saisie: 'Ce mois', objectifs: 'Objectifs', resume: resTab === 'stats' ? 'Statistiques' : 'Résumé' };
+  const titles = { home: 'Patrimoine', comptes: 'Mes comptes', saisie: 'Ce mois', objectifs: 'Objectifs', resume: 'Résumé' };
   const subs = { soldes: 'Soldes des comptes', operations: 'Opérations du mois' };
   const sub = view === 'saisie' ? subview : null;
   const hidden = masked && (view === 'saisie' || view === 'resume');
@@ -1201,7 +1240,9 @@ function vHome() {
         <button class="adismiss" data-act="dismiss" data-k="${esc(x.k)}" data-s="${esc(x.s)}" aria-label="Masquer ce point d’attention">×</button></li>`).join('')}</ul>
         <p class="small" style="margin-top:10px">Balaie une carte pour la masquer : elle revient si la situation change, sinon le mois prochain.</p>`
         : `<p class="muted">${hiddenN ? 'Tout est masqué pour ce mois.' : 'Rien à signaler ce mois-ci.'}</p>`}
-      ${hiddenN ? `<button class="link" data-act="unhide">Réafficher ${plural(hiddenN, 'point masqué', 'points masqués')}</button>` : ''}</section>`;
+      ${hiddenN ? `<button class="link" data-act="unhide">Réafficher ${plural(hiddenN, 'point masqué', 'points masqués')}</button>` : ''}</section>
+    <section class="statsec"><h2>Statistiques</h2>
+      ${masked ? '<p class="muted">Masquées tant que les montants le sont.</p><button class="btn" data-act="unmask">Afficher les montants</button>' : vStats()}</section>`;
 }
 
 function chart(tl) {
@@ -1344,12 +1385,18 @@ function vMois() {
       d: carryPending(m) ? `écart de ${monthName(addMonths(m, -1))} à reporter ou effacer` : !st.total ? 'aucune dépense enregistrée' : `${eur(st.total)} de charges${incOk ? '' : ', revenus à saisir'}`,
       ok: st.total > 0 && incOk && !carryPending(m), act: 'foyer' }] : []),
   ];
+  // Dernière étape : la sauvegarde, accessible une fois les soldes à jour
+  const le = S.settings.lastExport, soldesOk = steps[0].ok;
+  const saved = !!le && monthKey(new Date(le)) >= m;
+  steps.push({ k: 'backup', t: 'Exporter une sauvegarde',
+    d: saved ? `faite le ${new Date(le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : soldesOk ? 'les comptes sont à jour : mets-les à l’abri' : 'disponible une fois les soldes à jour',
+    ok: saved, act: 'backup', off: !soldesOk && !saved });
   const allOk = steps.every(x => x.ok);
   return `
     <div class="month-nav"><button data-act="month" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(m))}</strong><button data-act="month" data-d="1" aria-label="Mois suivant" ${m >= cur ? 'disabled' : ''}>›</button></div>
     <p class="explain">${allOk ? 'Tout est à jour pour ce mois. Le résumé est prêt dans l’onglet Résumé.' : 'Trois minutes par mois : suis les étapes, elles passent au vert une fois terminées.'}</p>
-    <ol class="steps">${steps.map((x, i) => `<li class="${x.ok ? 'ok' : ''}">
-      <button data-act="${x.act === 'sub' ? 'gosub' : 'gofoyer'}" ${x.v ? `data-v="${x.v}"` : ''}>
+    <ol class="steps">${steps.map((x, i) => `<li class="${x.ok ? 'ok' : ''}${x.off ? ' off' : ''}">
+      <button data-act="${x.act === 'sub' ? 'gosub' : x.act === 'backup' ? 'backupnow' : 'gofoyer'}" ${x.v ? `data-v="${x.v}"` : ''} ${x.off ? 'disabled' : ''}>
         <span class="stepno">${x.ok ? '✓' : i + 1}</span>
         <span class="stepmain"><span class="stept">${x.t}</span><span class="stepd">${x.d}</span></span>
         <span class="chev">›</span></button></li>`).join('')}</ol>
@@ -1444,13 +1491,16 @@ function vObjectifs() {
 
 function vLoan(F, ga) {
   const g = loanCfg(), R = LOAN_RATES[g.duree] || LOAN_RATES[25];
-  const rev = loanIncome(F, g.scope);
   const hh = S.household.on && members().length > 1;
+  if (hh && g.scope !== 'foyer' && !members().some(m => m.id === g.scope)) g.scope = 'moi';
+  const inc = loanIncome(F, g.scope), rev = inc.total;
+  // L'apport suit le périmètre choisi : un emprunt à titre personnel ne compte que les comptes de ce membre
+  const inScope = a => !hh || g.scope === 'foyer' || (a.owner || 'moi') === g.scope;
   const scopes = hh ? [['foyer', 'Foyer'], ...members().map(m => [m.id, m.name])] : [];
   if (!rev) return `<section><div class="goal"><h2>Emprunt immobilier</h2>
     <p class="muted">Renseigne ${hh ? 'les revenus du foyer dans Comptes &gt; Foyer' : 'tes revenus nets mensuels dans Réglages &gt; Budget de référence'} pour estimer ta capacité d’emprunt.</p></div></section>`;
   const c = loanCapacity(rev, g);
-  const apport = ga ? ga.cur : 0;
+  const apport = totalAt(F, a => a.apport && inScope(a));
   const prix = loanPrice(c.C, apport, g);
   // Projection à l'objectif : apport visé, et revenus éventuellement revalorisés
   const rz = S.settings.raise || {};
@@ -1472,19 +1522,20 @@ function vLoan(F, ga) {
     </div>
     <div class="result">
       <p class="small" style="margin:0">Revenus pris en compte : ${eur(rev)} par mois${hh ? ` · ${esc(g.scope === 'foyer' ? 'foyer' : mName(g.scope))}` : ''}</p>
+      ${inc.parts.length ? `<ul class="kv">${inc.parts.map(p => `<li><span>${esc(mName(p.id))}</span><span class="num">${eur(p.v)}<span class="small"> ${p.n ? `moyenne sur ${plural(p.n, 'mois', 'mois')}` : 'revenu de référence'}</span></span></li>`).join('')}</ul>` : ''}
       <p class="big num" style="margin:8px 0 2px">${eur(c.C)}</p>
       <p class="small">capacité d’emprunt sur ${g.duree} ans à ${tx2(c.taux)} %</p>
       <ul class="kv">
         <li><span>Mensualité maximale</span><span class="num">${eur(c.M)}</span></li>
         <li><span>dont assurance</span><span class="num">${eur(c.mensAssur)}</span></li>
         <li><span>Coût total du crédit</span><span class="num">${eur(c.cout + c.coutAssur)}</span></li>
-        <li><span>Apport disponible</span><span class="num">${eur(apport)}</span></li>
+        <li><span>Apport disponible${hh && g.scope !== 'foyer' ? ` (comptes de ${esc(mName(g.scope))})` : ''}</span><span class="num">${eur(apport)}</span></li>
       </ul>
       <p class="big num" style="margin:14px 0 2px">${eur(prix)}</p>
       <p class="small">prix d’achat accessible aujourd’hui, frais de notaire de ${numStr(g.frais)} % inclus</p>
     </div>
     <div class="result">
-      <h3 style="font:650 16px var(--num);margin:0 0 8px">Avec ton apport visé${apportObj ? ` de ${eur(apportObj)}` : ''}</h3>
+      <h3 style="font:650 16px var(--num);margin:0 0 8px">Avec ${hh && g.scope !== 'foyer' ? 'l’apport visé du foyer' : 'ton apport visé'}${apportObj ? ` de ${eur(apportObj)}` : ''}</h3>
       ${apportObj ? `<ul class="kv">
         ${rz.on && rz.pct && nMois ? `<li><span>Revenus projetés dans ${plural(Math.round(nMois / 12), 'an', 'ans')}</span><span class="num">${eur(revObj)}</span></li>` : ''}
         <li><span>Capacité d’emprunt</span><span class="num">${eur(cObj.C)}</span></li>
@@ -1636,8 +1687,8 @@ function vStats() {
   const goalName = { all: 'l’épargne totale', apport: 'l’apport immobilier', rente: 'la retraite' }[statGoal];
   const needTxt = need != null ? `Objectif : ${eur(need)} par mois pour ${goalName}` : null;
   const hh = S.household.on && members().length > 1;
-  let html = `${scopeBar()}
-    <div class="chips" role="group" aria-label="Période">${[6, 12, 24].map(v => `<button class="${N === v ? 'on' : ''}" data-act="statn" data-v="${v}">${v} mois</button>`).join('')}</div>
+  let html = `
+    <div class="chips tight" role="group" aria-label="Période">${[6, 12, 24].map(v => `<button class="${N === v ? 'on' : ''}" data-act="statn" data-v="${v}">${v} mois</button>`).join('')}</div>
     <div class="tiles">
       ${statTile(`Épargne moyenne sur ${plural(n, 'mois', 'mois')}`, eur(avg), need != null ? (avg >= need ? `au-dessus de l’objectif de ${eur(need)}` : `${eur(need - avg)} sous l’objectif`) : 'par mois', need != null ? (avg >= need ? 'up' : 'down') : '')}
       ${statTile('Mois à l’objectif', hit != null ? `${hit} / ${n}` : hitMid != null ? `${hitMid} / ${n}` : '—',
@@ -1656,13 +1707,8 @@ function vStats() {
         .replace('<details', `<label class="midin">Objectif intermédiaire (€ par mois)<input inputmode="decimal" data-inter="${statGoal}" value="${esc(numStr(mid))}" placeholder="${need != null ? 'ex. ' + Math.round(need * 0.7 / 50) * 50 : 'ex. 800'}"></label>` + '<details')
         .replace('<details', `<div class="chips tight" role="group" aria-label="Lissage" style="margin-top:10px">${[3, 6].map(v => `<button class="${Wn === v ? 'on' : ''}" data-act="statw" data-v="${v}">Lissage ${v} mois</button>`).join('')}</div><details`)}
     </section>`;
-  if (tl.length > 1) html += `<section><h2>Patrimoine</h2>
-      <p class="small" style="margin:-6px 0 10px">${signed(growth)} sur la période, dont ${signed(sumDepAll)} versés et ${signed(perfTot)} de gains.</p>
-      ${svgChart({ id: 'pat', labels: lbl, full, aria: `Patrimoine de ${eur(tl[0].t)} à ${eur(tl[tl.length - 1].t)}`, fromMin: true,
-        lines: [{ vals: ks.map(k => tl.find(p => p.k === k)?.t ?? null), name: 'Valeur', cls: 'v1', area: true },
-                { vals: ks.map(k => tl.find(p => p.k === k)?.inv ?? null), name: 'Argent versé', cls: 'v2' }] })}</section>`;
   if (ks.some(k => k > first)) html += `<section><h2>Performance des marchés</h2>
-      <p class="small" style="margin:-6px 0 10px">Variation hors versements : intérêts, dividendes et évolution des cours.</p>
+      <p class="small" style="margin:-6px 0 10px">Variation hors versements : intérêts, dividendes et évolution des cours.${tl.length > 1 ? ` Sur la période, le patrimoine a varié de ${signed(growth)}, dont ${signed(sumDepAll)} versés et ${signed(perfTot)} de gains.` : ''}</p>
       ${svgChart({ id: 'perf', labels: lbl, full, aria: `Performance mensuelle, total ${signed(perfTot)}`, bars: { vals: perf, name: 'Performance', neg: true, solo: true } })}</section>`;
   if (ga && S.goals.apport.target) {
     const ap = ks.map(k => k < first ? null : totalAt(k, a => f(a) && a.apport));
@@ -1682,14 +1728,12 @@ function vStats() {
         bars: { vals: ch, name: 'Charges du mois', solo: true },
         ref: { v: chAvg, label: `moyenne ${eurC(chAvg)}`, name: 'Moyenne' } })}</section>`;
   }
-  return html + `<p class="explain">Touche un graphique pour lire les valeurs d’un mois. Les montants suivent ${esc(scope === 'all' ? 'tout le foyer' : scope === 'moi' ? 'tes comptes' : 'les comptes de ' + mName(scope))}.</p>`;
+  return html + `<p class="explain">Touche un graphique pour lire les valeurs d’un mois. Les statistiques suivent ${esc(scope === 'all' ? 'tout le foyer' : scope === 'moi' ? 'tes comptes' : 'les comptes de ' + mName(scope))}, comme le reste de l’accueil.</p>`;
 }
 
 function vResume() {
   const ms = months();
-  const seg = ms.length ? `<div class="seg" role="tablist"><button class="${resTab === 'resume' ? 'on' : ''}" data-act="restab" data-t="resume">Résumé</button><button class="${resTab === 'stats' ? 'on' : ''}" data-act="restab" data-t="stats">Statistiques</button></div>` : '';
-  if (ms.length && resTab === 'stats') return seg + vStats();
-  return seg + vResumeText(ms);
+  return vResumeText(ms);
 }
 function vResumeText(ms) {
   if (!ms.length) return '<section class="empty"><h2>Pas encore de résumé</h2><p class="muted">Le résumé se génère à partir de ta saisie mensuelle.</p><button class="btn primary" data-act="go" data-view="saisie">Faire la saisie</button></section>';
@@ -1717,6 +1761,7 @@ function closeSheet() { $('#layer').innerHTML = ''; }
 
 // Réglages : un menu, puis une page par domaine. Les comptes se gèrent dans leur onglet.
 const SET_PAGES = {
+  apparence: { t: 'Apparence', d: () => `${THEMES[ui.theme]?.label || 'Forêt'} · ${{ auto: 'automatique', light: 'clair', dark: 'sombre' }[ui.mode]}` },
   foyer:   { t: 'Foyer', d: () => S.household.on ? members().map(m => m.name).join(', ') : 'non activé' },
   budget:  { t: 'Budget de référence', d: () => S.settings.depenses || S.settings.revenus ? 'dépenses et revenus renseignés' : 'à renseigner' },
   ai:      { t: 'Analyse par IA', d: () => S.settings.ai?.key ? (AI[S.settings.ai.provider] || AI.anthropic).label : 'désactivée, app hors ligne' },
@@ -1758,6 +1803,18 @@ function sheetSetPage(k) {
       <p class="small" style="margin:0">Répartition actuelle : ${H.members.map(m => `${esc(m.name)} ${pct(sh[m.id] || 0)}`).join(', ')}.</p>
       <button class="btn primary wide" type="submit">Enregistrer</button>
       ${setBack}</form>`);
+  if (k === 'apparence') {
+    const dark = document.documentElement.dataset.mode === 'dark' || (!document.documentElement.dataset.mode && matchMedia('(prefers-color-scheme: dark)').matches);
+    return openSheet(`${head}
+    <h3 style="margin-top:6px">Thème</h3>
+    <div class="themes">${Object.entries(THEMES).map(([key, t]) => `<button class="theme ${ui.theme === key ? 'on' : ''}" data-act="settheme" data-t="${key}" aria-pressed="${ui.theme === key}">
+      <span class="tsw" style="background:${(dark ? t.swd : t.sw)[0]}">${(dark ? t.swd : t.sw).slice(1).map(c => `<i style="background:${c}"></i>`).join('')}</span>
+      <span class="tname">${esc(t.label)}</span><span class="tdesc">${esc(t.desc)}</span></button>`).join('')}</div>
+    <h3>Mode</h3>
+    <div class="seg seg3">${[['auto', 'Auto'], ['light', 'Clair'], ['dark', 'Sombre']].map(([v, l]) => `<button class="${ui.mode === v ? 'on' : ''}" data-act="setmode" data-m="${v}">${l}</button>`).join('')}</div>
+    <p class="small">Automatique suit le réglage de ton iPhone. Le thème s’applique aussi à l’écran de verrouillage.</p>
+    <div class="stack-form">${setBack}</div>`);
+  }
   if (k === 'budget') return openSheet(`${head}
     <p class="small" style="margin:0 0 14px">Sert à calculer ton épargne de précaution, ton taux d’épargne et le plafond PER restant.</p>
     <div class="stack-form">
@@ -1884,7 +1941,7 @@ function offerPasskey() {
 const sheetMsg = msg => openSheet(`<h2>Face ID</h2><p>${esc(msg)}</p><button class="btn wide" data-act="setpage" data-p="secu">Retour</button>`);
 function enterApp() {
   view = 'home'; compteTab = 'detail';
-  saisieMonth = monthKey(); potMonth = monthKey(); resumeMonth = null; resTab = 'resume';
+  saisieMonth = monthKey(); potMonth = monthKey(); resumeMonth = null;
   scope = members().some(m => m.id === scope) ? scope : 'moi';
   masked = !!S.settings.masked;
   render(); window.scrollTo(0, 0);
@@ -2360,6 +2417,7 @@ const ACT = {
   gosub: t => goSub(t.dataset.v),
   back: () => { subview = null; render(); window.scrollTo(0, 0); },
   gofoyer: () => { compteTab = 'foyer'; go('comptes'); },
+  backupnow: () => exportBackup('mois'),
   mask: () => masked ? askUnmask() : setMasked(true),
   unmask: () => askUnmask(),
   comptetab: async t => {
@@ -2368,7 +2426,6 @@ const ACT = {
     render(); window.scrollTo(0, 0);
   },
   scope: t => { scope = t.dataset.s; render(); },
-  restab: t => { resTab = t.dataset.t; render(); window.scrollTo(0, 0); },
   statn: t => { statN = +t.dataset.v; render(); },
   statw: t => { statW = +t.dataset.v; render(); },
   statgoal: t => { statGoal = t.dataset.v; render(); },
@@ -2551,6 +2608,8 @@ const ACT = {
   close: () => closeSheet(),
   settings: () => sheetSettings(),
   setpage: t => sheetSetPage(t.dataset.p),
+  settheme: t => setUi({ theme: t.dataset.t }),
+  setmode: t => setUi({ mode: t.dataset.m }),
   newacc: () => sheetAccount(null),
   accinfo: t => sheetAccountInfo(t.dataset.id),
   editacc: t => sheetAccount(t.dataset.id),
@@ -2959,7 +3018,7 @@ document.addEventListener('submit', async e => {
   }
 });
 
-async function exportBackup() {
+async function exportBackup(from) {
   if (mode !== 'app') { toast('Crée ton coffre pour pouvoir exporter une sauvegarde'); return; }
   const v = await seal();
   const name = `patrimoine-sauvegarde-${new Date().toISOString().slice(0, 10)}.json`;
@@ -2970,7 +3029,7 @@ async function exportBackup() {
     try { await navigator.share({ files: [file] }); ok = true; } catch (e) { if (e.name === 'AbortError') return; }
   }
   if (!ok) { const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
-  S.settings.lastExport = Date.now(); await save(); render(); sheetSetPage('backup'); toast('Sauvegarde exportée');
+  S.settings.lastExport = Date.now(); await save(); render(); if (from !== 'mois') sheetSetPage('backup'); toast('Sauvegarde exportée');
 }
 
 function lockNow() { masked = false; lockHasPk = !!slots?.pk; wipeKeys(); closeSheet(); renderLock('unlock'); }
@@ -3019,6 +3078,8 @@ async function boot() {
   wipeKeys(); view = 'home';
   if (!window.crypto?.subtle) { app.innerHTML = '<main class="lock"><h1 class="lock-title">Patrimoine</h1><p class="lock-text">Le chiffrement n’est pas disponible ici. Ouvre l’app depuis son adresse https.</p></main>'; return; }
   store ||= await openStore();
+  try { ui = { ...ui, ...((await store.get('ui')) || {}) }; } catch {}
+  applyTheme();
   checkCode();
   const vault = await store.get('vault');
   lockHasPk = !!vault?.slots?.pk;
