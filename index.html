@@ -118,7 +118,9 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .tile .tl{margin:0;font-size:13px;color:var(--muted)}
 .tile .tv{margin:4px 0 2px;font:700 22px/1.15 var(--num);letter-spacing:-.01em}
 .tile .ts{margin:0;font-size:12.5px;color:var(--muted)}
-.tile .ts.up{color:var(--pos)} .tile .ts.down{color:var(--red)}
+.tile .ts.up{color:var(--pos)}
+.tile.alert{background:var(--red-soft);box-shadow:inset 0 0 0 1.5px var(--red)}
+.tile.alert .tv{color:var(--red)} .tile .ts.down{color:var(--red)}
 .schart{position:relative;touch-action:pan-y}
 .schart svg{width:100%;height:auto;display:block;overflow:visible}
 .sc-grid{stroke:var(--line);stroke-width:1}
@@ -128,7 +130,9 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .sc-bar.neg{fill:var(--red)}
 .sc-bar.hl{opacity:.72}
 .sc-line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
-.sc-line.v1{stroke:var(--v1)} .sc-line.v2{stroke:var(--v2)}
+.sc-line.v1{stroke:var(--v1)} .sc-line.v2{stroke:var(--v2)} .sc-line.warn{stroke:var(--red);stroke-width:2.5}
+.sc-dot.warn{fill:var(--red)}
+.key.warn{border-top:2.5px solid var(--red)}
 .sc-area{stroke:none;opacity:.1} .sc-area.v1{fill:var(--v1)}
 .sc-dot{stroke:var(--surface);stroke-width:2} .sc-dot.v1{fill:var(--v1)} .sc-dot.v2{fill:var(--v2)}
 .sc-ref{stroke:var(--ink);stroke-width:1.5}
@@ -1602,8 +1606,13 @@ function svgChart(cfg) {
     pts.forEach(p => { if (!p) { started = false; return; } d += `${started ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`; started = true; });
     if (l.area && pts.every(Boolean)) g += `<path class="sc-area ${l.cls}" d="${d}L${pts[n - 1][0].toFixed(1)},${y(Math.max(lo, 0)).toFixed(1)}L${pts[0][0].toFixed(1)},${y(Math.max(lo, 0)).toFixed(1)}Z"/>`;
     g += `<path class="sc-line ${l.cls}" d="${d}"/>`;
+    if (l.warn) {
+      let w = '';
+      pts.forEach((p, i) => { if (p && pts[i - 1] && l.warn[i]) w += `M${pts[i - 1][0].toFixed(1)},${pts[i - 1][1].toFixed(1)}L${p[0].toFixed(1)},${p[1].toFixed(1)}`; });
+      if (w) g += `<path class="sc-line warn" d="${w}"/>`;
+    }
     const last = pts.map((p, i) => [p, i]).filter(([p]) => p).pop();
-    if (last) g += `<circle class="sc-dot ${l.cls}" cx="${last[0][0].toFixed(1)}" cy="${last[0][1].toFixed(1)}" r="4"/>`;
+    if (last) g += `<circle class="sc-dot ${l.warn?.[last[1]] ? 'warn' : l.cls}" cx="${last[0][0].toFixed(1)}" cy="${last[0][1].toFixed(1)}" r="4"/>`;
   });
   // Objectif principal en trait plein, libellé à droite ; intermédiaire en pointillé, libellé à gauche,
   // pour que les deux étiquettes ne se chevauchent jamais même quand les lignes sont proches.
@@ -1618,7 +1627,8 @@ function svgChart(cfg) {
   CHARTS[cfg.id] = { cfg, pl, band, W };
   const legend = [cfg.bars && !cfg.bars.solo ? `<span><i class="key bar"></i>${esc(cfg.bars.name)}</span>` : '',
     ...(cfg.lines || []).filter(l => !l.solo).map(l => `<span><i class="key ${l.cls}${l.dash ? ' dash' : ''}"></i>${esc(l.name)}</span>`),
-    ...cfg.refs.map(r => `<span><i class="key ref${r === cfg.ref2 ? ' mid' : ''}"></i>${esc(r.name || 'Objectif')}</span>`)].filter(Boolean);
+    ...cfg.refs.map(r => `<span><i class="key ref${r === cfg.ref2 ? ' mid' : ''}"></i>${esc(r.name || 'Objectif')}</span>`),
+    ...(cfg.lines || []).filter(l => l.warn?.some(Boolean)).map(l => `<span><i class="key warn"></i>${esc(l.warnName)}</span>`)].filter(Boolean);
   const rows = cfg.labels.map((lb, i) => `<tr><td>${esc(cfg.full[i])}</td>${cfg.bars ? `<td class="num">${esc(eur(cfg.bars.vals[i]))}</td>` : ''}${(cfg.lines || []).map(l => `<td class="num">${l.vals[i] == null ? '—' : esc(eur(l.vals[i]))}</td>`).join('')}</tr>`).reverse().join('');
   return `<div class="schart" data-chart="${cfg.id}">
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(cfg.aria)}">${g}</svg>
@@ -1644,7 +1654,7 @@ function chartHover(el, clientX) {
   };
   const h = document.createElement('div'); h.className = 'th'; h.textContent = C.cfg.full[i]; tip.append(h);
   if (C.cfg.bars) add(eur(C.cfg.bars.vals[i]), C.cfg.bars.name, 'bar');
-  (C.cfg.lines || []).forEach(l => { if (l.vals[i] != null) add(eur(l.vals[i]), l.name, l.cls); });
+  (C.cfg.lines || []).forEach(l => { if (l.vals[i] != null) add(eur(l.vals[i]), l.name + (l.note?.[i] ? ' · ' + l.note[i] : ''), l.warn?.[i] ? 'warn' : l.cls); });
   C.cfg.refs.forEach(r => add(eur(r.v), r.name || 'Objectif', r === C.cfg.ref2 ? 'ref mid' : 'ref'));
   tip.hidden = false;
   const left = (cx / C.W) * rect.width, tw = tip.offsetWidth;
@@ -1659,8 +1669,8 @@ document.addEventListener('pointermove', e => { const el = e.target.closest?.('.
 document.addEventListener('pointerdown', e => { const el = e.target.closest?.('.schart'); if (el) chartHover(el, e.clientX); });
 document.addEventListener('pointerout', e => { const el = e.target.closest?.('.schart'); if (el && !el.contains(e.relatedTarget)) chartLeave(el); });
 
-function statTile(label, value, sub, cls = '') {
-  return `<div class="tile"><p class="tl">${label}</p><p class="tv num">${value}</p>${sub ? `<p class="ts ${cls}">${sub}</p>` : ''}</div>`;
+function statTile(label, value, sub, cls = '', alert = false) {
+  return `<div class="tile${alert ? ' alert' : ''}"><p class="tl">${label}</p><p class="tv num">${value}</p>${sub ? `<p class="ts ${cls}">${sub}</p>` : ''}</div>`;
 }
 function vStats() {
   const F = focusMonth(), f = scopeF(), N = statN, Wn = statW;
@@ -1691,6 +1701,18 @@ function vStats() {
   const perfTot = perf.reduce((t, v) => t + v, 0), start = tl[0];
   const sumDepAll = ks.reduce((t, k) => t + (k < first ? 0 : breakdown(k, f).dep), 0);
   const scopeName = !multi() ? '' : scope === 'all' ? ' du foyer' : scope === 'moi' ? '' : ' de ' + mName(scope);
+  // Seuil d'alerte du taux d'épargne (20 % par défaut, réglable ; 0 le désactive)
+  const seuil = (S.settings.seuilEpargne ?? 20) / 100;
+  const rate = rev ? Math.max(0, sumDepAll) / revSum : null;
+  const low = seuil > 0 && rate != null && rate < seuil;
+  // Taux lissé, mois par mois : épargne totale de la fenêtre / revenus de la même fenêtre
+  const winRate = ks.map(k => {
+    const w = Array.from({ length: Wn }, (_, j) => addMonths(k, -j)).filter(m => m >= first);
+    const inc = w.reduce((t, m) => t + scopeIncome(m, scope), 0);
+    return w.length && inc ? w.reduce((t, m) => t + breakdown(m, f).dep, 0) / inc : null;
+  });
+  const showWarn = seuil > 0 && statGoal === 'all' && winRate.some(r => r != null);
+  const pctTxt = v => pct(v, v < 0.1 ? 1 : 0);
   const growth = tl.length > 1 ? tl[tl.length - 1].t - tl[0].t : 0;
   const goalName = { all: 'l’épargne totale', apport: 'l’apport immobilier', rente: 'la retraite' }[statGoal];
   const needTxt = need != null ? `Objectif : ${eur(need)} par mois pour ${goalName}` : null;
@@ -1702,18 +1724,22 @@ function vStats() {
       ${statTile('Mois à l’objectif', hit != null ? `${hit} / ${n}` : hitMid != null ? `${hitMid} / ${n}` : '—',
         hit != null ? `mois où l’épargne a atteint l’objectif${hitMid != null ? ` · ${hitMid} / ${n} pour l’intermédiaire` : ''}` : hitMid != null ? 'mois où l’épargne a atteint l’objectif intermédiaire' : 'aucun objectif chiffré')}
       ${statTile('Meilleur mois', eur(best), cap(monthLabel(bestK)))}
-      ${statTile(rev ? 'Taux d’épargne moyen' : 'Gain des marchés', rev ? pct(Math.max(0, sumDepAll) / revSum) : signed(perfTot), rev ? `sur ${eur(rev)} de revenus mensuels${esc(scopeName)}` : `sur ${plural(n, 'mois', 'mois')}`, rev ? '' : perfTot >= 0 ? 'up' : 'down')}
+      ${statTile(rev ? 'Taux d’épargne moyen' : 'Gain des marchés', rev ? pctTxt(rate) : signed(perfTot),
+        rev ? `${low ? `sous le seuil de ${pctTxt(seuil)} · ` : ''}sur ${eur(rev)} de revenus mensuels${esc(scopeName)}` : `sur ${plural(n, 'mois', 'mois')}`,
+        rev ? (low ? 'down' : '') : perfTot >= 0 ? 'up' : 'down', low)}
     </div>
     <section><h2>Argent mis de côté</h2>
       <div class="chips tight" role="group" aria-label="Objectif">${goals.map(([v, l]) => `<button class="${statGoal === v ? 'on' : ''}" data-act="statgoal" data-v="${v}">${l}</button>`).join('')}</div>
       <p class="small" style="margin:8px 0 10px">${needTxt || (statGoal === 'all' ? 'Renseigne un objectif d’apport ou de rente pour afficher la ligne d’objectif.' : `Renseigne l’objectif ${statGoal === 'apport' ? 'd’apport (montant et échéance)' : 'de rente'} dans l’onglet Objectifs pour afficher la ligne.`)}</p>
       ${svgChart({ id: 'sav', labels: lbl, full, aria: `Épargne mensuelle sur ${n} mois${need != null ? `, objectif ${eur(need)} par mois` : ''}`,
         bars: { vals: dep, name: 'Épargne du mois', neg: true },
-        lines: [{ vals: smooth, name: `Moyenne lissée ${Wn} mois`, cls: 'v2' }],
+        lines: [{ vals: smooth, name: `Moyenne lissée ${Wn} mois`, cls: 'v2',
+          warn: showWarn ? winRate.map(r => r != null && r < seuil) : null, warnName: `Taux sous ${pctTxt(seuil)}`,
+          note: showWarn ? winRate.map(r => r == null ? null : `taux ${pctTxt(r)}`) : null }],
         ref: need != null ? { v: need, label: `objectif ${eurC(need)}`, name: 'Objectif mensuel' } : null,
         ref2: mid != null ? { v: mid, label: `intermédiaire ${eurC(mid)}`, name: 'Objectif intermédiaire' } : null })
         .replace('<details', `<label class="midin">Objectif intermédiaire (€ par mois)<input inputmode="decimal" data-inter="${statGoal}" value="${esc(numStr(mid))}" placeholder="${need != null ? 'ex. ' + Math.round(need * 0.7 / 50) * 50 : 'ex. 800'}"></label>` + '<details')
-        .replace('<details', `<div class="chips tight" role="group" aria-label="Lissage" style="margin-top:10px">${[3, 6].map(v => `<button class="${Wn === v ? 'on' : ''}" data-act="statw" data-v="${v}">Lissage ${v} mois</button>`).join('')}</div><details`)}
+        .replace('<details', `<div class="chips tight" role="group" aria-label="Lissage" style="margin-top:10px">${[3, 6].map(v => `<button class="${Wn === v ? 'on' : ''}" data-act="statw" data-v="${v}">Lissage ${v} mois</button>`).join('')}</div>${seuil > 0 && rev ? `<p class="small" style="margin:8px 0 0">${showWarn ? `La moyenne lissée passe en rouge quand le taux d’épargne de la période tombe sous ${pctTxt(seuil)} des revenus.` : `Le seuil de ${pctTxt(seuil)} s’applique à l’épargne totale : choisis « Tout » pour le voir sur la courbe.`}</p>` : ''}<details`)}
     </section>`;
   if (ks.some(k => k > first)) html += `<section><h2>Performance des marchés</h2>
       <p class="small" style="margin:-6px 0 10px">Variation hors versements : intérêts, dividendes et évolution des cours.${tl.length > 1 ? ` Sur la période, le patrimoine a varié de ${signed(growth)}, dont ${signed(sumDepAll)} versés et ${signed(perfTot)} de gains.` : ''}</p>
@@ -1828,6 +1854,8 @@ function sheetSetPage(k) {
     <div class="stack-form">
       <label>Dépenses mensuelles (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="depenses" value="${esc(numStr(st.depenses))}"`}></label>
       <label>Revenus nets mensuels (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="revenus" value="${esc(numStr(st.revenus))}"`}></label>
+      <label>Seuil d’alerte du taux d’épargne (%)<input inputmode="decimal" data-set="seuilEpargne" value="${esc(numStr(st.seuilEpargne))}" placeholder="20"></label>
+      <p class="small" style="margin:0">En dessous, le taux d’épargne moyen et la courbe lissée des statistiques passent en rouge. Mets 0 pour désactiver.</p>
       <label>Plafond de déduction PER de l’année (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="perPlafond" value="${esc(numStr(st.perPlafond))}"`}></label>
       <p class="small" style="margin:0">Le plafond PER figure sur ton avis d’impôt.</p>
       <h3>Évolution des revenus</h3>
