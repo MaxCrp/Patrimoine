@@ -16,25 +16,25 @@
 <title>Patrimoine</title>
 <style>
 :root{
-  --paper:#E9EEE8; --surface:#F7F9F5; --ink:#15201A; --muted:#5A675F; --line:#D1DAD2; --pine:#1E5540; --on-pine:#FFFFFF; --pine-soft:#DAE7DE; --pos:#1E5540; --amber:#9C6116; --amber-soft:#F2E4CB; --red:#A6423A; --red-soft:#F6DCD8; --c-livrets:#9DC1A7; --c-bourse:#1E5540; --c-av:#4F8B6D; --c-retraite:#B38B3F; --c-salariale:#5E7F8C; --c-courant:#8C7A5E; --v1:#2F8A5C; --v2:#3F6FC4;
+  --paper:#E9EEE8; --surface:#F7F9F5; --ink:#15201A; --muted:#5A675F; --line:#D1DAD2; --pine:#1E5540; --on-pine:#FFFFFF; --pine-soft:#DAE7DE; --pos:#1E5540; --amber:#9C6116; --amber-soft:#F2E4CB; --red:#A6423A; --red-soft:#F6DCD8; --c-livrets:#9DC1A7; --c-bourse:#1E5540; --c-av:#4F8B6D; --c-retraite:#B38B3F; --c-salariale:#5E7F8C; --c-courant:#8C7A5E; --v1:#2F8A5C; --v2:#3F6FC4; --v3:#A05000;
   --num: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
   --txt: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
   --safe-b: env(safe-area-inset-bottom, 0px); --safe-t: env(safe-area-inset-top, 0px);
   color-scheme: light dark;
 }
 /* Thème Forêt en sombre : suit le système, sauf si un mode est imposé dans les réglages */
-@media (prefers-color-scheme: dark){ :root:not([data-mode="light"]){ --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E; --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24; --pos:#7DC4A0; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#3AA06C; --v2:#5C8BDE; } }
-:root[data-mode="dark"]{ --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E; --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24; --pos:#7DC4A0; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#3AA06C; --v2:#5C8BDE; color-scheme:dark; }
+@media (prefers-color-scheme: dark){ :root:not([data-mode="light"]){ --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E; --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24; --pos:#7DC4A0; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#3AA06C; --v2:#5C8BDE; --v3:#CB7229; } }
+:root[data-mode="dark"]{ --paper:#0E1512; --surface:#17211C; --ink:#E4ECE6; --muted:#8FA096; --line:#28352E; --pine:#7DC4A0; --on-pine:#0E1512; --pine-soft:#1B2E24; --pos:#7DC4A0; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#3E6B51; --c-bourse:#7DC4A0; --c-av:#4F9C76; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#3AA06C; --v2:#5C8BDE; --v3:#CB7229; color-scheme:dark; }
 :root[data-mode="light"]{ color-scheme:light; }
-:root[data-theme="marine"]{ --paper:#ECEFF4; --surface:#F9FAFC; --ink:#131A2B; --muted:#586178; --line:#D2D8E3; --pine:#1F3A6B; --on-pine:#FFFFFF; --pine-soft:#DCE3F0; --pos:#24734F; --amber:#93650F; --amber-soft:#F2E6CA; --red:#A33A3A; --red-soft:#F5DADA; --c-livrets:#A8B8D6; --c-bourse:#1F3A6B; --c-av:#4A6FA5; --c-retraite:#B08A3E; --c-salariale:#6B7F99; --c-courant:#8C7F6A; --v1:#3F62A2; --v2:#906106; }
-@media (prefers-color-scheme: dark){ :root[data-theme="marine"]:not([data-mode="light"]){ --paper:#0D1220; --surface:#161D2E; --ink:#E2E7F1; --muted:#8D97AC; --line:#263049; --pine:#94B3EA; --on-pine:#0D1220; --pine-soft:#1B2640; --pos:#6CC79A; --amber:#E0B25A; --amber-soft:#322A17; --red:#E58080; --red-soft:#3A2224; --c-livrets:#2E4570; --c-bourse:#94B3EA; --c-av:#5E86C8; --c-retraite:#CFA756; --c-salariale:#7F93B0; --c-courant:#A8987E; --v1:#5679BB; --v2:#9C721C; } }
-:root[data-theme="marine"][data-mode="dark"]{ --paper:#0D1220; --surface:#161D2E; --ink:#E2E7F1; --muted:#8D97AC; --line:#263049; --pine:#94B3EA; --on-pine:#0D1220; --pine-soft:#1B2640; --pos:#6CC79A; --amber:#E0B25A; --amber-soft:#322A17; --red:#E58080; --red-soft:#3A2224; --c-livrets:#2E4570; --c-bourse:#94B3EA; --c-av:#5E86C8; --c-retraite:#CFA756; --c-salariale:#7F93B0; --c-courant:#A8987E; --v1:#5679BB; --v2:#9C721C; }
-:root[data-theme="ardoise"]{ --paper:#E9ECED; --surface:#F8F9F9; --ink:#171C1F; --muted:#5B6469; --line:#D2D8DA; --pine:#0E6A70; --on-pine:#FFFFFF; --pine-soft:#D3E7E8; --pos:#1F7A4D; --amber:#94640F; --amber-soft:#F1E5CC; --red:#A63E3A; --red-soft:#F6DAD8; --c-livrets:#9CCACB; --c-bourse:#0E6A70; --c-av:#3D8F94; --c-retraite:#B38B3F; --c-salariale:#66808A; --c-courant:#8A7D68; --v1:#2695AC; --v2:#B97340; }
-@media (prefers-color-scheme: dark){ :root[data-theme="ardoise"]:not([data-mode="light"]){ --paper:#0F1214; --surface:#191E21; --ink:#E3E8EA; --muted:#8B969B; --line:#283135; --pine:#5FC3C6; --on-pine:#0F1214; --pine-soft:#183034; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#285A5D; --c-bourse:#5FC3C6; --c-av:#3A9EA3; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#139CB6; --v2:#BB7B4E; } }
-:root[data-theme="ardoise"][data-mode="dark"]{ --paper:#0F1214; --surface:#191E21; --ink:#E3E8EA; --muted:#8B969B; --line:#283135; --pine:#5FC3C6; --on-pine:#0F1214; --pine-soft:#183034; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#285A5D; --c-bourse:#5FC3C6; --c-av:#3A9EA3; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#139CB6; --v2:#BB7B4E; }
-:root[data-theme="bordeaux"]{ --paper:#F1ECE3; --surface:#FBF8F2; --ink:#261C18; --muted:#6B5E55; --line:#DDD3C4; --pine:#74283A; --on-pine:#FFFFFF; --pine-soft:#EEDADC; --pos:#2B7440; --amber:#8E6113; --amber-soft:#F1E3C6; --red:#B03A2E; --red-soft:#F6D9D3; --c-livrets:#D9B9BE; --c-bourse:#74283A; --c-av:#A8566A; --c-retraite:#B08A3E; --c-salariale:#7A7F8C; --c-courant:#8C7A5E; --v1:#2B7440; --v2:#2A669F; }
-@media (prefers-color-scheme: dark){ :root[data-theme="bordeaux"]:not([data-mode="light"]){ --paper:#16110F; --surface:#211A17; --ink:#EEE6DC; --muted:#A3968B; --line:#382C27; --pine:#E59AAA; --on-pine:#16110F; --pine-soft:#3A2229; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08A6E; --red-soft:#3E241D; --c-livrets:#5A3540; --c-bourse:#E59AAA; --c-av:#B86B7F; --c-retraite:#C9A45A; --c-salariale:#9A9FAC; --c-courant:#B09A7F; --v1:#448C56; --v2:#437EB9; } }
-:root[data-theme="bordeaux"][data-mode="dark"]{ --paper:#16110F; --surface:#211A17; --ink:#EEE6DC; --muted:#A3968B; --line:#382C27; --pine:#E59AAA; --on-pine:#16110F; --pine-soft:#3A2229; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08A6E; --red-soft:#3E241D; --c-livrets:#5A3540; --c-bourse:#E59AAA; --c-av:#B86B7F; --c-retraite:#C9A45A; --c-salariale:#9A9FAC; --c-courant:#B09A7F; --v1:#448C56; --v2:#437EB9; }
+:root[data-theme="marine"]{ --paper:#ECEFF4; --surface:#F9FAFC; --ink:#131A2B; --muted:#586178; --line:#D2D8E3; --pine:#1F3A6B; --on-pine:#FFFFFF; --pine-soft:#DCE3F0; --pos:#24734F; --amber:#93650F; --amber-soft:#F2E6CA; --red:#A33A3A; --red-soft:#F5DADA; --c-livrets:#A8B8D6; --c-bourse:#1F3A6B; --c-av:#4A6FA5; --c-retraite:#B08A3E; --c-salariale:#6B7F99; --c-courant:#8C7F6A; --v1:#3F62A2; --v2:#906106; --v3:#799A2D; }
+@media (prefers-color-scheme: dark){ :root[data-theme="marine"]:not([data-mode="light"]){ --paper:#0D1220; --surface:#161D2E; --ink:#E2E7F1; --muted:#8D97AC; --line:#263049; --pine:#94B3EA; --on-pine:#0D1220; --pine-soft:#1B2640; --pos:#6CC79A; --amber:#E0B25A; --amber-soft:#322A17; --red:#E58080; --red-soft:#3A2224; --c-livrets:#2E4570; --c-bourse:#94B3EA; --c-av:#5E86C8; --c-retraite:#CFA756; --c-salariale:#7F93B0; --c-courant:#A8987E; --v1:#5679BB; --v2:#9C721C; --v3:#6FA901; } }
+:root[data-theme="marine"][data-mode="dark"]{ --paper:#0D1220; --surface:#161D2E; --ink:#E2E7F1; --muted:#8D97AC; --line:#263049; --pine:#94B3EA; --on-pine:#0D1220; --pine-soft:#1B2640; --pos:#6CC79A; --amber:#E0B25A; --amber-soft:#322A17; --red:#E58080; --red-soft:#3A2224; --c-livrets:#2E4570; --c-bourse:#94B3EA; --c-av:#5E86C8; --c-retraite:#CFA756; --c-salariale:#7F93B0; --c-courant:#A8987E; --v1:#5679BB; --v2:#9C721C; --v3:#6FA901; }
+:root[data-theme="ardoise"]{ --paper:#E9ECED; --surface:#F8F9F9; --ink:#171C1F; --muted:#5B6469; --line:#D2D8DA; --pine:#0E6A70; --on-pine:#FFFFFF; --pine-soft:#D3E7E8; --pos:#1F7A4D; --amber:#94640F; --amber-soft:#F1E5CC; --red:#A63E3A; --red-soft:#F6DAD8; --c-livrets:#9CCACB; --c-bourse:#0E6A70; --c-av:#3D8F94; --c-retraite:#B38B3F; --c-salariale:#66808A; --c-courant:#8A7D68; --v1:#2695AC; --v2:#B97340; --v3:#61620C; }
+@media (prefers-color-scheme: dark){ :root[data-theme="ardoise"]:not([data-mode="light"]){ --paper:#0F1214; --surface:#191E21; --ink:#E3E8EA; --muted:#8B969B; --line:#283135; --pine:#5FC3C6; --on-pine:#0F1214; --pine-soft:#183034; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#285A5D; --c-bourse:#5FC3C6; --c-av:#3A9EA3; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#139CB6; --v2:#BB7B4E; --v3:#6D6E1D; } }
+:root[data-theme="ardoise"][data-mode="dark"]{ --paper:#0F1214; --surface:#191E21; --ink:#E3E8EA; --muted:#8B969B; --line:#283135; --pine:#5FC3C6; --on-pine:#0F1214; --pine-soft:#183034; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#E47D72; --red-soft:#3A2220; --c-livrets:#285A5D; --c-bourse:#5FC3C6; --c-av:#3A9EA3; --c-retraite:#C9A45A; --c-salariale:#7FA2B0; --c-courant:#B09A7F; --v1:#139CB6; --v2:#BB7B4E; --v3:#6D6E1D; }
+:root[data-theme="bordeaux"]{ --paper:#F1ECE3; --surface:#FBF8F2; --ink:#261C18; --muted:#6B5E55; --line:#DDD3C4; --pine:#74283A; --on-pine:#FFFFFF; --pine-soft:#EEDADC; --pos:#2B7440; --amber:#8E6113; --amber-soft:#F1E3C6; --red:#B03A2E; --red-soft:#F6D9D3; --c-livrets:#D9B9BE; --c-bourse:#74283A; --c-av:#A8566A; --c-retraite:#B08A3E; --c-salariale:#7A7F8C; --c-courant:#8C7A5E; --v1:#2B7440; --v2:#2A669F; --v3:#B97D4A; }
+@media (prefers-color-scheme: dark){ :root[data-theme="bordeaux"]:not([data-mode="light"]){ --paper:#16110F; --surface:#211A17; --ink:#EEE6DC; --muted:#A3968B; --line:#382C27; --pine:#E59AAA; --on-pine:#16110F; --pine-soft:#3A2229; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08A6E; --red-soft:#3E241D; --c-livrets:#5A3540; --c-bourse:#E59AAA; --c-av:#B86B7F; --c-retraite:#C9A45A; --c-salariale:#9A9FAC; --c-courant:#B09A7F; --v1:#448C56; --v2:#437EB9; --v3:#D85218; } }
+:root[data-theme="bordeaux"][data-mode="dark"]{ --paper:#16110F; --surface:#211A17; --ink:#EEE6DC; --muted:#A3968B; --line:#382C27; --pine:#E59AAA; --on-pine:#16110F; --pine-soft:#3A2229; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08A6E; --red-soft:#3E241D; --c-livrets:#5A3540; --c-bourse:#E59AAA; --c-av:#B86B7F; --c-retraite:#C9A45A; --c-salariale:#9A9FAC; --c-courant:#B09A7F; --v1:#448C56; --v2:#437EB9; --v3:#D85218; }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--txt);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
@@ -127,6 +127,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .sc-grid.zero{stroke:var(--muted);stroke-opacity:.5}
 .sc-lbl{fill:var(--muted);font:11px var(--txt)}
 .sc-bar{fill:var(--v1)}
+.sc-bar.v2{fill:var(--v2)} .sc-bar.v3{fill:var(--v3)}
 .sc-bar.neg{fill:var(--red)}
 .sc-bar.hl{opacity:.72}
 .sc-line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
@@ -142,6 +143,25 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .key.ref.mid{border-top:1.5px dashed var(--muted)}
 .sc-tip .key.ref.mid{border-top-color:var(--paper);opacity:.7}
 .midin{margin-top:12px;font-size:13px}
+.bilan{background:var(--surface);border-radius:22px;padding:18px}
+.bilan .bk{margin:0;color:var(--muted);font-size:15px}
+.bilan .bt{margin:2px 0 4px;font:700 38px/1.05 var(--num);letter-spacing:-.02em}
+.bilan .bs{margin:0 0 2px;font-size:14.5px;color:var(--muted)}
+.bilan .bs .up,.bilan .bs .down{font-weight:650}
+.bilan h3{font:650 16px var(--num);margin:20px 0 10px}
+.bstack{display:flex;height:16px;border-radius:8px;overflow:hidden;gap:2px;background:var(--surface)}
+.bstack i{display:block;height:100%}
+.bstack i.rest,.bdot.rest{background:var(--line)}
+.blist{list-style:none;margin:12px 0 0;padding:0}
+.blist li{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}
+.blist li:last-child{border-bottom:0;font-weight:650}
+.bdot{width:10px;height:10px;border-radius:3px;align-self:center}
+.bl .small{color:var(--muted);font-weight:400;display:block;font-size:13px}
+.bv .small{color:var(--muted);font-weight:400;margin-left:4px}
+.bcmp li > span:last-child{text-align:right}
+.bd{display:block;font-size:12.5px;color:var(--muted)}
+.bilan .bd.up{color:var(--pos)} .bilan .bd.down{color:var(--red)}
+.bv{white-space:nowrap}
 .themes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .theme{display:grid;gap:4px;align-content:start;text-align:left;padding:10px;border-radius:16px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
 .theme.on{border-color:var(--pine)}
@@ -158,6 +178,8 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .key.bar{width:10px;height:10px;border:0;border-radius:3px;background:var(--v1)}
 .key.v1{border-top-color:var(--v1)} .key.v2{border-top:2px solid var(--v2)} .key.ref{border-top:1.5px solid var(--ink)}
 .sc-tip .key{width:12px;margin:0}
+.key.bar.v2,.key.bar.v3{border:0}
+.legend .key.bar{display:inline-block;margin-right:7px;vertical-align:-1px} .key.bar.v2,.sc-tip .key.bar.v2{background:var(--v2)} .key.bar.v3,.sc-tip .key.bar.v3{background:var(--v3)}
 .sc-tip .key.bar{background:var(--v1)} .sc-tip .key.ref{border-top-color:var(--paper)}
 .sc-data{margin-top:8px}
 .sc-data summary{font-size:14px;color:var(--pine);font-weight:600;cursor:pointer;padding:6px 0}
@@ -410,6 +432,7 @@ const addMonths = (k, n) => { const [y, m] = k.split('-').map(Number); return mo
 const monthDiff = (a, b) => { const [y1, m1] = a.split('-').map(Number), [y2, m2] = b.split('-').map(Number); return (y2 - y1) * 12 + (m2 - m1); };
 const monthLabel = (k, opt = { month: 'long', year: 'numeric' }) => { const [y, m] = k.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('fr-FR', opt); };
 const monthName = k => monthLabel(k, { month: 'long' });
+const deM = t => (/^[aeiouyéèêh]/i.test(t) ? 'd’' : 'de ') + t;
 const monthShort = k => monthLabel(k, { month: 'short', year: '2-digit' });
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -856,6 +879,7 @@ const potOf = m => S.pot[m] || { items: [], transfers: [] };
 // Les dépenses marquées « fixe » sont reprises d'office le mois suivant, une seule fois :
 // si tu en supprimes une, elle ne revient pas.
 async function seedMonth(k) {
+  await seedPerso(k);
   if (S.pot[k]?.seeded) return 0;
   const prevK = addMonths(k, -1), rec = potOf(prevK).items.filter(i => i.r !== false);
   const cur = (S.pot[k] ||= { items: [], transfers: [] });
@@ -867,6 +891,29 @@ async function seedMonth(k) {
   cur.seeded = true; cur.from = prevK;
   await save();
   return n;
+}
+// Charges personnelles : les tiennes uniquement, saisies à la main, reprises chaque mois comme les charges communes
+const persoOf = k => S.pot[k]?.perso || [];
+const persoTotal = k => persoOf(k).reduce((t, i) => t + i.a, 0);
+async function seedPerso(k) {
+  if (S.pot[k]?.persoSeeded) return 0;
+  const prevK = addMonths(k, -1), rec = persoOf(prevK).filter(i => i.r !== false);
+  const cur = (S.pot[k] ||= { items: [], transfers: [] });
+  cur.perso ||= [];
+  if (!rec.length) { if (cur.perso.length) cur.persoSeeded = true; return 0; }
+  const have = new Set(cur.perso.map(i => norm(i.n)));
+  let n = 0;
+  for (const i of rec) if (!have.has(norm(i.n))) { cur.perso.push({ id: uid(), n: i.n, a: i.a, r: true }); n++; }
+  cur.persoSeeded = true; cur.persoFrom = prevK;
+  await save();
+  return n;
+}
+// Reste à vivre d'un membre : revenu − part des charges communes − charges perso (toi seulement) − épargne versée
+function resteOf(k, id) {
+  const rev = scopeIncome(k, id), st = S.household.on && members().length > 1 ? potStats(k) : null;
+  const share = st ? st.due[id] || 0 : 0, perso = id === 'moi' ? persoTotal(k) : 0;
+  const sav = Math.max(0, S.accounts.filter(a => !isCash(a) && (a.owner || 'moi') === id).reduce((t, a) => t + dep(k, a), 0));
+  return { rev, share, perso, sav, reste: rev - share - perso - sav };
 }
 // Dépenses communes du mois : saisies à la main, opérations de compte courant classées « charge », enveloppes
 function potItems(k) {
@@ -979,7 +1026,7 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
   if (withdrawMonths.length >= 3) out.push({ l: 'warn', k: 'reprises6', s: withdrawMonths.length, t: `Reprises d’épargne sur ${withdrawMonths.length} des 6 derniers mois : le montant que tu mets de côté chaque mois est probablement trop ambitieux, ou l’épargne de précaution ne joue pas son rôle d’amortisseur.` });
   const miss = mine ? incomeMissing(F) : null;
   if (miss && miss.length && potStats(F).total > 0)
-    out.push({ l: 'warn', k: 'revenusmanquants', s: miss.map(m => m.id).join(','), t: `Revenus de ${monthName(F)} non saisis pour ${forSummary ? miss.map(m => mLabel(m.id)).join(', ') : miss.map(m => m.name).join(', ')} : la répartition des charges utilise le revenu de référence.` });
+    out.push({ l: 'warn', k: 'revenusmanquants', s: miss.map(m => m.id).join(','), t: `Revenus ${deM(monthName(F))} non saisis pour ${forSummary ? miss.map(m => mLabel(m.id)).join(', ') : miss.map(m => m.name).join(', ')} : la répartition des charges utilise le revenu de référence.` });
   for (const a of cashAccounts().filter(x => !isSimple(x) && f(x))) {
     const todo = txOf(F, a).filter(t => t.a < 0 && !t.c).length;
     if (todo && !forSummary) out.push({ l: 'info', k: `txtodo:${a.id}`, s: todo, t: `${a.name} : ${plural(todo, 'opération non classée', 'opérations non classées')} en ${monthName(F)}. Classe-les pour que les charges communes soient justes.` });
@@ -988,7 +1035,7 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
   if (ms.length >= 3) {
     const b = breakdown(F, f), prev = avgDep(addMonths(F, -1), 6, f);
     if (b.dep < 0) out.push({ l: 'warn', k: 'retraitnet', s: Math.round(-b.dep / 50), t: `Retrait net de ${E(-b.dep)} en ${monthName(F)} : vérifie qu’il était prévu.` });
-    else if (prev.n >= 2 && prev.avg > 0 && b.dep < 0.7 * prev.avg) out.push({ l: 'warn', k: 'epargnefaible', s: Math.round(b.dep / 50), t: `Épargne de ${monthName(F)} : ${E(b.dep)}, sous ta moyenne récente (${E(prev.avg)} par mois).` });
+    else if (prev.n >= 2 && prev.avg > 0 && b.dep < 0.7 * prev.avg) out.push({ l: 'warn', k: 'epargnefaible', s: Math.round(b.dep / 50), t: `Épargne ${deM(monthName(F))} : ${E(b.dep)}, sous ta moyenne récente (${E(prev.avg)} par mois).` });
     else if (prev.n >= 2 && prev.avg > 0 && b.dep > 1.3 * prev.avg) out.push({ l: 'good', k: 'epargneforte', s: Math.round(b.dep / 50), t: `Bon mois : ${E(b.dep)} épargnés, au-dessus de ta moyenne récente (${E(prev.avg)} par mois).` });
   }
   const ga = mine ? goalApport(F) : null;
@@ -1088,6 +1135,7 @@ function summary(F) {
       for (const m of members()) L.push(`- ${mLabel(m.id)} : part ${pct(st.sh[m.id] || 0)}, payé ${R(st.paid[m.id])}, dû ${R(st.due[m.id])}${incomeOf(F, m.id) ? `, soit ${pct(st.due[m.id] / incomeOf(F, m.id))} de ses revenus` : ''}`);
       const d = settle(st);
       if (d.length) d.forEach(x => L.push(`- Régularisation attendue : ${mLabel(x.from)} doit ${R(x.a)} à ${mLabel(x.to)}`));
+
       else L.push('- Comptes équilibrés entre les membres ce mois-ci.');
     }
     const others = members().filter(m => m.id !== 'moi');
@@ -1105,6 +1153,15 @@ function summary(F) {
     const env = cash.filter(isSimple).map(a => ({ a, d: dotOf(F, a) })).filter(x => x.d > 0);
     if (env.length) lines.push(`- Enveloppes envoyées : ${env.map(x => `${x.a.name} ${R(x.d)}`).join(', ')}`);
     if (lines.length) { L.push('', 'Compte courant et enveloppes :'); lines.forEach(l => L.push(l)); }
+  }
+  {
+    const rv = resteOf(F, 'moi');
+    if (rv.perso > 0 || (rv.rev && (rv.share || rv.perso))) {
+      L.push('', 'Mon budget du mois :');
+      if (rv.share) L.push(`- Ma part des charges communes : ${R(rv.share)}`);
+      if (rv.perso > 0) L.push(`- Mes charges personnelles : ${R(rv.perso)}`);
+      if (rv.rev) L.push(`- Reste à vivre après charges et épargne : ${SR(rv.reste)}${rv.reste < 0 ? ' (dépassement)' : ''}`);
+    }
   }
   const comp = active().filter(a => mineF(a) && a.lines?.length && valueAt(a, F) > 0);
   if (comp.length) {
@@ -1330,9 +1387,10 @@ function vFoyer() {
       <td class="num ${st.net[m.id] < -0.5 ? 'down' : st.net[m.id] > 0.5 ? 'up' : ''}">${signed(st.net[m.id])}</td></tr>`;
   }).join('');
   const effort = ms.filter(m => incomeOf(k, m.id) > 0).map(m => {
-    const sav = savedBy(k, m.id), rev = incomeOf(k, m.id);
-    return `<li><span>${esc(m.name)}</span><span>${pct(st.due[m.id] / rev)} de charges · ${pct(Math.max(0, sav) / rev)} d’épargne · reste ${eur(rev - st.due[m.id] - Math.max(0, sav))}</span></li>`;
+    const r = resteOf(k, m.id);
+    return `<li><span>${esc(m.name)}</span><span>${pct(r.share / r.rev)} de charges communes${m.id === 'moi' ? ` · ${pct(r.perso / r.rev)} de charges perso` : ''} · ${pct(r.sav / r.rev)} d’épargne · <b class="${r.reste < 0 ? 'down' : ''}">reste ${eur(r.reste)}</b></span></li>`;
   }).join('');
+  const perso = persoOf(k).slice().sort((a, b) => b.a - a.a);
   const miss = incomeMissing(k) || [];
   const items = st.items.slice().sort((a, b) => b.a - a.a);
   const prevK = addMonths(k, -1), gap = carryPending(k) ? prevGap(k) : null;
@@ -1341,12 +1399,12 @@ function vFoyer() {
   const trs = (st.p.transfers || []);
   return `
     <div class="month-nav"><button data-act="potmonth" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(k))}</strong><button data-act="potmonth" data-d="1" aria-label="Mois suivant" ${k >= cur ? 'disabled' : ''}>›</button></div>
-    ${gap ? `<section><div class="goal carry"><h2>Écart de ${monthName(prevK)}</h2>
+    ${gap ? `<section><div class="goal carry"><h2>Écart ${deM(monthName(prevK))}</h2>
       <p>${cap(monthName(prevK))} s’est terminé sans régularisation : ${gapTxt}.</p>
       <p class="small">Tu peux reporter cet écart sur ${monthName(k)}, il s’ajoutera aux soldes du mois, ou repartir de zéro si vous avez réglé autrement.</p>
       <div class="row2" style="margin-top:12px"><button class="btn primary" data-act="carry" data-v="1">Reporter</button><button class="btn" data-act="carry" data-v="0">Repartir à zéro</button></div>
     </div></section>` : ''}
-    <section><div class="goal"><h2>Revenus de ${monthName(k)}</h2>
+    <section><div class="goal"><h2>Revenus ${deM(monthName(k))}</h2>
       <p class="small" style="margin:0 0 12px">À renseigner chaque mois quand les revenus varient. Laisse vide pour reprendre le revenu de référence du membre.</p>
       <div class="fields">${ms.map(m => `<label>${esc(m.name)}<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-inc="${m.id}" value="${esc(numStr(S.pot[k]?.inc?.[m.id]))}" placeholder="${esc(numStr(m.income) || '0')}"`}></label>`).join('')}</div>
       <p class="small" style="margin-top:10px">Total du foyer : ${eur(ms.reduce((t, m) => t + incomeOf(k, m.id), 0))}${ms.some(m => !incomeSet(k, m.id)) ? ` · ${ms.filter(m => !incomeSet(k, m.id)).map(m => esc(m.name)).join(', ')} : revenu de référence` : ''}</p>
@@ -1355,17 +1413,22 @@ function vFoyer() {
       <p class="big num">${eur(st.total)}</p>
       <p class="small">${plural(items.length, 'dépense enregistrée', 'dépenses enregistrées')} · répartition : ${SPLIT[H.split.mode]}</p>
       ${st.total || carried ? `<div class="tbl"><table><thead><tr><th></th><th>Part</th><th>Payé</th><th>Dû</th><th>Solde</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
-      ${carried ? `<p class="small" style="margin-top:8px">Solde incluant le report de ${monthName(prevK)} : ${members().map(m => `${esc(m.name)} ${signed(st.p.carry[m.id] || 0)}`).join(', ')}. <button class="inline" data-act="uncarry">Annuler le report</button></p>` : ''}
+      ${carried ? `<p class="small" style="margin-top:8px">Solde incluant le report ${deM(monthName(prevK))} : ${members().map(m => `${esc(m.name)} ${signed(st.p.carry[m.id] || 0)}`).join(', ')}. <button class="inline" data-act="uncarry">Annuler le report</button></p>` : ''}
       ${dues.length ? `<div class="settle">${dues.map(d => `<p><strong>${esc(mName(d.from))} doit ${eur(d.a)} à ${esc(mName(d.to))}</strong></p>
         <button class="btn wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer ce virement</button>`).join('')}</div>`
         : st.total || carried ? '<p class="small" style="margin-top:12px">Comptes équilibrés entre vous.</p>' : ''}
       <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>
     <section><h2>Dépenses du mois</h2>
-      ${st.p.from && st.p.items.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Dépenses fixes reprises de ${monthLabel(st.p.from)} : vérifie les montants qui ont changé.</p>` : ''}
+      ${st.p.from && st.p.items.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Dépenses fixes reprises ${deM(monthLabel(st.p.from))} : vérifie les montants qui ont changé.</p>` : ''}
       ${items.length ? `<ul class="list">${items.map(i => `<li><button data-act="${i.src ? 'srcinfo' : 'editcharge'}" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : i.r === false ? ' · ponctuelle' : ' · fixe'}</span></span><span class="num">${eur(i.a)}</span></button></li>`).join('')}</ul>`
         : '<p class="muted">Aucune dépense commune enregistrée pour ce mois.</p>'}
       <div class="actions"><button class="btn primary wide" data-act="newcharge">Ajouter une dépense</button>
-        ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre à nouveau les dépenses de ${monthName(addMonths(k, -1))}</button>` : ''}</div></section>
+        ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre à nouveau les dépenses ${deM(monthName(addMonths(k, -1)))}</button>` : ''}</div></section>
+    <section><h2>Mes charges personnelles</h2>
+      <p class="muted" style="margin:-6px 0 12px;font-size:14px">${perso.length ? `${eur(persoTotal(k))} ce mois-ci. Elles ne concernent que toi et réduisent ton reste à vivre.` : 'Abonnements, téléphone, transport… : ce qui ne regarde que toi, pour un reste à vivre plus juste.'}</p>
+      ${st.p.persoFrom && perso.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Charges fixes reprises ${deM(monthLabel(st.p.persoFrom))} : vérifie les montants qui ont changé.</p>` : ''}
+      ${perso.length ? `<ul class="list">${perso.map(i => `<li><button data-act="editperso" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">${i.r === false ? 'ponctuelle' : 'fixe'}</span></span><span class="num">${eur(i.a)}</span></button></li>`).join('')}</ul>` : ''}
+      <div class="actions"><button class="btn wide" data-act="newperso">Ajouter une charge personnelle</button></div></section>
     <section><h2>Virements entre vous</h2>
       ${trs.length ? `<ul class="list">${trs.map(t => {
         const detail = [t.fa || t.ta ? `${esc(accName(t.fa) || '?')} → ${esc(accName(t.ta) || '?')}` : '', t.reg === false ? 'hors régularisation' : '', t.n ? esc(t.n) : ''].filter(Boolean).join(' · ');
@@ -1374,7 +1437,7 @@ function vFoyer() {
         <p class="small">Touche un virement pour le supprimer.</p>` : '<p class="muted">Aucun virement ce mois-ci.</p>'}
       <div class="actions"><button class="btn wide" data-act="newtransfer">Ajouter un virement</button></div></section>
     ${effort ? `<section><h2>Reste à vivre</h2><ul class="kv effort">${effort}</ul>
-      <p class="small">Calculé sur les revenus renseignés, la part de charges due et l’épargne versée ce mois-ci.</p></section>` : ''}
+      <p class="small">Revenus du mois, moins la part de charges communes due, tes charges personnelles et l’épargne versée.</p></section>` : ''}
 `;
 }
 function vMois() {
@@ -1392,7 +1455,7 @@ function vMois() {
     { k: 'soldes', t: 'Soldes des comptes', d: `${doneN} sur ${accs.length} à jour`, ok: doneN === accs.length, act: 'sub', v: 'soldes' },
     ...(cashDet.length ? [{ k: 'operations', t: 'Opérations du mois', d: !txAll.length ? 'aucun relevé importé' : txTodo ? `${plural(txTodo, 'ligne', 'lignes')} à classer` : `${plural(txAll.length, 'ligne classée', 'lignes classées')}`, ok: txAll.length > 0 && !txTodo, act: 'sub', v: 'operations' }] : []),
     ...(S.household.on && members().length > 1 ? [{ k: 'foyer', t: 'Revenus et charges du foyer',
-      d: carryPending(m) ? `écart de ${monthName(addMonths(m, -1))} à reporter ou effacer` : !st.total ? 'aucune dépense enregistrée' : `${eur(st.total)} de charges${incOk ? '' : ', revenus à saisir'}`,
+      d: carryPending(m) ? `écart ${deM(monthName(addMonths(m, -1)))} à reporter ou effacer` : !st.total ? 'aucune dépense enregistrée' : `${eur(st.total)} de charges${incOk ? '' : ', revenus à saisir'}`,
       ok: st.total > 0 && incOk && !carryPending(m), act: 'foyer' }] : []),
   ];
   // Dernière étape : la sauvegarde, accessible une fois les soldes à jour
@@ -1573,6 +1636,7 @@ function svgChart(cfg) {
   const W = 340, H = 190, pl = 44, pr = 8, pt = 12, pb = 24;
   const n = cfg.labels.length, all = [];
   if (cfg.bars) all.push(...cfg.bars.vals);
+  if (cfg.bars2) all.push(...cfg.bars2.vals);
   (cfg.lines || []).forEach(l => all.push(...l.vals.filter(v => v != null)));
   cfg.refs = [cfg.ref, cfg.ref2].filter(r => r?.v != null);
   cfg.refs.forEach(r => all.push(r.v));
@@ -1589,17 +1653,21 @@ function svgChart(cfg) {
   }
   const ticks = n <= 1 ? [0] : [...new Set([0, Math.round((n - 1) / 2), n - 1])];
   ticks.forEach(i => { g += `<text class="sc-lbl" x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="${i === 0 && n > 1 ? 'start' : i === n - 1 && n > 1 ? 'end' : 'middle'}">${esc(cfg.labels[i])}</text>`; });
-  if (cfg.bars) {
-    const bw = Math.min(22, band * 0.62), r = Math.min(4, bw / 2), y0 = y(0);
-    cfg.bars.vals.forEach((v, i) => {
+  // Une série : barre centrée. Deux séries : barres côte à côte, séparées d'un espace de 2 px.
+  const series = [cfg.bars, cfg.bars2].filter(Boolean);
+  series.forEach((B, si) => {
+    const two = series.length > 1;
+    const bw = two ? Math.min(13, band * 0.36) : Math.min(22, band * 0.62), r = Math.min(4, bw / 2), y0 = y(0);
+    const off = two ? (si === 0 ? -bw - 1 : 1) : -bw / 2;
+    B.vals.forEach((v, i) => {
       const yv = y(v), h = Math.abs(y0 - yv); if (h < 0.5) return;
-      const x0 = x(i) - bw / 2, cls = v < 0 && cfg.bars.neg ? 'sc-bar neg' : 'sc-bar';
+      const x0 = x(i) + off, cls = `sc-bar${B.cls ? ' ' + B.cls : ''}${v < 0 && B.neg ? ' neg' : ''}`;
       const d = v >= 0
         ? `M${x0},${y0}V${yv + r}Q${x0},${yv} ${x0 + r},${yv}H${x0 + bw - r}Q${x0 + bw},${yv} ${x0 + bw},${yv + r}V${y0}Z`
         : `M${x0},${y0}V${yv - r}Q${x0},${yv} ${x0 + r},${yv}H${x0 + bw - r}Q${x0 + bw},${yv} ${x0 + bw},${yv - r}V${y0}Z`;
       g += `<path class="${cls}" data-i="${i}" d="${d}"/>`;
     });
-  }
+  });
   (cfg.lines || []).forEach(l => {
     const pts = l.vals.map((v, i) => v == null ? null : [x(i), y(v)]);
     let d = '', started = false;
@@ -1625,16 +1693,17 @@ function svgChart(cfg) {
   });
   g += `<line class="sc-cross" x1="0" x2="0" y1="${pt}" y2="${H - pb}" style="display:none"/>`;
   CHARTS[cfg.id] = { cfg, pl, band, W };
-  const legend = [cfg.bars && !cfg.bars.solo ? `<span><i class="key bar"></i>${esc(cfg.bars.name)}</span>` : '',
+  const legend = [cfg.bars && !cfg.bars.solo ? `<span><i class="key bar ${cfg.bars.cls || ''}"></i>${esc(cfg.bars.name)}</span>` : '',
+    cfg.bars2 ? `<span><i class="key bar ${cfg.bars2.cls || ''}"></i>${esc(cfg.bars2.name)}</span>` : '',
     ...(cfg.lines || []).filter(l => !l.solo).map(l => `<span><i class="key ${l.cls}${l.dash ? ' dash' : ''}"></i>${esc(l.name)}</span>`),
     ...cfg.refs.map(r => `<span><i class="key ref${r === cfg.ref2 ? ' mid' : ''}"></i>${esc(r.name || 'Objectif')}</span>`),
     ...(cfg.lines || []).filter(l => l.warn?.some(Boolean)).map(l => `<span><i class="key warn"></i>${esc(l.warnName)}</span>`)].filter(Boolean);
-  const rows = cfg.labels.map((lb, i) => `<tr><td>${esc(cfg.full[i])}</td>${cfg.bars ? `<td class="num">${esc(eur(cfg.bars.vals[i]))}</td>` : ''}${(cfg.lines || []).map(l => `<td class="num">${l.vals[i] == null ? '—' : esc(eur(l.vals[i]))}</td>`).join('')}</tr>`).reverse().join('');
+  const rows = cfg.labels.map((lb, i) => `<tr><td>${esc(cfg.full[i])}</td>${cfg.bars ? `<td class="num">${esc(eur(cfg.bars.vals[i]))}</td>` : ''}${cfg.bars2 ? `<td class="num">${esc(eur(cfg.bars2.vals[i]))}</td>` : ''}${(cfg.lines || []).map(l => `<td class="num">${l.vals[i] == null ? '—' : esc(eur(l.vals[i]))}</td>`).join('')}</tr>`).reverse().join('');
   return `<div class="schart" data-chart="${cfg.id}">
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(cfg.aria)}">${g}</svg>
       <div class="sc-tip" hidden></div></div>
     ${legend.length > 1 || cfg.refs.length ? `<div class="legend">${legend.join('')}</div>` : ''}
-    <details class="sc-data"><summary>Voir les données</summary><div class="tbl"><table><thead><tr><th>Mois</th>${cfg.bars ? `<th>${esc(cfg.bars.name)}</th>` : ''}${(cfg.lines || []).map(l => `<th>${esc(l.name)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></details>`;
+    <details class="sc-data"><summary>Voir les données</summary><div class="tbl"><table><thead><tr><th>Mois</th>${cfg.bars ? `<th>${esc(cfg.bars.name)}</th>` : ''}${cfg.bars2 ? `<th>${esc(cfg.bars2.name)}</th>` : ''}${(cfg.lines || []).map(l => `<th>${esc(l.name)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></details>`;
 }
 function chartHover(el, clientX) {
   const C = CHARTS[el.dataset.chart]; if (!C) return;
@@ -1653,7 +1722,8 @@ function chartHover(el, clientX) {
     tip.append(r);
   };
   const h = document.createElement('div'); h.className = 'th'; h.textContent = C.cfg.full[i]; tip.append(h);
-  if (C.cfg.bars) add(eur(C.cfg.bars.vals[i]), C.cfg.bars.name, 'bar');
+  if (C.cfg.bars) add(eur(C.cfg.bars.vals[i]), C.cfg.bars.name, 'bar ' + (C.cfg.bars.cls || ''));
+  if (C.cfg.bars2) add(eur(C.cfg.bars2.vals[i]), C.cfg.bars2.name, 'bar ' + (C.cfg.bars2.cls || ''));
   (C.cfg.lines || []).forEach(l => { if (l.vals[i] != null) add(eur(l.vals[i]), l.name + (l.note?.[i] ? ' · ' + l.note[i] : ''), l.warn?.[i] ? 'warn' : l.cls); });
   C.cfg.refs.forEach(r => add(eur(r.v), r.name || 'Objectif', r === C.cfg.ref2 ? 'ref mid' : 'ref'));
   tip.hidden = false;
@@ -1754,17 +1824,71 @@ function vStats() {
         ref2: S.goals.inter?.apportPalier != null ? { v: S.goals.inter.apportPalier, label: `palier ${eurC(S.goals.inter.apportPalier)}`, name: 'Palier intermédiaire' } : null })
         .replace('<details', `<label class="midin">Palier intermédiaire (€)<input inputmode="decimal" data-inter="apportPalier" value="${esc(numStr(S.goals.inter?.apportPalier))}" placeholder="ex. ${Math.round(S.goals.apport.target / 2 / 1000) * 1000}"></label><details`)}</section>`;
   }
-  if (hh) {
-    const ch = ks.map(k => potStats(k).total), chAvg = ch.reduce((t, v) => t + v, 0) / n;
-    if (ch.some(v => v > 0)) html += `<section><h2>Charges communes</h2>
-      <p class="small" style="margin:-6px 0 10px">Moyenne de ${eur(chAvg)} par mois sur la période.</p>
-      ${svgChart({ id: 'chg', labels: lbl, full, aria: `Charges communes par mois, moyenne ${eur(chAvg)}`,
-        bars: { vals: ch, name: 'Charges du mois', solo: true },
-        ref: { v: chAvg, label: `moyenne ${eurC(chAvg)}`, name: 'Moyenne' } })}</section>`;
+  {
+    // Charges communes (total du foyer, ou part due par le membre affiché) et charges perso (toi seulement)
+    const com = hh ? ks.map(k => scope === 'all' ? potStats(k).total : potStats(k).due[scope] || 0) : ks.map(() => 0);
+    const withPerso = scope === 'moi' || scope === 'all';
+    const per = withPerso ? ks.map(persoTotal) : null;
+    const avg = a => a.reduce((t, v) => t + v, 0) / n;
+    if (com.some(v => v > 0) || per?.some(v => v > 0)) html += `<section><h2>Charges</h2>
+      <p class="small" style="margin:-6px 0 10px">En moyenne par mois : ${hh ? `${eur(avg(com))} de charges communes${scope === 'all' ? '' : ' (part due)'}` : ''}${hh && per ? ' et ' : ''}${per ? `${eur(avg(per))} de charges personnelles` : ''}.</p>
+      ${svgChart({ id: 'chg', labels: lbl, full, aria: `Charges par mois : communes ${eur(avg(com))}${per ? `, personnelles ${eur(avg(per))}` : ''} en moyenne`,
+        bars: hh ? { vals: com, name: scope === 'all' ? 'Charges communes' : 'Part des charges communes', cls: 'v2', solo: !per } : { vals: per, name: 'Charges personnelles', cls: 'v3', solo: true },
+        bars2: hh && per ? { vals: per, name: 'Charges personnelles', cls: 'v3' } : null })}</section>`;
   }
   return html + `<p class="explain">Touche un graphique pour lire les valeurs d’un mois. Les statistiques suivent ${esc(scope === 'all' ? 'tout le foyer' : scope === 'moi' ? 'tes comptes' : 'les comptes de ' + mName(scope))}, comme le reste de l’accueil.</p>`;
 }
 
+// Bilan de fin de mois : ton mois en un coup d'œil, comparé au précédent
+function bilanData(k) {
+  const mineF = a => (a.owner || 'moi') === 'moi';
+  const hh = S.household.on && members().length > 1;
+  const b = breakdown(k, mineF), r = resteOf(k, 'moi');
+  return { k, b, ...r, dep: b.dep, perf: b.perf, communes: hh ? potStats(k).total : 0,
+    foyer: hh ? breakdown(k) : null, has: months().includes(k) };
+}
+function vBilan(F) {
+  const ms = months(), cur = bilanData(F), pk = addMonths(F, -1), prev = ms.includes(pk) && pk >= ms[0] ? bilanData(pk) : null;
+  const hh = S.household.on && members().length > 1, first = ms[0] === F;
+  // Écart au mois précédent : vert quand c'est une bonne nouvelle (plus d'épargne, moins de charges)
+  const cmp = (now, before, goodUp) => {
+    if (!prev || before == null) return '';
+    const d = now - before; if (Math.abs(d) < 1) return '<span class="bd">= ' + monthName(pk) + '</span>';
+    const good = goodUp ? d > 0 : d < 0;
+    return `<span class="bd ${good ? 'up' : 'down'}">${d > 0 ? '▲' : '▼'} ${signed(d)} vs ${monthName(pk)}</span>`;
+  };
+  const delta = cur.b.total - cur.b.prevTotal;
+  // Où sont partis les revenus du mois
+  const parts = [
+    { k: 'Épargne', v: cur.sav, c: 'var(--v1)' },
+    ...(hh ? [{ k: 'Charges communes', v: cur.share, c: 'var(--v2)', sub: cur.communes ? `ta part de ${eur(cur.communes)}` : '' }] : []),
+    { k: 'Charges perso', v: cur.perso, c: 'var(--v3)' },
+  ];
+  const out = parts.reduce((t, x) => t + x.v, 0), over = cur.rev ? Math.max(0, out - cur.rev) : 0;
+  const base = Math.max(cur.rev, out) || 1;
+  const reste = cur.rev - out;
+  const bar = cur.rev ? `<div class="bstack" role="img" aria-label="Répartition des revenus ${deM(monthName(F))}">${parts.filter(x => x.v > 0).map(x => `<i style="width:${x.v / base * 100}%;background:${x.c}"></i>`).join('')}${reste > 0 ? `<i class="rest" style="width:${reste / base * 100}%"></i>` : ''}</div>` : '';
+  const rows = [...parts, ...(cur.rev ? [{ k: reste >= 0 ? 'Reste à vivre' : 'Dépassement', v: Math.abs(reste), c: reste >= 0 ? 'rest' : 'var(--red)', bad: reste < 0 }] : [])];
+  return `<section class="bilan" style="margin-top:14px">
+    <p class="bk">Bilan ${deM(monthName(F))}</p>
+    <p class="bt num">${eur(cur.b.total)}</p>
+    <p class="bs">${first ? 'Premier mois de suivi' : `<span class="${delta >= 0 ? 'up' : 'down'}">${signed(delta)}</span> sur le mois, dont ${signed(cur.dep)} versés et ${signed(cur.perf)} de marchés`}</p>
+    ${cur.foyer ? `<p class="bs">Foyer : ${eur(cur.foyer.total)} <span class="${cur.foyer.total - cur.foyer.prevTotal >= 0 ? 'up' : 'down'}">${first ? '' : signed(cur.foyer.total - cur.foyer.prevTotal)}</span></p>` : ''}
+    ${cur.rev ? `<h3>Tes revenus : ${eur(cur.rev)}</h3>${bar}` : '<h3>Ton mois</h3><p class="small">Renseigne tes revenus pour voir leur répartition et ton reste à vivre.</p>'}
+    <ul class="blist">${rows.map(x => `<li><span class="bdot ${x.c === 'rest' ? 'rest' : ''}" ${x.c !== 'rest' ? `style="background:${x.c}"` : ''}></span>
+      <span class="bl">${x.k}${x.sub ? `<span class="small"> ${x.sub}</span>` : ''}</span>
+      <span class="bv num ${x.bad ? 'down' : ''}">${eur(x.v)}${cur.rev ? `<span class="small"> ${pct(x.v / cur.rev)}</span>` : ''}</span></li>`).join('')}</ul>
+    ${prev ? `<h3>Par rapport à ${monthName(pk)}</h3>
+    <ul class="kv bcmp">
+      <li><span>Mis de côté</span><span>${eur(cur.sav)} ${cmp(cur.sav, prev.sav, true)}</span></li>
+      ${hh ? `<li><span>Charges communes du foyer</span><span>${eur(cur.communes)} ${cmp(cur.communes, prev.communes, false)}</span></li>` : ''}
+      <li><span>Charges perso</span><span>${eur(cur.perso)} ${cmp(cur.perso, prev.perso, false)}</span></li>
+      ${cur.rev ? `<li><span>Reste à vivre</span><span>${eur(reste)} ${cmp(reste, prev.rev ? prev.reste : null, true)}</span></li>` : ''}
+      <li><span>Gains des marchés</span><span>${signed(cur.perf)} ${cmp(cur.perf, prev.perf, true)}</span></li>
+    </ul>` : ''}
+    <p class="small" style="margin:12px 0 0">Tes comptes${hh ? ' et ta part du foyer' : ''}. Choisis un autre mois ci-dessus pour revoir un bilan passé.</p>
+  </section>`;
+}
 function vResume() {
   const ms = months();
   return vResumeText(ms);
@@ -1775,13 +1899,15 @@ function vResumeText(ms) {
   const an = S.analyses[resumeMonth];
   const cfg = S.settings.ai;
   return `
-    <section style="margin-top:14px"><label>Mois<select id="resmonth">${ms.slice().reverse().map(k => `<option value="${k}" ${k === resumeMonth ? 'selected' : ''}>${cap(monthLabel(k))}</option>`).join('')}</select></label>
-      <label class="check"><input type="checkbox" id="round" ${rounding ? 'checked' : ''}>Arrondir les montants</label></section>
-    <section style="margin-top:14px">
+    <section style="margin-top:14px"><label>Mois<select id="resmonth">${ms.slice().reverse().map(k => `<option value="${k}" ${k === resumeMonth ? 'selected' : ''}>${cap(monthLabel(k))}</option>`).join('')}</select></label></section>
+    ${vBilan(resumeMonth)}
+    <section style="margin-top:28px"><h2>Analyse</h2>
       ${an ? `<div class="analysis">${aiHtml(an.t)}<p class="small">Analyse du ${new Date(an.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}, sur ${plural(an.n, 'mois', 'mois')} d’historique. Indicatif : ce n’est pas un conseil financier.</p></div>` : ''}
       <button class="btn ${an ? '' : 'primary'} wide" id="analyse-btn" data-act="analyse">${an ? 'Relancer l’analyse' : cfg?.key ? 'Analyser' : 'Configurer l’analyse par IA'}</button>
       ${cfg?.key ? '<p class="explain">L’analyse envoie le résumé ci-dessous au service configuré, avec les mois précédents pour dégager des tendances.</p>' : '<p class="explain">Sans clé d’API, l’app reste entièrement hors ligne : copie le résumé et colle-le dans une conversation avec Claude.</p>'}</section>
-    <section style="margin-top:22px"><h2>Résumé envoyé</h2><pre class="summary" id="sumtext">${esc(summary(resumeMonth))}</pre>
+    <section style="margin-top:22px"><h2>Résumé envoyé</h2>
+      <label class="check"><input type="checkbox" id="round" ${rounding ? 'checked' : ''}>Arrondir les montants</label>
+      <pre class="summary" id="sumtext">${esc(summary(resumeMonth))}</pre>
       <div class="row2" style="margin-top:12px"><button class="btn" data-act="copy">Copier</button><button class="btn" data-act="share">Partager</button></div>
       <p class="explain">Il ne contient ni nom de compte ni établissement.</p></section>`;
 }
@@ -1909,7 +2035,7 @@ function sheetAccountInfo(id) {
   kv.push(['Dernière mise à jour', lu ? cap(monthLabel(lu)) : simple ? '—' : 'jamais']);
   const lines = a.lines?.length ? (() => {
     const tot = a.lines.reduce((t, l) => t + l.v, 0) || 1;
-    return `<h3>Composition${a.linesAt ? ` · relevé de ${monthLabel(a.linesAt)}` : ''}</h3>
+    return `<h3>Composition${a.linesAt ? ` · relevé ${deM(monthLabel(a.linesAt))}` : ''}</h3>
       <div class="lines"><ul>${a.lines.slice().sort((x, y) => y.v - x.v).map(l => `<li><span class="ln">${esc(l.n)}</span><span class="lb"><i style="width:${Math.round(l.v / tot * 100)}%"></i></span><span class="lp">${pct(l.v / tot)}</span><span class="num">${eur(l.v)}</span></li>`).join('')}</ul></div>`;
   })() : '';
   openSheet(`<h2>${esc(a.name)}</h2>
@@ -1981,6 +2107,9 @@ function enterApp() {
   scope = members().some(m => m.id === scope) ? scope : 'moi';
   masked = !!S.settings.masked;
   render(); window.scrollTo(0, 0);
+  // Nouveau mois : reprend tout de suite les charges fixes (communes et perso), pour que le bilan et les
+  // statistiques soient justes même si le volet Foyer n'a pas encore été ouvert.
+  if (S.household.on && !S.pot[monthKey()]?.seeded) seedMonth(monthKey()).then(() => render()).catch(() => {});
 }
 async function finishImport(o) {
   if (mode === 'app' && !confirm('Remplacer les données actuelles par cette sauvegarde ?')) { closeSheet(); return; }
@@ -2146,7 +2275,7 @@ function sheetTxImport(id) {
   txAcc = id;
   const a = S.accounts.find(x => x.id === id), n = txOf(saisieMonth, a).length;
   openSheet(`<h2>Opérations — ${esc(a.name)}</h2>
-    <p class="small" style="margin:0 0 14px">Relevé de ${monthLabel(saisieMonth)}. ${n ? `${plural(n, 'opération déjà enregistrée', 'opérations déjà enregistrées')}. Un nouvel import remplace les opérations du mois.` : ''} Tout est analysé sur cet iPhone.</p>
+    <p class="small" style="margin:0 0 14px">Relevé ${deM(monthLabel(saisieMonth))}. ${n ? `${plural(n, 'opération déjà enregistrée', 'opérations déjà enregistrées')}. Un nouvel import remplace les opérations du mois.` : ''} Tout est analysé sur cet iPhone.</p>
     <button class="btn wide" data-act="picktx">Choisir un fichier</button>
     ${n ? '<button class="btn ghost wide" style="margin-top:10px" data-act="classify">Reprendre le classement</button>' : ''}
     <h3>Ou coller le relevé</h3>
@@ -2179,10 +2308,22 @@ function sheetClassify(list) {
 }
 
 /* ---------- Foyer : feuilles ---------- */
+function sheetPerso(id) {
+  const it = persoOf(potMonth).find(x => x.id === id) || { id: null, n: '', a: null };
+  openSheet(`<h2>${it.id ? 'Modifier la charge' : 'Nouvelle charge personnelle'}</h2>
+    <p class="small" style="margin:0 0 14px">Charge personnelle ${deM(monthLabel(potMonth))} : abonnement, téléphone, transport, assurance… Elle réduit ton reste à vivre, sans entrer dans la répartition du foyer.</p>
+    <form id="f-perso" class="stack-form" data-id="${it.id || ''}">
+      <label>Libellé<input id="p-n" value="${esc(it.n)}" placeholder="ex. téléphone, salle de sport" required></label>
+      <label>Montant (€)<input id="p-a" inputmode="decimal" value="${esc(numStr(it.a))}" required></label>
+      <label class="check"><input type="checkbox" id="p-rec" ${it.r === false ? '' : 'checked'}>Charge fixe, reprise chaque mois</label>
+      <button class="btn primary wide" type="submit">Enregistrer</button>
+      ${it.id ? `<button class="btn danger wide" type="button" data-act="delperso" data-id="${it.id}">Supprimer</button>` : ''}
+      <button class="link" type="button" data-act="close">Annuler</button></form>`);
+}
 function sheetCharge(id) {
   const it = potOf(potMonth).items.find(x => x.id === id) || { id: null, n: '', a: null, by: 'moi' };
   openSheet(`<h2>${it.id ? 'Modifier la dépense' : 'Nouvelle dépense'}</h2>
-    <p class="small" style="margin:0 0 14px">Dépense commune de ${monthLabel(potMonth)}.</p>
+    <p class="small" style="margin:0 0 14px">Dépense commune ${deM(monthLabel(potMonth))}.</p>
     <form id="f-charge" class="stack-form" data-id="${it.id || ''}">
       <label>Libellé<input id="c-n" value="${esc(it.n)}" placeholder="ex. loyer, courses, énergie" required></label>
       <label>Montant (€)<input id="c-a" inputmode="decimal" value="${esc(numStr(it.a))}" required></label>
@@ -2233,6 +2374,7 @@ function sheetQuick(step) {
         return `<li><button data-act="quickm" data-id="${m.id}"><span>${esc(m.name)}<br><span class="small">${plural(n, 'compte', 'comptes')}</span></span><span class="chev">›</span></button></li>`;
       }).join('')}</ul>
       <button class="btn primary wide" style="margin-top:16px" data-act="quickcharge">Ajouter une dépense commune</button>
+      <button class="btn wide" style="margin-top:10px" data-act="quickperso">Ajouter une charge personnelle</button>
       <button class="btn wide" style="margin-top:10px" data-act="close">Annuler</button>`);
   }
   if (!quick.accId) {
@@ -2281,7 +2423,7 @@ function sheetMoves(id) {
   const list = (e.moves || []).slice().sort((x, y) => x.d - y.d);
   const [, mo] = m.split('-').map(Number), lastDay = new Date(m.split('-')[0], mo, 0).getDate();
   openSheet(`<h2>${esc(a.name)}</h2>
-    <p class="small" style="margin:0 0 14px">Mouvements de ${monthLabel(m)}. Chaque mouvement met à jour le solde du compte, ce qui te donne le disponible en cours de mois. Les intérêts et plus-values ne sont pas des mouvements : ils seront absorbés quand tu saisiras le solde réel au mois suivant.</p>
+    <p class="small" style="margin:0 0 14px">Mouvements ${deM(monthLabel(m))}. Chaque mouvement met à jour le solde du compte, ce qui te donne le disponible en cours de mois. Les intérêts et plus-values ne sont pas des mouvements : ils seront absorbés quand tu saisiras le solde réel au mois suivant.</p>
     ${list.length ? `<ul class="list">${list.map((mv, i) => `<li><button type="button" data-act="delmove" data-id="${a.id}" data-i="${i}"><span>${dayLabel(m, mv.d)}${mv.n ? `<br><span class="small">${esc(mv.n)}</span>` : ''}</span><span class="num ${mv.a < 0 ? 'down' : 'up'}">${signed(mv.a)}</span></button></li>`).join('')}</ul>
       <p class="small" style="margin:10px 0 0">Versé ${eur(movesIn(e))}, repris ${eur(movesOut(e))}, net ${signed(moveSum(e))}. Touche une ligne pour la supprimer.</p>
       <p class="small" style="margin:6px 0 0">Solde du compte : ${eur(valueAt(a, m))}${e.auto ? ', calculé depuis ces mouvements' : ', saisi manuellement'}.</p>`
@@ -2533,6 +2675,17 @@ const ACT = {
   household: () => sheetSetPage('foyer'),
   split: () => sheetSetPage('foyer'),
   newcharge: () => sheetCharge(null),
+  newperso: () => sheetPerso(null),
+  editperso: t => sheetPerso(t.dataset.id),
+  delperso: async t => {
+    const p = S.pot[potMonth]; p.perso = (p.perso || []).filter(i => i.id !== t.dataset.id); delete p.persoFrom;
+    await save(); closeSheet(); render();
+  },
+  quickperso: async () => {
+    quick = null; potMonth = monthKey();
+    if (mode === 'app') await seedPerso(potMonth);
+    sheetPerso(null);
+  },
   editcharge: t => sheetCharge(t.dataset.id),
   newtransfer: () => sheetTransfer(null),
   settlenow: t => sheetTransfer({ from: t.dataset.from, to: t.dataset.to, a: +t.dataset.a, reg: true }),
@@ -2728,7 +2881,7 @@ const ACT = {
 };
 
 // Tant que les montants sont masqués, aucune fiche affichant ou modifiant des montants ne s'ouvre
-const MASK_BLOCK = new Set(['newcharge', 'editcharge', 'moves', 'tx', 'newtransfer', 'settlenow', 'split', 'household', 'copycharges', 'importstmt', 'classify', 'delcharge', 'deltransfer', 'srcinfo']);
+const MASK_BLOCK = new Set(['newperso', 'editperso', 'delperso', 'quickperso', 'newcharge', 'editcharge', 'moves', 'tx', 'newtransfer', 'settlenow', 'split', 'household', 'copycharges', 'importstmt', 'classify', 'delcharge', 'deltransfer', 'srcinfo']);
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t || !ACT[t.dataset.act]) return;
   e.preventDefault();
@@ -2977,6 +3130,17 @@ document.addEventListener('submit', async e => {
     if (id) Object.assign(p.items.find(i => i.id === id), { n, a, by: $('#c-by').value, r });
     else p.items.push({ id: uid(), n, a, by: $('#c-by').value, r });
     p.seeded = true; delete p.from;
+    await save(); closeSheet(); render();
+  }
+  else if (f.id === 'f-perso') {
+    const n = $('#p-n').value.trim(), a = num($('#p-a').value);
+    if (!n || !Number.isFinite(a) || a <= 0) return toast('Indique un libellé et un montant positif');
+    const p = (S.pot[potMonth] ||= { items: [], transfers: [] });
+    p.perso ||= [];
+    const id = f.dataset.id, r = $('#p-rec').checked;
+    if (id) Object.assign(p.perso.find(i => i.id === id), { n, a, r });
+    else p.perso.push({ id: uid(), n, a, r });
+    p.persoSeeded = true; delete p.persoFrom;
     await save(); closeSheet(); render();
   }
   else if (f.id === 'f-transfer') {
