@@ -788,6 +788,11 @@ const loanCfg = () => S.goals.loan;
 const tx2 = v => Number(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 // Revenu retenu par la banque pour un membre : la moyenne des revenus saisis sur les 12 derniers mois
 // (un revenu variable ne doit pas faire bondir la capacité d'un mois à l'autre), sinon son revenu de référence.
+function scopeIncome(k, sc) {
+  if (!S.household.on || members().length < 2) return S.settings.revenus || 0;
+  if (sc === 'all' || sc === 'foyer') return members().reduce((t, m) => t + incomeOf(k, m.id), 0);
+  return incomeOf(k, sc);
+}
 function memberLoanIncome(F, id) {
   const ks = Array.from({ length: 12 }, (_, i) => addMonths(F, -i)).filter(k => incomeSet(k, id));
   if (!ks.length) return { v: memberOf(id).income || 0, n: 0 };
@@ -1035,7 +1040,8 @@ function summary(F) {
   const mine = S.accounts.filter(mineF);
   const gin = mine.reduce((t, a) => t + movesIn(entry(F, a)), 0), gout = mine.reduce((t, a) => t + movesOut(entry(F, a)), 0);
   L.push(`Épargne du mois : ${R(b.dep)}${gout > 0 ? ` (${R(gin)} versés, ${R(gout)} repris en cours de mois)` : ''}${prev.n >= 2 ? ` — moyenne des ${prev.n} mois précédents : ${R(prev.avg)} par mois` : ''}.`);
-  if (S.settings.revenus) L.push(`Taux d’épargne : ${pct(b.dep / S.settings.revenus)} des revenus nets mensuels.`);
+  const myRev = scopeIncome(F, 'moi');
+  if (myRev) L.push(`Taux d’épargne : ${pct(b.dep / myRev)} des revenus nets mensuels.`);
   if (S.settings.depenses) L.push(`Épargne de précaution : ${(totalAt(F, a => mineF(a) && TYPES[a.type].cat === 'livrets') / S.settings.depenses).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} mois de dépenses sur les livrets.`);
   L.push('', 'Répartition :');
   for (const [c, C] of Object.entries(CATS)) {
@@ -1677,12 +1683,14 @@ function vStats() {
   const hit = need != null ? dep.filter(v => v >= need).length : null;
   const hitMid = mid != null ? dep.filter(v => v >= mid).length : null;
   const best = Math.max(...dep), bestK = ks[dep.indexOf(best)];
-  const rev = S.settings.revenus;
+  const incK = ks.filter(k => k >= first), revSum = incK.reduce((t, k) => t + scopeIncome(k, scope), 0);
+  const rev = incK.length ? revSum / incK.length : 0;
   // Patrimoine et performance sur la même période
   const tl = timeline(f).filter(p => ks.includes(p.k));
   const perf = ks.map(k => k <= first ? 0 : breakdown(k, f).perf);
   const perfTot = perf.reduce((t, v) => t + v, 0), start = tl[0];
   const sumDepAll = ks.reduce((t, k) => t + (k < first ? 0 : breakdown(k, f).dep), 0);
+  const scopeName = !multi() ? '' : scope === 'all' ? ' du foyer' : scope === 'moi' ? '' : ' de ' + mName(scope);
   const growth = tl.length > 1 ? tl[tl.length - 1].t - tl[0].t : 0;
   const goalName = { all: 'l’épargne totale', apport: 'l’apport immobilier', rente: 'la retraite' }[statGoal];
   const needTxt = need != null ? `Objectif : ${eur(need)} par mois pour ${goalName}` : null;
@@ -1694,7 +1702,7 @@ function vStats() {
       ${statTile('Mois à l’objectif', hit != null ? `${hit} / ${n}` : hitMid != null ? `${hitMid} / ${n}` : '—',
         hit != null ? `mois où l’épargne a atteint l’objectif${hitMid != null ? ` · ${hitMid} / ${n} pour l’intermédiaire` : ''}` : hitMid != null ? 'mois où l’épargne a atteint l’objectif intermédiaire' : 'aucun objectif chiffré')}
       ${statTile('Meilleur mois', eur(best), cap(monthLabel(bestK)))}
-      ${statTile(rev ? 'Taux d’épargne moyen' : 'Gain des marchés', rev ? pct(Math.max(0, avg) / rev) : signed(perfTot), rev ? `sur ${eur(rev)} de revenus` : `sur ${plural(n, 'mois', 'mois')}`, rev ? '' : perfTot >= 0 ? 'up' : 'down')}
+      ${statTile(rev ? 'Taux d’épargne moyen' : 'Gain des marchés', rev ? pct(Math.max(0, sumDepAll) / revSum) : signed(perfTot), rev ? `sur ${eur(rev)} de revenus mensuels${esc(scopeName)}` : `sur ${plural(n, 'mois', 'mois')}`, rev ? '' : perfTot >= 0 ? 'up' : 'down')}
     </div>
     <section><h2>Argent mis de côté</h2>
       <div class="chips tight" role="group" aria-label="Objectif">${goals.map(([v, l]) => `<button class="${statGoal === v ? 'on' : ''}" data-act="statgoal" data-v="${v}">${l}</button>`).join('')}</div>
