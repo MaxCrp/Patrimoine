@@ -110,6 +110,9 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .progress{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:8px;width:140px}
 .progress i{display:block;height:100%;background:var(--pine);border-radius:9px}
 .chips.tight{margin-top:0}
+.qown{margin:18px 0 2px;font:650 15px var(--num);color:var(--muted)}
+.sheet .qown:first-of-type{margin-top:4px}
+.qsub{margin:12px 0 0;font-size:13px;color:var(--muted)}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
 .view section.statsec{margin-top:40px;padding-top:24px;border-top:1px solid var(--line)}
 .statsec > h2{font-size:21px}
@@ -2405,37 +2408,37 @@ function sheetQuick(step) {
   const cur = monthKey();
   quick = { ...(quick || {}), ...(step || {}) };
   const hh = S.household.on && members().length > 1;
-  if (!quick.member) quick.member = hh ? null : 'moi';
   const back = label => `<button class="link" data-act="quickback">‹ ${label}</button>`;
   const head = t => `<h2>${t}</h2><p class="small" style="margin:0 0 14px">${cap(monthLabel(cur))}</p>`;
 
-  if (hh && !quick.member) {
+  // Premier écran : quatre actions directes
+  if (!quick.step) {
     return openSheet(`${head('Que veux-tu saisir ?')}
-      <h3 style="margin:4px 0 4px">Un compte</h3>
-      <ul class="list menu">${members().map(m => {
-        const n = active().filter(a => (a.owner || 'moi') === m.id).length;
-        return `<li><button data-act="quickm" data-id="${m.id}"><span>${esc(m.name)}<br><span class="small">${plural(n, 'compte', 'comptes')}</span></span><span class="chev">›</span></button></li>`;
-      }).join('')}</ul>
-      <h3 style="margin:20px 0 4px">Une charge</h3>
-      <ul class="list menu">
-        <li><button data-act="quickcharge"><span>Dépense commune<br><span class="small">répartie dans le foyer</span></span><span class="chev">›</span></button></li>
-        <li><button data-act="quickperso"><span>Charge personnelle<br><span class="small">abonnement, téléphone, transport…</span></span><span class="chev">›</span></button></li>
-        <li><button data-act="quickrefund"><span>Remboursement<br><span class="small">réduit tes charges personnelles</span></span><span class="chev">›</span></button></li>
-      </ul>
-      <button class="btn wide" style="margin-top:10px" data-act="close">Annuler</button>`);
+      <div class="stack-form">
+        <button class="btn primary wide" data-act="quickstep">Mouvement de compte</button>
+        ${hh ? '<button class="btn wide" data-act="quickcharge">Ajouter une dépense commune</button>' : ''}
+        <button class="btn wide" data-act="quickperso">Ajouter une charge personnelle</button>
+        <button class="btn wide" data-act="quickrefund">Enregistrer un remboursement</button>
+        <button class="btn ghost wide" data-act="close">Annuler</button></div>`);
   }
   if (!quick.accId) {
-    const own = active().filter(a => (a.owner || 'moi') === quick.member);
-    if (!own.length) return openSheet(`${head('Aucun compte')}<p class="muted">Ajoute d’abord un compte dans l’onglet Comptes.</p>
+    const all = active();
+    if (!all.length) return openSheet(`${head('Aucun compte')}<p class="muted">Ajoute d’abord un compte dans l’onglet Comptes.</p>
       <button class="btn wide" data-act="close">Fermer</button>`);
     const row = a => `<li><button data-act="quicka" data-id="${a.id}"><span>${esc(a.name)}${(() => { const l = isSimple(a) ? 'Enveloppe' : TYPES[a.type].label; return a.name.trim().toLowerCase() === l.toLowerCase() ? '' : `<br><span class="small">${l}</span>`; })()}</span>
       <span class="num">${eur(isSimple(a) ? dotOf(cur, a) : valueAt(a, cur))}</span><span class="chev">›</span></button></li>`;
-    const pat = own.filter(a => !isCash(a)), cash = own.filter(isCash);
+    // Tous les comptes : par titulaire si le foyer est activé (toi d'abord), placements puis fonctionnement
+    const owners = hh ? members().filter(m => all.some(a => (a.owner || 'moi') === m.id)) : [{ id: 'moi' }];
+    const block = id => {
+      const own = all.filter(a => !hh || (a.owner || 'moi') === id);
+      const pat = own.filter(a => !isCash(a)), cash = own.filter(isCash);
+      return `${hh ? `<h3 class="qown">${esc(mName(id))}</h3>` : ''}
+        ${pat.length ? `<ul class="list">${pat.map(row).join('')}</ul>` : ''}
+        ${cash.length ? `<p class="qsub">Comptes de fonctionnement</p><ul class="list">${cash.map(row).join('')}</ul>` : ''}`;
+    };
     return openSheet(`${head('Quel compte ?')}
-      ${pat.length ? `<ul class="list">${pat.map(row).join('')}</ul>` : ''}
-      ${cash.length ? `<h3>Comptes de fonctionnement</h3><ul class="list">${cash.map(row).join('')}</ul>` : ''}
-      ${hh ? back(esc(mName(quick.member))) : ''}
-      <button class="btn wide" style="margin-top:10px" data-act="close">Annuler</button>`);
+      ${owners.map(m => block(m.id)).join('')}
+      ${back('Retour')}`);
   }
   const a = S.accounts.find(x => x.id === quick.accId);
   if (!a) { quick = null; return closeSheet(); }
@@ -2674,7 +2677,7 @@ const ACT = {
   analyse: () => runAnalysis(resumeMonth),
   aiclear: async () => { S.settings.ai = null; await save(); render(); sheetSetPage('ai'); toast('Clé supprimée'); },
   quick: () => { quick = null; saisieMonth = monthKey(); sheetQuick(); },
-  quickm: t => sheetQuick({ member: t.dataset.id }),
+  quickstep: () => sheetQuick({ step: 'acc' }),
   quickcharge: async () => {
     quick = null; potMonth = monthKey();
     if (mode === 'app') await seedMonth(potMonth);
@@ -2685,7 +2688,7 @@ const ACT = {
   quickback: () => {
     if (quick?.action) quick.action = null;
     else if (quick?.accId) quick.accId = null;
-    else if (quick) quick.member = null;
+    else if (quick) quick.step = null;
     sheetQuick();
   },
   moves: t => sheetMoves(t.dataset.id),
