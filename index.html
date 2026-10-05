@@ -895,9 +895,17 @@ async function seedMonth(k) {
 // Charges personnelles : les tiennes uniquement, saisies à la main, reprises chaque mois comme les charges communes
 const persoOf = k => S.pot[k]?.perso || [];
 const persoTotal = k => persoOf(k).reduce((t, i) => t + i.a, 0);
+const persoGross = k => persoOf(k).filter(i => !i.rb).reduce((t, i) => t + i.a, 0);
+const persoRefunds = k => persoOf(k).filter(i => i.rb).reduce((t, i) => t - i.a, 0);
+// Remboursements reçus (tous mois confondus) pour une charge donnée
+function refundsOf(chargeId) {
+  const out = [];
+  for (const [k, p] of Object.entries(S.pot || {})) for (const i of p.perso || []) if (i.rb && i.of?.id === chargeId) out.push({ k, a: -i.a });
+  return out;
+}
 async function seedPerso(k) {
   if (S.pot[k]?.persoSeeded) return 0;
-  const prevK = addMonths(k, -1), rec = persoOf(prevK).filter(i => i.r !== false);
+  const prevK = addMonths(k, -1), rec = persoOf(prevK).filter(i => i.r !== false && !i.rb);
   const cur = (S.pot[k] ||= { items: [], transfers: [] });
   cur.perso ||= [];
   if (!rec.length) { if (cur.perso.length) cur.persoSeeded = true; return 0; }
@@ -1156,10 +1164,10 @@ function summary(F) {
   }
   {
     const rv = resteOf(F, 'moi');
-    if (rv.perso > 0 || (rv.rev && (rv.share || rv.perso))) {
+    if (rv.perso > 0 || persoRefunds(F) || (rv.rev && (rv.share || rv.perso))) {
       L.push('', 'Mon budget du mois :');
       if (rv.share) L.push(`- Ma part des charges communes : ${R(rv.share)}`);
-      if (rv.perso > 0) L.push(`- Mes charges personnelles : ${R(rv.perso)}`);
+      if (rv.perso > 0 || persoRefunds(F)) L.push(`- Mes charges personnelles : ${R(rv.perso)}${persoRefunds(F) ? ` (${R(persoGross(F))} de charges, ${R(persoRefunds(F))} remboursés)` : ''}`);
       if (rv.rev) L.push(`- Reste à vivre après charges et épargne : ${SR(rv.reste)}${rv.reste < 0 ? ' (dépassement)' : ''}`);
     }
   }
@@ -1390,7 +1398,7 @@ function vFoyer() {
     const r = resteOf(k, m.id);
     return `<li><span>${esc(m.name)}</span><span>${pct(r.share / r.rev)} de charges communes${m.id === 'moi' ? ` · ${pct(r.perso / r.rev)} de charges perso` : ''} · ${pct(r.sav / r.rev)} d’épargne · <b class="${r.reste < 0 ? 'down' : ''}">reste ${eur(r.reste)}</b></span></li>`;
   }).join('');
-  const perso = persoOf(k).slice().sort((a, b) => b.a - a.a);
+  const perso = persoOf(k).filter(i => !i.rb).sort((a, b) => b.a - a.a), refunds = persoOf(k).filter(i => i.rb);
   const miss = incomeMissing(k) || [];
   const items = st.items.slice().sort((a, b) => b.a - a.a);
   const prevK = addMonths(k, -1), gap = carryPending(k) ? prevGap(k) : null;
@@ -1425,10 +1433,14 @@ function vFoyer() {
       <div class="actions"><button class="btn primary wide" data-act="newcharge">Ajouter une dépense</button>
         ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre à nouveau les dépenses ${deM(monthName(addMonths(k, -1)))}</button>` : ''}</div></section>
     <section><h2>Mes charges personnelles</h2>
-      <p class="muted" style="margin:-6px 0 12px;font-size:14px">${perso.length ? `${eur(persoTotal(k))} ce mois-ci. Elles ne concernent que toi et réduisent ton reste à vivre.` : 'Abonnements, téléphone, transport… : ce qui ne regarde que toi, pour un reste à vivre plus juste.'}</p>
+      <p class="muted" style="margin:-6px 0 12px;font-size:14px">${perso.length || refunds.length ? `${eur(persoTotal(k))} ce mois-ci${refunds.length ? `, après ${eur(persoRefunds(k))} de remboursements` : ''}. Elles ne concernent que toi et réduisent ton reste à vivre.` : 'Abonnements, téléphone, transport… : ce qui ne regarde que toi, pour un reste à vivre plus juste.'}</p>
       ${st.p.persoFrom && perso.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Charges fixes reprises ${deM(monthLabel(st.p.persoFrom))} : vérifie les montants qui ont changé.</p>` : ''}
-      ${perso.length ? `<ul class="list">${perso.map(i => `<li><button data-act="editperso" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">${i.r === false ? 'ponctuelle' : 'fixe'}</span></span><span class="num">${eur(i.a)}</span></button></li>`).join('')}</ul>` : ''}
-      <div class="actions"><button class="btn wide" data-act="newperso">Ajouter une charge personnelle</button></div></section>
+      ${perso.length || refunds.length ? `<ul class="list">${perso.map(i => {
+        const back = refundsOf(i.id).reduce((t, r) => t + r.a, 0);
+        return `<li><button data-act="editperso" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">${i.r === false ? 'ponctuelle' : 'fixe'}${back ? ` · ${esc(eur(back))} remboursés` : ''}</span></span><span class="num">${eur(i.a)}</span></button></li>`;
+      }).join('')}${refunds.map(i => `<li><button data-act="editrefund" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">remboursement${i.of ? ` · ${esc(i.of.n)}${i.of.k !== k ? `, ${monthName(i.of.k)}` : ''}` : ''}</span></span><span class="num up">${signed(i.a)}</span></button></li>`).join('')}</ul>` : ''}
+      <div class="actions"><button class="btn wide" data-act="newperso">Ajouter une charge personnelle</button>
+        <button class="btn ghost wide" data-act="newrefund">Enregistrer un remboursement</button></div></section>
     <section><h2>Virements entre vous</h2>
       ${trs.length ? `<ul class="list">${trs.map(t => {
         const detail = [t.fa || t.ta ? `${esc(accName(t.fa) || '?')} → ${esc(accName(t.ta) || '?')}` : '', t.reg === false ? 'hors régularisation' : '', t.n ? esc(t.n) : ''].filter(Boolean).join(' · ');
@@ -1862,7 +1874,7 @@ function vBilan(F) {
   const parts = [
     { k: 'Épargne', v: cur.sav, c: 'var(--v1)' },
     ...(hh ? [{ k: 'Charges communes', v: cur.share, c: 'var(--v2)', sub: cur.communes ? `ta part de ${eur(cur.communes)}` : '' }] : []),
-    { k: 'Charges perso', v: cur.perso, c: 'var(--v3)' },
+    { k: 'Charges perso', v: Math.max(0, cur.perso), c: 'var(--v3)', sub: persoRefunds(F) ? `après ${eur(persoRefunds(F))} de remboursements` : '' },
   ];
   const out = parts.reduce((t, x) => t + x.v, 0), over = cur.rev ? Math.max(0, out - cur.rev) : 0;
   const base = Math.max(cur.rev, out) || 1;
@@ -2308,6 +2320,34 @@ function sheetClassify(list) {
 }
 
 /* ---------- Foyer : feuilles ---------- */
+// Charges remboursables : les charges perso des six derniers mois, la plus récente d'abord
+function refundableCharges() {
+  const out = [];
+  for (let i = 0; i < 6; i++) {
+    const k = addMonths(monthKey(), -i);
+    for (const c of persoOf(k)) if (!c.rb) out.push({ k, c, back: refundsOf(c.id).reduce((t, r) => t + r.a, 0) });
+  }
+  return out;
+}
+function sheetRefund(id, preset) {
+  const cur = monthKey();
+  const found = id ? Object.entries(S.pot).map(([k, p]) => [k, (p.perso || []).find(i => i.id === id)]).find(([, i]) => i) : null;
+  const it = found ? { ...found[1], k: found[0] } : { id: null, n: '', a: null, k: cur, of: preset || null };
+  const list = refundableCharges();
+  const months = Array.from({ length: 6 }, (_, i) => addMonths(cur, -i));
+  openSheet(`<h2>${it.id ? 'Modifier le remboursement' : 'Enregistrer un remboursement'}</h2>
+    <p class="small" style="margin:0 0 14px">Un remboursement réduit tes charges personnelles du mois où tu le reçois. Tu peux le relier à la charge d’origine pour garder la trace.</p>
+    <form id="f-refund" class="stack-form" data-id="${it.id || ''}">
+      <label>Charge remboursée<select id="r-of"><option value="">— aucune en particulier —</option>
+        ${list.map(({ k, c, back }) => `<option value="${k}|${c.id}" ${it.of?.id === c.id ? 'selected' : ''}>${esc(c.n)} · ${monthLabel(k, { month: 'short', year: '2-digit' })} · ${esc(eur(c.a))}${back ? ` (déjà ${esc(eur(back))} remboursés)` : ''}</option>`).join('')}
+        ${it.of && !list.some(x => x.c.id === it.of.id) ? `<option value="${it.of.k}|${it.of.id}" selected>${esc(it.of.n)} · ${monthLabel(it.of.k, { month: 'short', year: '2-digit' })}</option>` : ''}</select></label>
+      <label>Montant remboursé (€)<input id="r-a" inputmode="decimal" value="${it.a ? esc(numStr(-it.a)) : ''}" required></label>
+      <label>Reçu en<select id="r-k">${months.map(k => `<option value="${k}" ${k === it.k ? 'selected' : ''}>${cap(monthLabel(k))}</option>`).join('')}</select></label>
+      <label>Libellé (facultatif)<input id="r-n" value="${esc(it.n)}" maxlength="40" placeholder="Remboursement ${it.of ? esc(it.of.n) : ''}"></label>
+      <button class="btn primary wide" type="submit">Enregistrer</button>
+      ${it.id ? `<button class="btn danger wide" type="button" data-act="delrefund" data-id="${it.id}" data-k="${it.k}">Supprimer</button>` : ''}
+      <button class="link" type="button" data-act="close">Annuler</button></form>`);
+}
 function sheetPerso(id) {
   const it = persoOf(potMonth).find(x => x.id === id) || { id: null, n: '', a: null };
   openSheet(`<h2>${it.id ? 'Modifier la charge' : 'Nouvelle charge personnelle'}</h2>
@@ -2317,6 +2357,8 @@ function sheetPerso(id) {
       <label>Montant (€)<input id="p-a" inputmode="decimal" value="${esc(numStr(it.a))}" required></label>
       <label class="check"><input type="checkbox" id="p-rec" ${it.r === false ? '' : 'checked'}>Charge fixe, reprise chaque mois</label>
       <button class="btn primary wide" type="submit">Enregistrer</button>
+      ${it.id ? (() => { const back = refundsOf(it.id); return `${back.length ? `<p class="small" style="margin:0">Remboursé : ${back.map(r => `${esc(eur(r.a))} en ${monthName(r.k)}`).join(', ')}.</p>` : ''}
+        <button class="btn wide" type="button" data-act="refundfor" data-id="${it.id}">Enregistrer un remboursement</button>`; })() : ''}
       ${it.id ? `<button class="btn danger wide" type="button" data-act="delperso" data-id="${it.id}">Supprimer</button>` : ''}
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
 }
@@ -2677,6 +2719,13 @@ const ACT = {
   newcharge: () => sheetCharge(null),
   newperso: () => sheetPerso(null),
   editperso: t => sheetPerso(t.dataset.id),
+  newrefund: () => sheetRefund(null),
+  editrefund: t => sheetRefund(t.dataset.id),
+  refundfor: t => { const c = persoOf(potMonth).find(i => i.id === t.dataset.id); sheetRefund(null, c ? { k: potMonth, id: c.id, n: c.n } : null); },
+  delrefund: async t => {
+    const p = S.pot[t.dataset.k]; if (p?.perso) p.perso = p.perso.filter(i => i.id !== t.dataset.id);
+    await save(); closeSheet(); render();
+  },
   delperso: async t => {
     const p = S.pot[potMonth]; p.perso = (p.perso || []).filter(i => i.id !== t.dataset.id); delete p.persoFrom;
     await save(); closeSheet(); render();
@@ -2881,7 +2930,7 @@ const ACT = {
 };
 
 // Tant que les montants sont masqués, aucune fiche affichant ou modifiant des montants ne s'ouvre
-const MASK_BLOCK = new Set(['newperso', 'editperso', 'delperso', 'quickperso', 'newcharge', 'editcharge', 'moves', 'tx', 'newtransfer', 'settlenow', 'split', 'household', 'copycharges', 'importstmt', 'classify', 'delcharge', 'deltransfer', 'srcinfo']);
+const MASK_BLOCK = new Set(['newrefund', 'editrefund', 'refundfor', 'delrefund', 'newperso', 'editperso', 'delperso', 'quickperso', 'newcharge', 'editcharge', 'moves', 'tx', 'newtransfer', 'settlenow', 'split', 'household', 'copycharges', 'importstmt', 'classify', 'delcharge', 'deltransfer', 'srcinfo']);
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t || !ACT[t.dataset.act]) return;
   e.preventDefault();
@@ -3142,6 +3191,20 @@ document.addEventListener('submit', async e => {
     else p.perso.push({ id: uid(), n, a, r });
     p.persoSeeded = true; delete p.persoFrom;
     await save(); closeSheet(); render();
+  }
+  else if (f.id === 'f-refund') {
+    const a = num($('#r-a').value), k = $('#r-k').value, ofv = $('#r-of').value;
+    if (!Number.isFinite(a) || a <= 0) return toast('Indique le montant remboursé');
+    let of = null;
+    if (ofv) { const [ok, oid] = ofv.split('|'); const c = persoOf(ok).find(i => i.id === oid); of = { k: ok, id: oid, n: c?.n || '' }; }
+    const n = $('#r-n').value.trim() || (of ? 'Remboursement ' + of.n : 'Remboursement');
+    const id = f.dataset.id;
+    if (id) for (const p of Object.values(S.pot)) if (p.perso) p.perso = p.perso.filter(i => i.id !== id);   // gère le changement de mois
+    const p = (S.pot[k] ||= { items: [], transfers: [] });
+    p.perso ||= [];
+    p.perso.push({ id: id || uid(), n, a: -a, r: false, rb: true, of });
+    await save(); closeSheet(); render();
+    toast(k === potMonth ? 'Remboursement enregistré' : `Remboursement enregistré en ${monthName(k)}`);
   }
   else if (f.id === 'f-transfer') {
     const a = num($('#t-a').value), from = $('#t-from').value, to = $('#t-to').value;
