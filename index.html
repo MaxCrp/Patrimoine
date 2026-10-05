@@ -2410,13 +2410,18 @@ function sheetQuick(step) {
   const head = t => `<h2>${t}</h2><p class="small" style="margin:0 0 14px">${cap(monthLabel(cur))}</p>`;
 
   if (hh && !quick.member) {
-    return openSheet(`${head('Qui ?')}
-      <ul class="list">${members().map(m => {
+    return openSheet(`${head('Que veux-tu saisir ?')}
+      <h3 style="margin:4px 0 4px">Un compte</h3>
+      <ul class="list menu">${members().map(m => {
         const n = active().filter(a => (a.owner || 'moi') === m.id).length;
         return `<li><button data-act="quickm" data-id="${m.id}"><span>${esc(m.name)}<br><span class="small">${plural(n, 'compte', 'comptes')}</span></span><span class="chev">›</span></button></li>`;
       }).join('')}</ul>
-      <button class="btn primary wide" style="margin-top:16px" data-act="quickcharge">Ajouter une dépense commune</button>
-      <button class="btn wide" style="margin-top:10px" data-act="quickperso">Ajouter une charge personnelle</button>
+      <h3 style="margin:20px 0 4px">Une charge</h3>
+      <ul class="list menu">
+        <li><button data-act="quickcharge"><span>Dépense commune<br><span class="small">répartie dans le foyer</span></span><span class="chev">›</span></button></li>
+        <li><button data-act="quickperso"><span>Charge personnelle<br><span class="small">abonnement, téléphone, transport…</span></span><span class="chev">›</span></button></li>
+        <li><button data-act="quickrefund"><span>Remboursement<br><span class="small">réduit tes charges personnelles</span></span><span class="chev">›</span></button></li>
+      </ul>
       <button class="btn wide" style="margin-top:10px" data-act="close">Annuler</button>`);
   }
   if (!quick.accId) {
@@ -2730,6 +2735,11 @@ const ACT = {
     const p = S.pot[potMonth]; p.perso = (p.perso || []).filter(i => i.id !== t.dataset.id); delete p.persoFrom;
     await save(); closeSheet(); render();
   },
+  quickrefund: async () => {
+    quick = null; potMonth = monthKey();
+    if (mode === 'app') await seedPerso(potMonth);
+    sheetRefund(null);
+  },
   quickperso: async () => {
     quick = null; potMonth = monthKey();
     if (mode === 'app') await seedPerso(potMonth);
@@ -2930,7 +2940,7 @@ const ACT = {
 };
 
 // Tant que les montants sont masqués, aucune fiche affichant ou modifiant des montants ne s'ouvre
-const MASK_BLOCK = new Set(['newrefund', 'editrefund', 'refundfor', 'delrefund', 'newperso', 'editperso', 'delperso', 'quickperso', 'newcharge', 'editcharge', 'moves', 'tx', 'newtransfer', 'settlenow', 'split', 'household', 'copycharges', 'importstmt', 'classify', 'delcharge', 'deltransfer', 'srcinfo']);
+const MASK_BLOCK = new Set(['quickrefund', 'newrefund', 'editrefund', 'refundfor', 'delrefund', 'newperso', 'editperso', 'delperso', 'quickperso', 'newcharge', 'editcharge', 'moves', 'tx', 'newtransfer', 'settlenow', 'split', 'household', 'copycharges', 'importstmt', 'classify', 'delcharge', 'deltransfer', 'srcinfo']);
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t || !ACT[t.dataset.act]) return;
   e.preventDefault();
