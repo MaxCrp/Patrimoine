@@ -347,6 +347,10 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .menu li button{padding:15px 2px;font-weight:650}
 .menu .small{font-weight:400;color:var(--muted)}
 .list .closed{opacity:.5}
+.list [data-act=point]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.list [data-act=point] > span{transition:opacity .15s}
+.list li.done [data-act=point] > span{opacity:.4}
+.list [data-act=point].press{background:var(--line)}
 @keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
 .toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:15px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
 .toast.show{opacity:1}
@@ -935,6 +939,10 @@ function potItems(k) {
   }
   return out;
 }
+// Pointage : marque une charge comme vérifiée pour le mois (repart à zéro chaque mois, ne change aucun total)
+// Toucher une charge la pointe (grisée) ou la dépointe ; un appui long ouvre sa modification
+const ptHint = list => list.length ? `<p class="small" style="margin-top:8px">${list.some(i => i.pt) ? `${list.filter(i => i.pt).length} sur ${list.length} pointées. ` : ''}Touche une charge pour la pointer, appuie longuement pour la modifier.</p>` : '';
+const ptRow = (i, kind, inner) => `<li class="${i.pt ? 'done' : ''}"><button data-act="point" data-kind="${kind}" data-id="${i.id}" data-edit="${kind === 'p' ? 'editperso' : 'editcharge'}" aria-pressed="${i.pt ? 'true' : 'false'}" aria-description="Appui long pour modifier">${inner}</button></li>`;
 // Revenu du mois : valeur saisie pour ce mois, sinon le revenu de référence du membre
 const incomeSet = (k, id) => S.pot[k]?.inc?.[id] != null;
 const incomeOf = (k, id) => (S.pot[k]?.inc?.[id] ?? memberOf(id).income) || 0;
@@ -1431,7 +1439,7 @@ function vFoyer() {
       <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>
     <section><h2>Dépenses du mois</h2>
       ${st.p.from && st.p.items.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Dépenses fixes reprises ${deM(monthLabel(st.p.from))} : vérifie les montants qui ont changé.</p>` : ''}
-      ${items.length ? `<ul class="list">${items.map(i => `<li><button data-act="${i.src ? 'srcinfo' : 'editcharge'}" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : i.r === false ? ' · ponctuelle' : ' · fixe'}</span></span><span class="num">${eur(i.a)}</span></button></li>`).join('')}</ul>`
+      ${items.length ? `<ul class="list">${items.map(i => { const b = `<span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : i.r === false ? ' · ponctuelle' : ' · fixe'}</span></span><span class="num">${eur(i.a)}</span>`; return i.src ? `<li><button data-act="srcinfo" data-id="${i.id}">${b}</button></li>` : ptRow(i, 'c', b); }).join('')}</ul>${ptHint(items.filter(i => !i.src))}`
         : '<p class="muted">Aucune dépense commune enregistrée pour ce mois.</p>'}
       <div class="actions"><button class="btn primary wide" data-act="newcharge">Ajouter une dépense</button>
         ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre à nouveau les dépenses ${deM(monthName(addMonths(k, -1)))}</button>` : ''}</div></section>
@@ -1440,8 +1448,8 @@ function vFoyer() {
       ${st.p.persoFrom && perso.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Charges fixes reprises ${deM(monthLabel(st.p.persoFrom))} : vérifie les montants qui ont changé.</p>` : ''}
       ${perso.length || refunds.length ? `<ul class="list">${perso.map(i => {
         const back = refundsOf(i.id).reduce((t, r) => t + r.a, 0);
-        return `<li><button data-act="editperso" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">${i.r === false ? 'ponctuelle' : 'fixe'}${back ? ` · ${esc(eur(back))} remboursés` : ''}</span></span><span class="num">${eur(i.a)}</span></button></li>`;
-      }).join('')}${refunds.map(i => `<li><button data-act="editrefund" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">remboursement${i.of ? ` · ${esc(i.of.n)}${i.of.k !== k ? `, ${monthName(i.of.k)}` : ''}` : ''}</span></span><span class="num up">${signed(i.a)}</span></button></li>`).join('')}</ul>` : ''}
+        return ptRow(i, 'p', `<span>${esc(i.n)}<br><span class="small">${i.r === false ? 'ponctuelle' : 'fixe'}${back ? ` · ${esc(eur(back))} remboursés` : ''}</span></span><span class="num">${eur(i.a)}</span>`);
+      }).join('')}${refunds.map(i => `<li><button data-act="editrefund" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">remboursement${i.of ? ` · ${esc(i.of.n)}${i.of.k !== k ? `, ${monthName(i.of.k)}` : ''}` : ''}</span></span><span class="num up">${signed(i.a)}</span></button></li>`).join('')}</ul>${ptHint(perso)}` : ''}
       <div class="actions"><button class="btn wide" data-act="newperso">Ajouter une charge personnelle</button>
         <button class="btn ghost wide" data-act="newrefund">Enregistrer un remboursement</button></div></section>
     <section><h2>Virements entre vous</h2>
@@ -2727,6 +2735,12 @@ const ACT = {
   newcharge: () => sheetCharge(null),
   newperso: () => sheetPerso(null),
   editperso: t => sheetPerso(t.dataset.id),
+  point: async t => {
+    const p = S.pot[potMonth], it = (t.dataset.kind === 'p' ? p?.perso : p?.items)?.find(i => i.id === t.dataset.id);
+    if (!it) return;
+    if (it.pt) delete it.pt; else it.pt = true;
+    await save(); render();
+  },
   newrefund: () => sheetRefund(null),
   editrefund: t => sheetRefund(t.dataset.id),
   refundfor: t => { const c = persoOf(potMonth).find(i => i.id === t.dataset.id); sheetRefund(null, c ? { k: potMonth, id: c.id, n: c.n } : null); },
@@ -2793,7 +2807,7 @@ const ACT = {
     const p = (S.pot[potMonth] ||= { items: [], transfers: [] });
     const have = new Set(p.items.map(i => norm(i.n)));
     let n = 0;
-    for (const i of prev.items) if (i.r !== false && !have.has(norm(i.n))) { p.items.push({ ...i, id: uid() }); n++; }
+    for (const i of prev.items) if (i.r !== false && !have.has(norm(i.n))) { { const { pt, ...c } = i; p.items.push({ ...c, id: uid() }); n++; } }
     p.seeded = true;
     await save(); render(); toast(`${plural(n, 'dépense reprise', 'dépenses reprises')}`);
   },
@@ -2944,7 +2958,27 @@ const ACT = {
 
 // Tant que les montants sont masqués, aucune fiche affichant ou modifiant des montants ne s'ouvre
 const MASK_BLOCK = new Set(['quickrefund', 'newrefund', 'editrefund', 'refundfor', 'delrefund', 'newperso', 'editperso', 'delperso', 'quickperso', 'newcharge', 'editcharge', 'moves', 'tx', 'newtransfer', 'settlenow', 'split', 'household', 'copycharges', 'importstmt', 'classify', 'delcharge', 'deltransfer', 'srcinfo']);
+// Appui long sur une charge : ouvre sa modification au lieu de la pointer
+let press = null, pressDone = false;
+const pressEnd = () => { if (press) { clearTimeout(press.timer); press.el.classList.remove('press'); press = null; } };
+const pressEdit = el => {
+  const act = el.dataset.edit;
+  if (masked && MASK_BLOCK.has(act)) return askUnmask();
+  ACT[act]({ dataset: { id: el.dataset.id } });
+};
+document.addEventListener('pointerdown', e => {
+  const el = e.target.closest('[data-act=point]'); pressEnd(); pressDone = false; if (!el) return;
+  press = { el, x: e.clientX, y: e.clientY, timer: setTimeout(() => { pressDone = true; pressEnd(); pressEdit(el); }, 500) };
+  el.classList.add('press');
+});
+document.addEventListener('pointermove', e => { if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 10) pressEnd(); });
+['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, pressEnd, { passive: true }));
+document.addEventListener('contextmenu', e => {
+  const el = e.target.closest('[data-act=point]'); if (!el) return;
+  e.preventDefault(); if (!pressDone) { pressDone = true; pressEnd(); pressEdit(el); }
+});
 document.addEventListener('click', e => {
+  if (pressDone && e.target.closest('[data-act=point]')) { pressDone = false; e.preventDefault(); return; }
   const t = e.target.closest('[data-act]'); if (!t || !ACT[t.dataset.act]) return;
   e.preventDefault();
   if (masked && MASK_BLOCK.has(t.dataset.act)) return askUnmask();
