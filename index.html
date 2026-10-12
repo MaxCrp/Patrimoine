@@ -987,12 +987,6 @@ function settle(st) {
   }
   return res;
 }
-// Compte proposé par défaut pour un virement : le compte courant du membre
-function defaultAcc(id) {
-  const own = active().filter(a => (a.owner || 'moi') === id);
-  return (own.find(a => isCash(a) && !isSimple(a)) || own.find(isCash) || own[0])?.id || '';
-}
-const accName = id => S.accounts.find(a => a.id === id)?.name || '';
 const savedBy = (k, id) => S.accounts.filter(a => !isCash(a) && a.owner === id).reduce((t, a) => t + dep(k, a), 0);
 
 /* ---------- Points d’attention ---------- */
@@ -1434,7 +1428,7 @@ function vFoyer() {
       ${st.total || carried ? `<div class="tbl"><table><thead><tr><th></th><th>Part</th><th>Payé</th><th>Dû</th><th>Solde</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
       ${carried ? `<p class="small" style="margin-top:8px">Solde incluant le report ${deM(monthName(prevK))} : ${members().map(m => `${esc(m.name)} ${signed(st.p.carry[m.id] || 0)}`).join(', ')}. <button class="inline" data-act="uncarry">Annuler le report</button></p>` : ''}
       ${dues.length ? `<div class="settle">${dues.map(d => `<p><strong>${esc(mName(d.from))} doit ${eur(d.a)} à ${esc(mName(d.to))}</strong></p>
-        <button class="btn wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer ce virement</button>`).join('')}</div>`
+        <button class="btn wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer un virement</button>`).join('')}</div>`
         : st.total || carried ? '<p class="small" style="margin-top:12px">Comptes équilibrés entre vous.</p>' : ''}
       <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>
     <section><h2>Dépenses du mois</h2>
@@ -1454,7 +1448,7 @@ function vFoyer() {
         <button class="btn ghost wide" data-act="newrefund">Enregistrer un remboursement</button></div></section>
     <section><h2>Virements entre vous</h2>
       ${trs.length ? `<ul class="list">${trs.map(t => {
-        const detail = [t.fa || t.ta ? `${esc(accName(t.fa) || '?')} → ${esc(accName(t.ta) || '?')}` : '', t.reg === false ? 'hors régularisation' : '', t.n ? esc(t.n) : ''].filter(Boolean).join(' · ');
+        const detail = [t.reg === false ? 'hors régularisation' : '', t.n ? esc(t.n) : ''].filter(Boolean).join(' · ');
         return `<li><button data-act="deltransfer" data-id="${t.id}"><span>${esc(mName(t.from))} → ${esc(mName(t.to))}${detail ? `<br><span class="small">${detail}</span>` : ''}</span><span class="num">${eur(t.a)}</span></button></li>`;
       }).join('')}</ul>
         <p class="small">Touche un virement pour le supprimer.</p>` : '<p class="muted">Aucun virement ce mois-ci.</p>'}
@@ -2387,26 +2381,18 @@ function sheetCharge(id) {
       ${it.id ? `<button class="btn danger wide" type="button" data-act="delcharge" data-id="${it.id}">Supprimer</button>` : ''}
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
 }
-function accOptions(owner, sel) {
-  const own = active().filter(a => (a.owner || 'moi') === owner);
-  const list = own.length ? own : active();
-  return `<option value="">— non précisé —</option>` + list.map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${esc(a.name)}${isCash(a) ? '' : ' (épargne)'}</option>`).join('');
-}
 function sheetTransfer(pre) {
   const ms = members();
   const from = pre?.from || ms[0].id, to = pre?.to || ms.find(m => m.id !== from)?.id || ms[0].id;
   openSheet(`<h2>Virement entre vous</h2>
     <p class="small" style="margin:0 0 14px">Enregistré sur ${monthLabel(potMonth)}.</p>
-    <form id="f-transfer" class="stack-form">
+    <form id="f-transfer" class="stack-form"${pre?.reg ? ` data-due="${pre.a}"` : ''}>
       <div class="row2"><label>De<select id="t-from">${ms.map(m => `<option value="${m.id}" ${m.id === from ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
         <label>Vers<select id="t-to">${ms.map(m => `<option value="${m.id}" ${m.id === to ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label></div>
-      <label>Compte source<select id="t-fa">${accOptions(from, defaultAcc(from))}</select></label>
-      <label>Compte destinataire<select id="t-ta">${accOptions(to, defaultAcc(to))}</select></label>
       <label>Montant (€)<input id="t-a" inputmode="decimal" value="${pre ? esc(numStr(Math.round(pre.a * 100) / 100)) : ''}" required></label>
-      <label class="check"><input type="checkbox" id="t-reg" ${pre?.reg === false ? '' : 'checked'}>Régularise les charges du mois</label>
-      <p class="small" style="margin:0">Décoche pour un virement qui n’a rien à voir avec les charges, par exemple de ton épargne vers celle de ${esc(mName(to))} : il sera enregistré sans modifier les soldes.</p>
+      ${pre?.reg ? `<p class="small" style="margin:-4px 0 0">${esc(mName(from))} doit ${esc(numStr(Math.round(pre.a * 100) / 100))} € à ${esc(mName(to))}. Valide tel quel pour tout régler, ou indique un montant plus faible pour un virement partiel : le reste restera dû.</p>` : ''}
       <label>Motif (facultatif)<input id="t-n" maxlength="40" placeholder="ex. régularisation ${esc(monthName(potMonth))}"></label>
-      <button class="btn primary wide" type="submit">Enregistrer</button>
+      <button class="btn primary wide" type="submit">Valider le virement</button>
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
 }
 
@@ -3084,10 +3070,6 @@ document.addEventListener('change', async e => {
   }
   else if (t.id === 's-mode') $('#s-manual').hidden = t.value !== 'manuel';
   else if (t.id === 'ai-prov') { const P = AI[t.value]; $('#ai-model').placeholder = P.model; $('#ai-model').value = ''; }
-  else if (t.id === 't-from' || t.id === 't-to') {
-    const which = t.id === 't-from' ? '#t-fa' : '#t-ta';
-    $(which).innerHTML = accOptions(t.value, defaultAcc(t.value));
-  }
   else if (t.dataset.inc) {
     const v = num(t.value), k = potMonth;
     const p = (S.pot[k] ||= { items: [], transfers: [] }); p.inc ||= {};
@@ -3259,9 +3241,10 @@ document.addEventListener('submit', async e => {
     if (from === to) return toast('Choisis deux membres différents');
     const p = (S.pot[potMonth] ||= { items: [], transfers: [] });
     p.transfers ||= [];
-    p.transfers.push({ id: uid(), from, to, a, fa: $('#t-fa').value || undefined, ta: $('#t-ta').value || undefined,
-      reg: $('#t-reg').checked, n: $('#t-n').value.trim() || undefined });
+    const reg = true, due = +f.dataset.due || 0, rest = due - a;
+    p.transfers.push({ id: uid(), from, to, a, reg, n: $('#t-n').value.trim() || undefined });
     await save(); closeSheet(); render();
+    if (due && reg && rest >= 1) toast(`Virement partiel enregistré : il reste ${eur(rest)} à régler`);
   }
   else if (f.id === 'f-quick') {
     const cur = monthKey(), a = S.accounts.find(x => x.id === quick.accId), v = num($('#q-val').value);
