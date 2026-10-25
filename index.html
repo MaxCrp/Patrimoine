@@ -158,6 +158,9 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .blist{list-style:none;margin:12px 0 0;padding:0}
 .blist li{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}
 .blist li:last-child{border-bottom:0;font-weight:650}
+.blist li[data-act],.bcmp li[data-act]{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.blist li[data-act]:active,.bcmp li[data-act]:active{background:var(--line)}
+.bgo{color:var(--muted);margin-left:6px;font-weight:400}
 .bdot{width:10px;height:10px;border-radius:3px;align-self:center}
 .bl .small{color:var(--muted);font-weight:400;display:block;font-size:13px}
 .bv .small{color:var(--muted);font-weight:400;margin-left:4px}
@@ -212,6 +215,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .kv{list-style:none;margin:12px 0 0;padding:0;font-size:14px}
 .kv li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}
 .kv li:last-child{border-bottom:0}
+.kv .num{white-space:nowrap}
 .kv li span:first-child{color:var(--muted)}
 .lines{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
 .lines ul{list-style:none;margin:8px 0 0;padding:0}
@@ -712,7 +716,7 @@ let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', subview 
 const emptyData = () => ({
   v: 1, accounts: [], entries: {}, pot: {}, rules: {}, dismissed: {},
   household: { on: false, members: [{ id: 'moi', name: 'Moi', income: null }], split: { mode: 'moitie', shares: {} } },
-  settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null, ai: null, raise: { on: false, pct: 2 } },
+  settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null, ai: null, raise: { on: false, pct: 2 }, usage: { on: true } },
   analyses: {},
   goals: { apport: { target: null, date: null }, rente: { birthYear: null, retireAge: 64, monthly: null, ret: 3, withdraw: 4 },
     loan: { v: 2, scope: 'moi', duree: 25, taux: null, endettement: 35, assurance: 0.15, frais: 7.5 },
@@ -1266,6 +1270,7 @@ function render() {
       const btn = `<button class="tab ${view === v ? 'on' : ''}" data-act="go" data-view="${v}" ${view === v ? 'aria-current="page"' : ''}>${i}<span>${l}</span>${v === 'saisie' && todo ? '<i class="badge" aria-label="mise à jour à faire"></i>' : ''}</button>`;
       return btn;
     }).join('')}<button class="tab plus" data-act="quick" aria-label="Raccourci : solde, mouvement ou dépense commune">${ICON.plus}</button></nav>`;
+  uScreenCheck();
 }
 function go(v) { view = v; subview = null; render(); window.scrollTo(0, 0); }
 function goSub(v) { subview = v; render(); window.scrollTo(0, 0); }
@@ -1431,13 +1436,13 @@ function vFoyer() {
         <button class="btn wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer un virement</button>`).join('')}</div>`
         : st.total || carried ? '<p class="small" style="margin-top:12px">Comptes équilibrés entre vous.</p>' : ''}
       <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>
-    <section><h2>Dépenses du mois</h2>
+    <section id="sec-communes"><h2>Dépenses du mois</h2>
       ${st.p.from && st.p.items.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Dépenses fixes reprises ${deM(monthLabel(st.p.from))} : vérifie les montants qui ont changé.</p>` : ''}
       ${items.length ? `<ul class="list">${items.map(i => { const b = `<span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : i.r === false ? ' · ponctuelle' : ' · fixe'}</span></span><span class="num">${eur(i.a)}</span>`; return i.src ? `<li><button data-act="srcinfo" data-id="${i.id}">${b}</button></li>` : ptRow(i, 'c', b); }).join('')}</ul>${ptHint(items.filter(i => !i.src))}`
         : '<p class="muted">Aucune dépense commune enregistrée pour ce mois.</p>'}
       <div class="actions"><button class="btn primary wide" data-act="newcharge">Ajouter une dépense</button>
         ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre à nouveau les dépenses ${deM(monthName(addMonths(k, -1)))}</button>` : ''}</div></section>
-    <section><h2>Mes charges personnelles</h2>
+    <section id="sec-perso"><h2>Mes charges personnelles</h2>
       <p class="muted" style="margin:-6px 0 12px;font-size:14px">${perso.length || refunds.length ? `${eur(persoTotal(k))} ce mois-ci${refunds.length ? `, après ${eur(persoRefunds(k))} de remboursements` : ''}. Elles ne concernent que toi et réduisent ton reste à vivre.` : 'Abonnements, téléphone, transport… : ce qui ne regarde que toi, pour un reste à vivre plus juste.'}</p>
       ${st.p.persoFrom && perso.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Charges fixes reprises ${deM(monthLabel(st.p.persoFrom))} : vérifie les montants qui ont changé.</p>` : ''}
       ${perso.length || refunds.length ? `<ul class="list">${perso.map(i => {
@@ -1878,13 +1883,15 @@ function vBilan(F) {
   // Où sont partis les revenus du mois
   const parts = [
     { k: 'Épargne', v: cur.sav, c: 'var(--v1)' },
-    ...(hh ? [{ k: 'Charges communes', v: cur.share, c: 'var(--v2)', sub: cur.communes ? `ta part de ${eur(cur.communes)}` : '' }] : []),
-    { k: 'Charges perso', v: Math.max(0, cur.perso), c: 'var(--v3)', sub: persoRefunds(F) ? `après ${eur(persoRefunds(F))} de remboursements` : '' },
+    ...(hh ? [{ k: 'Charges communes', v: cur.share, c: 'var(--v2)', sub: cur.communes ? `ta part de ${eur(cur.communes)}` : '', go: 'c' }] : []),
+    { k: 'Charges perso', v: Math.max(0, cur.perso), c: 'var(--v3)', sub: persoRefunds(F) ? `après ${eur(persoRefunds(F))} de remboursements` : '', go: S.household.on ? 'p' : null },
   ];
   const out = parts.reduce((t, x) => t + x.v, 0), over = cur.rev ? Math.max(0, out - cur.rev) : 0;
   const base = Math.max(cur.rev, out) || 1;
   const reste = cur.rev - out;
   const bar = cur.rev ? `<div class="bstack" role="img" aria-label="Répartition des revenus ${deM(monthName(F))}">${parts.filter(x => x.v > 0).map(x => `<i style="width:${x.v / base * 100}%;background:${x.c}"></i>`).join('')}${reste > 0 ? `<i class="rest" style="width:${reste / base * 100}%"></i>` : ''}</div>` : '';
+  // Les lignes de charges ouvrent la liste correspondante dans Comptes > Foyer, au mois du bilan
+  const link = w => w ? ` data-act="bilango" data-w="${w}" data-m="${F}" role="link" tabindex="0"` : '';
   const rows = [...parts, ...(cur.rev ? [{ k: reste >= 0 ? 'Reste à vivre' : 'Dépassement', v: Math.abs(reste), c: reste >= 0 ? 'rest' : 'var(--red)', bad: reste < 0 }] : [])];
   return `<section class="bilan" style="margin-top:14px">
     <p class="bk">Bilan ${deM(monthName(F))}</p>
@@ -1892,14 +1899,14 @@ function vBilan(F) {
     <p class="bs">${first ? 'Premier mois de suivi' : `<span class="${delta >= 0 ? 'up' : 'down'}">${signed(delta)}</span> sur le mois, dont ${signed(cur.dep)} versés et ${signed(cur.perf)} de marchés`}</p>
     ${cur.foyer ? `<p class="bs">Foyer : ${eur(cur.foyer.total)} <span class="${cur.foyer.total - cur.foyer.prevTotal >= 0 ? 'up' : 'down'}">${first ? '' : signed(cur.foyer.total - cur.foyer.prevTotal)}</span></p>` : ''}
     ${cur.rev ? `<h3>Tes revenus : ${eur(cur.rev)}</h3>${bar}` : '<h3>Ton mois</h3><p class="small">Renseigne tes revenus pour voir leur répartition et ton reste à vivre.</p>'}
-    <ul class="blist">${rows.map(x => `<li><span class="bdot ${x.c === 'rest' ? 'rest' : ''}" ${x.c !== 'rest' ? `style="background:${x.c}"` : ''}></span>
+    <ul class="blist">${rows.map(x => `<li${link(x.go)}><span class="bdot ${x.c === 'rest' ? 'rest' : ''}" ${x.c !== 'rest' ? `style="background:${x.c}"` : ''}></span>
       <span class="bl">${x.k}${x.sub ? `<span class="small"> ${x.sub}</span>` : ''}</span>
-      <span class="bv num ${x.bad ? 'down' : ''}">${eur(x.v)}${cur.rev ? `<span class="small"> ${pct(x.v / cur.rev)}</span>` : ''}</span></li>`).join('')}</ul>
+      <span class="bv num ${x.bad ? 'down' : ''}">${eur(x.v)}${cur.rev ? `<span class="small"> ${pct(x.v / cur.rev)}</span>` : ''}${x.go ? '<span class="bgo" aria-hidden="true">›</span>' : ''}</span></li>`).join('')}</ul>
     ${prev ? `<h3>Par rapport à ${monthName(pk)}</h3>
     <ul class="kv bcmp">
       <li><span>Mis de côté</span><span>${eur(cur.sav)} ${cmp(cur.sav, prev.sav, true)}</span></li>
-      ${hh ? `<li><span>Charges communes du foyer</span><span>${eur(cur.communes)} ${cmp(cur.communes, prev.communes, false)}</span></li>` : ''}
-      <li><span>Charges perso</span><span>${eur(cur.perso)} ${cmp(cur.perso, prev.perso, false)}</span></li>
+      ${hh ? `<li${link('c')}><span>Charges communes du foyer</span><span>${eur(cur.communes)}<span class="bgo" aria-hidden="true">›</span> ${cmp(cur.communes, prev.communes, false)}</span></li>` : ''}
+      <li${link(S.household.on ? 'p' : null)}><span>Charges perso</span><span>${eur(cur.perso)}${S.household.on ? '<span class="bgo" aria-hidden="true">›</span>' : ''} ${cmp(cur.perso, prev.perso, false)}</span></li>
       ${cur.rev ? `<li><span>Reste à vivre</span><span>${eur(reste)} ${cmp(reste, prev.rev ? prev.reste : null, true)}</span></li>` : ''}
       <li><span>Gains des marchés</span><span>${signed(cur.perf)} ${cmp(cur.perf, prev.perf, true)}</span></li>
     </ul>` : ''}
@@ -1932,9 +1939,10 @@ function vResumeText(ms) {
 /* ---------- Feuilles (réglages, compte, import) ---------- */
 function openSheet(html) {
   $('#layer').innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+  uSheet = uPending; uScreenCheck();
   const f = $('.sheet input:not([readonly]), .sheet select, .sheet button:not(.link)'); if (f && f.type !== 'password') f.focus({ preventScroll: true });
 }
-function closeSheet() { $('#layer').innerHTML = ''; }
+function closeSheet() { $('#layer').innerHTML = ''; uSheet = null; uScreenCheck(); }
 
 // Réglages : un menu, puis une page par domaine. Les comptes se gèrent dans leur onglet.
 const SET_PAGES = {
@@ -1943,7 +1951,7 @@ const SET_PAGES = {
   budget:  { t: 'Budget de référence', d: () => S.settings.depenses || S.settings.revenus ? 'dépenses et revenus renseignés' : 'à renseigner' },
   ai:      { t: 'Analyse par IA', d: () => S.settings.ai?.key ? (AI[S.settings.ai.provider] || AI.anthropic).label : 'désactivée, app hors ligne' },
   secu:    { t: 'Sécurité', d: () => slots?.pk ? 'mot de passe et Face ID' : 'mot de passe' },
-  backup:  { t: 'Sauvegarde', d: () => S.settings.lastExport ? 'dernière le ' + new Date(S.settings.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : 'aucune sauvegarde' },
+  backup:  { t: 'Données de l’application', d: () => (S.settings.lastExport ? 'sauvegarde du ' + new Date(S.settings.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : 'aucune sauvegarde') + (S.settings.usage?.on ? ' · suivi actif' : '') },
   code:    { t: 'Code de l’app', d: () => code.status === 'ok' ? 'conforme à la version approuvée' : code.status === 'unknown' ? 'vérification indisponible' : 'différence détectée' },
 };
 function sheetSettings() {
@@ -2018,9 +2026,17 @@ function sheetSetPage(k) {
   if (k === 'backup') {
     const le = st.lastExport ? new Date(st.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
     return openSheet(`${head}
+      <h3 style="margin-top:4px">Sauvegarde</h3>
       <p class="small" style="margin:0 0 14px">${le ? `Dernière sauvegarde exportée le ${le}.` : 'Aucune sauvegarde exportée.'} Le fichier reste chiffré avec ton mot de passe : range-le dans iCloud Drive.</p>
       <div class="stack-form"><button class="btn primary wide" data-act="export">Exporter une sauvegarde</button>
-        <button class="btn ghost wide" data-act="import">Restaurer une sauvegarde</button>
+        <button class="btn ghost wide" data-act="import">Restaurer une sauvegarde</button></div>
+      <h3>Suivi d’utilisation</h3>
+      <label class="check"><input type="checkbox" id="u-on" ${st.usage?.on ? 'checked' : ''}>Enregistrer mon utilisation de l’app</label>
+      <p class="small">Note les écrans ouverts, le temps passé et les boutons touchés, pour repérer les chemins à raccourcir. Jamais de montant, de nom ni de contenu saisi. Le journal reste chiffré sur cet iPhone ; tu choisis quand l’exporter.</p>
+      ${U?.ev.length ? `<p class="small">${plural(U.ev.length, 'événement', 'événements')} depuis le ${new Date(U.ev[0][0]).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}, sur ${plural(new Set(U.ev.map(e => e[1])).size, 'ouverture', 'ouvertures')}.</p>` : ''}
+      <div class="stack-form">${U?.ev.length ? `<button class="btn wide" data-act="usageview">Voir la synthèse</button>
+        <button class="btn wide" data-act="usageexport">Exporter le suivi (JSON)</button>
+        <button class="btn ghost wide" data-act="usageclear">Effacer le journal</button>` : ''}
         ${setBack}</div>`);
   }
   return openSheet(`${head}
@@ -2123,6 +2139,8 @@ function enterApp() {
   saisieMonth = monthKey(); potMonth = monthKey(); resumeMonth = null;
   scope = members().some(m => m.id === scope) ? scope : 'moi';
   masked = !!S.settings.masked;
+  uSheet = null;
+  uStart({ 'f-unlock': 'motdepasse', pkunlock: 'faceid', 'f-setup': 'creation' }[uPending] || 'restauration').catch(() => {});
   render(); window.scrollTo(0, 0);
   // Nouveau mois : reprend tout de suite les charges fixes (communes et perso), pour que le bilan et les
   // statistiques soient justes même si le volet Foyer n'a pas encore été ouvert.
@@ -2639,6 +2657,21 @@ const ACT = {
   gosub: t => goSub(t.dataset.v),
   back: () => { subview = null; render(); window.scrollTo(0, 0); },
   gofoyer: () => { compteTab = 'foyer'; go('comptes'); },
+  usageview: () => sheetUsage(),
+  usageexport: () => usageExport(),
+  usageclear: async () => {
+    if (!confirm('Effacer le journal d’utilisation ?')) return;
+    U = uNew(); uDirty++; await uFlush();
+    if (S.settings.usage?.on) { uSess = ++U.n; uScreen = ''; uLog('start', 'effacement'); uScreenCheck(); }
+    sheetSetPage('backup'); toast('Journal effacé');
+  },
+  bilango: async t => {
+    potMonth = t.dataset.m; compteTab = 'foyer';
+    if (mode === 'app') await seedMonth(potMonth);
+    go('comptes');
+    const el = $(t.dataset.w === 'p' ? '#sec-perso' : '#sec-communes');
+    if (el) window.scrollTo(0, el.getBoundingClientRect().top + scrollY - ($('.top')?.offsetHeight || 0) - 8);
+  },
   backupnow: () => exportBackup('mois'),
   mask: () => masked ? askUnmask() : setMasked(true),
   unmask: () => askUnmask(),
@@ -2875,7 +2908,7 @@ const ACT = {
   wipe: async () => {
     if (!confirm('Effacer toutes les données de cet iPhone ? Sans sauvegarde exportée, elles seront perdues définitivement.')) return;
     if (!confirm('Confirmer l’effacement définitif ?')) return;
-    await store.del('vault'); await store.del('fails'); boot();
+    await store.del('vault'); await store.del('fails'); await store.del('usage'); U = null; boot();
   },
   copyprev: () => {
     const prevM = addMonths(saisieMonth, -1);
@@ -2948,7 +2981,7 @@ const MASK_BLOCK = new Set(['quickrefund', 'newrefund', 'editrefund', 'refundfor
 let press = null, pressDone = false;
 const pressEnd = () => { if (press) { clearTimeout(press.timer); press.el.classList.remove('press'); press = null; } };
 const pressEdit = el => {
-  const act = el.dataset.edit;
+  const act = el.dataset.edit; uPending = act; uLog('long', act);
   if (masked && MASK_BLOCK.has(act)) return askUnmask();
   ACT[act]({ dataset: { id: el.dataset.id } });
 };
@@ -2967,10 +3000,12 @@ document.addEventListener('click', e => {
   if (pressDone && e.target.closest('[data-act=point]')) { pressDone = false; e.preventDefault(); return; }
   const t = e.target.closest('[data-act]'); if (!t || !ACT[t.dataset.act]) return;
   e.preventDefault();
-  if (masked && MASK_BLOCK.has(t.dataset.act)) return askUnmask();
+  const act = t.dataset.act; uPending = uKey(act, t);
+  if (masked && MASK_BLOCK.has(act)) { uLog('tap', act, 'bloque-masque'); return askUnmask(); }
+  uLog('tap', act, uDetail(t));
   ACT[t.dataset.act](t, e);
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); else if (e.key === 'Enter' && e.target.matches?.('li[data-act]')) e.target.click(); });
 
 // Balayage horizontal pour masquer un point d'attention. Un mouvement vertical laisse défiler la page.
 let swipe = null;
@@ -3045,6 +3080,14 @@ document.addEventListener('pointercancel', () => endSwipe(true));
 
 document.addEventListener('change', async e => {
   const t = e.target;
+  uLog('change', t.id || Object.keys(t.dataset)[0] || t.type);
+  if (t.id === 'u-on') {
+    if (!t.checked) uLog('end', 'desactivation');
+    S.settings.usage = { ...(S.settings.usage || {}), on: t.checked };
+    await save();
+    if (t.checked) { U ||= uNew(); uSess = ++U.n; uScreen = ''; uLog('start', 'activation'); uScreenCheck(); }
+    await uFlush(); sheetSetPage('backup'); return;
+  }
   if (t.dataset.set2) {
     const [g, k] = t.dataset.set2.split('.');
     S.settings[g] ||= {};
@@ -3122,6 +3165,7 @@ document.addEventListener('change', async e => {
 document.addEventListener('submit', async e => {
   e.preventDefault();
   const f = e.target, btn = f.querySelector('[type=submit]');
+  uPending = f.id; uLog('submit', f.id);
   const busy = label => { btn.disabled = true; btn.textContent = label; };
   if (f.id === 'f-setup') {
     const p1 = $('#p1').value, p2 = $('#p2').value;
@@ -3325,11 +3369,193 @@ async function exportBackup(from) {
   S.settings.lastExport = Date.now(); await save(); render(); if (from !== 'mois') sheetSetPage('backup'); toast('Sauvegarde exportée');
 }
 
-function lockNow() { masked = false; lockHasPk = !!slots?.pk; wipeKeys(); closeSheet(); renderLock('unlock'); }
+function lockNow() { uStop(hiddenAt && Date.now() - hiddenAt > LOCK_MS ? 'auto' : 'manuel'); masked = false; lockHasPk = !!slots?.pk; wipeKeys(); closeSheet(); renderLock('unlock'); }
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) hiddenAt = Date.now();
+  if (document.hidden) { hiddenAt = Date.now(); uLog('pause'); uFlush(); }
   else if (mode === 'app' && hiddenAt && Date.now() - hiddenAt > LOCK_MS) lockNow();
+  else { uLog('resume'); hiddenAt = 0; }
 });
+
+/* ---------- Suivi d'utilisation ----------
+   Journal local des gestes (boutons touchés, formulaires validés, écrans affichés et temps passé),
+   pour repérer plus tard les fonctions les plus utilisées et les chemins trop longs.
+   Ne contient jamais de montant, de nom, de libellé ni de contenu saisi : seulement des noms d'actions
+   du code de l'app, des écrans et des horodatages. Chiffré avec la clé du coffre, jamais envoyé.
+   Chaque événement : [horodatage ms, n° de session, type, nom, écran, détail]. */
+const USE_MAX = 20000;
+let U = null, uSess = 0, uScreen = '', uSheet = null, uPending = null, uDirty = 0, uTimer = null;
+const usageOn = () => mode === 'app' && !!S?.settings.usage?.on && !!U;
+const uNew = () => ({ v: 1, since: Date.now(), n: 0, ev: [] });
+// Écran de base, sans aucune donnée : onglet et sous-onglet
+function uBase() {
+  if (view === 'comptes') return 'comptes/' + (compteTab === 'foyer' && S?.household.on ? 'foyer' : 'detail');
+  if (view === 'saisie') return subview ? 'mois/' + subview : 'mois';
+  return { home: 'accueil', objectifs: 'objectifs', resume: 'resume' }[view] || view;
+}
+// Détail sûr d'un geste : uniquement des identifiants courts du code, ou le type d'un compte (jamais son nom)
+const U_KEYS = ['view', 'p', 't', 'kind', 'w', 'd', 's', 'v', 'step'];
+function uDetail(el) {
+  const d = el.dataset, out = [];
+  for (const k of U_KEYS) if (d[k] != null && /^[a-z0-9_-]{1,20}$/i.test(d[k])) out.push(d[k]);
+  const acc = d.id && S?.accounts.find(a => a.id === d.id);
+  if (acc) out.push('compte-' + acc.type);
+  return out.join(',') || undefined;
+}
+function uLog(k, a, x) {
+  if (!usageOn()) return;
+  const e = [Date.now(), uSess, k, a || '', uScreen];
+  if (x != null) e.push(x);
+  U.ev.push(e);
+  if (U.ev.length > USE_MAX) U.ev.splice(0, U.ev.length - USE_MAX);
+  uDirty++;
+  clearTimeout(uTimer); uTimer = setTimeout(() => uFlush(), 4000);
+}
+// Appelé après chaque affichage : note un changement d'écran (onglet, sous-onglet ou fiche ouverte)
+function uScreenCheck() {
+  if (!usageOn()) return;
+  const sc = uBase() + (uSheet ? ' > ' + uSheet : '');
+  if (sc === uScreen) return;
+  uScreen = sc; uLog('screen', sc);
+}
+const uKey = (act, el) => act === 'setpage' ? 'reglages/' + el.dataset.p : act === 'settings' ? 'reglages' : act;
+async function uFlush(key = dek) {
+  if (!U || !key || !uDirty || mode !== 'app') return;
+  uDirty = 0;
+  try { await store.set('usage', await aesEnc(key, enc.encode(JSON.stringify(U)))); } catch { uDirty++; }
+}
+async function uStart(via) {
+  if (!U) {
+    try { const r = await store.get('usage'); U = r ? JSON.parse(dec.decode(await aesDec(dek, r.iv, r.ct))) : null; } catch { U = null; }
+    if (!U || U.v !== 1 || !Array.isArray(U.ev)) U = uNew();
+  }
+  if (!S?.settings.usage?.on) return;
+  uSess = ++U.n; uScreen = ''; uSheet = null;
+  uLog('start', via || 'inconnu', `${innerWidth}x${innerHeight}${matchMedia('(display-mode: standalone)').matches ? ',app' : ',navigateur'}`);
+  uScreenCheck();
+}
+function uStop(reason) {
+  if (usageOn()) uLog('end', reason);
+  const k = dek; clearTimeout(uTimer); uFlush(k); U = null;
+}
+
+// Fin d'une tâche : formulaire validé ou action qui produit un résultat sans formulaire
+const U_DONE = new Set(['point', 'copy', 'share', 'export', 'analyse', 'dismiss', 'unhide', 'carry', 'uncarry', 'copycharges', 'delcharge', 'delperso', 'delrefund',
+  'deltransfer', 'delmove', 'savesaisie', 'savetx', 'copyprev', 'mask', 'unmask', 'settheme', 'setmode', 'aitest', 'aiclear', 'usageexport', 'closeacc', 'delacc', 'backupnow']);
+const uMed = a => { if (!a.length) return 0; const b = a.slice().sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+const uTop = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n);
+function uSummary() {
+  const ev = U?.ev || [], bySess = new Map();
+  for (const e of ev) { if (!bySess.has(e[1])) bySess.set(e[1], []); bySess.get(e[1]).push(e); }
+  const acts = {}, screens = {}, tasks = {}, grams = {}, hours = Array(24).fill(0), days = Array(7).fill(0);
+  const sess = [];
+  for (const list of bySess.values()) {
+    let cur = null, since = null, dur = 0, gestures = 0, path = [], t0 = list[0][0], seq = [];
+    const close = t => { if (cur && since != null) { const d = t - since; dur += d; const o = screens[cur]; o.ms += d; o.d.push(d); } since = null; };
+    for (const [t, , k, a, , x] of list) {
+      if (k === 'screen') {
+        // Fiche refermée sans rien valider : le chemin suivant repart de l'écran de base
+        if (cur?.includes(' > ') && !a.includes(' > ')) { path = []; t0 = t; }
+        close(t); cur = a; since = t;
+        const o = screens[a] ||= { n: 0, ms: 0, d: [], taps: [], via: {} };
+        o.n++; o.taps.push(path.length);
+        if (path.length) { const p = path.slice(-6).join(' › '); o.via[p] = (o.via[p] || 0) + 1; }
+      } else if (k === 'pause' || k === 'end') close(t);
+      else if (k === 'resume') since = t;
+      else if (k === 'start') { t0 = t; path = []; }
+      else if (k === 'tap' || k === 'long' || k === 'submit' || k === 'change') {
+        const name = k === 'submit' ? 'valide:' + a : k === 'long' ? 'appui-long:' + a : k === 'change' ? 'champ:' + a : a + (x ? ':' + x : '');
+        acts[name] = (acts[name] || 0) + 1;
+        const d = new Date(t); hours[d.getHours()]++; days[(d.getDay() + 6) % 7]++;
+        if (k !== 'submit') gestures++;
+        if (k === 'tap' && a === 'go') { path = []; t0 = t; }   // un onglet touché démarre un nouveau chemin
+        path.push(name); seq.push(name);
+        if (seq.length >= 3) { const g = seq.slice(-3).join(' › '); grams[g] = (grams[g] || 0) + 1; }
+        if ((k === 'submit' && !['f-unlock', 'f-setup'].includes(a)) || (k === 'tap' && U_DONE.has(a))) {
+          const o = tasks[name] ||= { n: 0, taps: [], secs: [], paths: {} };
+          o.n++; o.taps.push(path.filter(p => !p.startsWith('valide:')).length); o.secs.push((t - t0) / 1000);
+          const p = path.slice(-8).join(' › '); o.paths[p] = (o.paths[p] || 0) + 1;
+          path = []; t0 = t;
+        }
+      }
+    }
+    close(list[list.length - 1][0]);
+    sess.push({ dur, gestures });
+  }
+  const r1 = x => Math.round(x * 10) / 10;
+  return {
+    period: ev.length ? { from: new Date(ev[0][0]).toISOString(), to: new Date(ev[ev.length - 1][0]).toISOString() } : null,
+    sessions: { n: sess.length, medianSeconds: r1(uMed(sess.map(s => s.dur / 1000))), medianGestures: uMed(sess.map(s => s.gestures)), totalGestures: sess.reduce((t, s) => t + s.gestures, 0) },
+    actions: uTop(acts, 60).map(([action, n]) => ({ action, n })),
+    screens: Object.entries(screens).sort((a, b) => b[1].n - a[1].n).map(([screen, o]) => ({ screen, visits: o.n, totalSeconds: Math.round(o.ms / 1000),
+      medianSeconds: r1(uMed(o.d) / 1000), medianTapsToReach: uMed(o.taps), topPaths: uTop(o.via, 3).map(([path, n]) => ({ path, n })) })),
+    tasks: Object.entries(tasks).sort((a, b) => b[1].n - a[1].n).map(([task, o]) => ({ task, n: o.n, medianTaps: uMed(o.taps), medianSeconds: r1(uMed(o.secs)),
+      topPaths: uTop(o.paths, 3).map(([path, n]) => ({ path, n })) })),
+    sequences: uTop(grams, 25).map(([seq, n]) => ({ seq, n })),
+    byHour: hours, byWeekday: { order: 'lun→dim', counts: days },
+  };
+}
+
+// Libellés lisibles pour la synthèse affichée dans l'app (l'export garde les noms du code)
+const U_LABELS = {
+  'go:home': 'Onglet Accueil', 'go:comptes': 'Onglet Comptes', 'go:saisie': 'Onglet Ce mois', 'go:objectifs': 'Onglet Objectifs', 'go:resume': 'Onglet Résumé',
+  quick: 'Bouton +', quickstep: '+ › Mouvement de compte', quicka: '+ › choix du compte', quickact: '+ › choix de l’action', quickback: '+ › Retour',
+  quickcharge: '+ › Dépense commune', quickperso: '+ › Charge perso', quickrefund: '+ › Remboursement',
+  'comptetab:foyer': 'Comptes › Foyer', 'comptetab:detail': 'Comptes › Détail', point: 'Pointer une charge', editcharge: 'Modifier une dépense commune',
+  newcharge: 'Ajouter une dépense commune', newperso: 'Ajouter une charge perso', settlenow: 'Enregistrer un virement', newtransfer: 'Ajouter un virement',
+  potmonth: 'Changer de mois (Foyer)', 'bilango:c': 'Bilan › charges communes', 'bilango:p': 'Bilan › charges perso', 'champ:resmonth': 'Résumé › choix du mois',
+  'setpage:backup': 'Réglages › Données', usageview: 'Synthèse d’utilisation', usageexport: 'Export du suivi', export: 'Exporter une sauvegarde', mask: 'Masquer/afficher les montants', lock: 'Verrouiller', settings: 'Réglages',
+  close: 'Fermer une fiche', gosub: 'Ce mois › étape', accinfo: 'Fiche d’un compte', moves: 'Mouvements d’un compte', analyse: 'Analyse IA', copy: 'Copier le résumé',
+  'valide:f-quick': 'Valider (raccourci +)', 'valide:f-charge': 'Valider une dépense commune', 'valide:f-perso': 'Valider une charge perso',
+  'valide:f-refund': 'Valider un remboursement', 'valide:f-transfer': 'Valider un virement', 'valide:f-move': 'Valider un mouvement',
+  'appui-long:editcharge': 'Appui long › dépense commune', 'appui-long:editperso': 'Appui long › charge perso',
+  accueil: 'Accueil', 'comptes/detail': 'Comptes', 'comptes/foyer': 'Comptes › Foyer', mois: 'Ce mois', 'mois/soldes': 'Ce mois › Soldes',
+  'mois/operations': 'Ce mois › Opérations', objectifs: 'Objectifs', resume: 'Résumé', reglages: 'Réglages', 'reglages/backup': 'Réglages › Données',
+  'reglages/ai': 'Réglages › IA', 'reglages/foyer': 'Réglages › Foyer', 'reglages/secu': 'Réglages › Sécurité', 'reglages/apparence': 'Réglages › Apparence',
+  'champ:p-n': 'Champ libellé (charge perso)', 'champ:p-a': 'Champ montant (charge perso)', 'champ:c-n': 'Champ libellé (dépense commune)',
+  'champ:c-a': 'Champ montant (dépense commune)', 'champ:q-val': 'Champ montant (raccourci +)', 'champ:t-a': 'Champ montant (virement)', 'champ:r-a': 'Champ montant (remboursement)',
+};
+const uLabel = n => n.includes(' > ') ? n.split(' > ').map(uLabel).join(' › ') : U_LABELS[n] || U_LABELS[n.split(',')[0]] || U_LABELS[n.split(':')[0]] || n;
+function sheetUsage() {
+  const s = uSummary(), n = U?.ev.length || 0;
+  const li = (l, v) => `<li><span>${esc(l)}</span><span class="num">${esc(String(v))}</span></li>`;
+  const dur = x => x >= 60 ? `${Math.floor(x / 60)} min ${String(Math.round(x % 60)).padStart(2, '0')}` : `${Math.round(x)} s`;
+  openSheet(`<h2>Synthèse d’utilisation</h2>
+    <p class="small" style="margin:0 0 14px">${s.period ? `Du ${new Date(s.period.from).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} au ${new Date(s.period.to).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : 'Aucune donnée pour l’instant'} · ${plural(n, 'événement', 'événements')}</p>
+    ${s.sessions.n ? `<ul class="kv">${li('Ouvertures de l’app', s.sessions.n)}${li('Durée médiane d’une ouverture', dur(s.sessions.medianSeconds))}${li('Gestes médians par ouverture', s.sessions.medianGestures)}</ul>
+    <h3>Gestes les plus fréquents</h3><ul class="kv">${s.actions.slice(0, 10).map(a => li(uLabel(a.action), a.n)).join('')}</ul>
+    <h3>Tâches accomplies</h3><p class="small" style="margin:-4px 0 0">Nombre de fois · gestes médians pour y arriver</p>
+    <ul class="kv">${s.tasks.slice(0, 8).map(t => li(uLabel(t.task), `${t.n} · ${t.medianTaps}`)).join('') || li('Aucune', '')}</ul>
+    <h3>Écrans les plus consultés</h3><p class="small" style="margin:-4px 0 0">Visites · temps médian</p>
+    <ul class="kv">${s.screens.slice(0, 8).map(x => li(uLabel(x.screen), `${x.visits} · ${dur(x.medianSeconds)}`)).join('')}</ul>` : '<p class="muted">Utilise l’app quelques jours, la synthèse se remplira.</p>'}
+    <div class="stack-form" style="margin-top:18px"><button class="btn primary wide" data-act="usageexport">Exporter le suivi (JSON)</button>
+      <button class="btn wide" data-act="setpage" data-p="backup">Retour</button></div>`);
+}
+async function usageExport() {
+  if (mode !== 'app' || !U) return;
+  const sum = uSummary();
+  const out = {
+    format: 'patrimoine-usage-v1', exportedAt: new Date().toISOString(),
+    trackingSince: new Date(U.since).toISOString(),
+    context: { screen: `${screen.width}x${screen.height}`, standalone: matchMedia('(display-mode: standalone)').matches, theme: ui.theme, mode: ui.mode,
+      household: !!S.household.on, members: members().length, accounts: active().length, appFingerprint: code.served ? fpLabel(code.served) : null },
+    legend: {
+      kinds: { start: 'ouverture (nom = méthode, détail = taille d’écran)', end: 'verrouillage', pause: 'app en arrière-plan', resume: 'retour dans l’app',
+        screen: 'nouvel écran affiché (nom = écran > fiche ouverte)', tap: 'bouton touché (nom = action, détail = paramètres)', long: 'appui long',
+        submit: 'formulaire validé (nom = formulaire)', change: 'champ ou option modifié (nom = champ, sans sa valeur)' },
+      note: 'Aucun montant, nom de compte, libellé ou contenu saisi. Durées en secondes. Les « paths » listent les derniers gestes avant d’atteindre l’écran ou la tâche.',
+    },
+    summary: sum,
+    events: { columns: ['time', 'session', 'kind', 'name', 'screen', 'detail'], rows: U.ev.map(([t, ...r]) => [new Date(t).toISOString(), ...r]) },
+  };
+  const name = `patrimoine-utilisation-${new Date().toISOString().slice(0, 10)}.json`;
+  const blob = new Blob([JSON.stringify(out, null, 1)], { type: 'application/json' });
+  const file = new File([blob], name, { type: 'application/json' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return toast('Suivi exporté'); } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 4000);
+  toast('Suivi exporté');
+}
 
 /* ---------- Données fictives ---------- */
 function demoData() {
