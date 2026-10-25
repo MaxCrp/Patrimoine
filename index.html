@@ -216,6 +216,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .kv li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}
 .kv li:last-child{border-bottom:0}
 .kv .num{white-space:nowrap}
+#c-custom input[readonly]{background:transparent;color:var(--muted)}
 .kv li span:first-child{color:var(--muted)}
 .lines{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
 .lines ul{list-style:none;margin:8px 0 0;padding:0}
@@ -898,7 +899,7 @@ async function seedMonth(k) {
   if (!rec.length) { if (S.pot[k].items.length) cur.seeded = true; return 0; }
   const have = new Set(cur.items.map(i => norm(i.n)));
   let n = 0;
-  for (const i of rec) if (!have.has(norm(i.n))) { cur.items.push({ id: uid(), n: i.n, a: i.a, by: i.by, r: true }); n++; }
+  for (const i of rec) if (!have.has(norm(i.n))) { cur.items.push({ id: uid(), n: i.n, a: i.a, by: i.by, r: true, ...(i.sp ? { sp: i.sp } : {}) }); n++; }
   cur.seeded = true; cur.from = prevK;
   await save();
   return n;
@@ -951,13 +952,20 @@ const ptRow = (i, kind, inner) => `<li class="${i.pt ? 'done' : ''}"><button dat
 const incomeSet = (k, id) => S.pot[k]?.inc?.[id] != null;
 const incomeOf = (k, id) => (S.pot[k]?.inc?.[id] ?? memberOf(id).income) || 0;
 const incomeMissing = k => S.household.on && S.household.split.mode === 'revenus' && members().filter(m => !incomeSet(k, m.id));
-function shares(k) {
+// Répartition d'un mois selon un mode ; sans mode, celui des réglages du foyer
+function shares(k, mode = S.household.split.mode, custom = null) {
   const H = S.household, ms = H.members;
   const from = vals => { const t = vals.reduce((a, b) => a + b, 0); return t > 0 ? Object.fromEntries(ms.map((m, i) => [m.id, vals[i] / t])) : null; };
-  if (H.split.mode === 'revenus') { const r = from(ms.map(m => incomeOf(k, m.id))); if (r) return r; }
-  if (H.split.mode === 'manuel') { const r = from(ms.map(m => H.split.shares[m.id] || 0)); if (r) return r; }
+  if (custom) { const r = from(ms.map(m => custom[m.id] || 0)); if (r) return r; }
+  if (mode === 'revenus') { const r = from(ms.map(m => incomeOf(k, m.id))); if (r) return r; }
+  if (mode === 'manuel') { const r = from(ms.map(m => H.split.shares[m.id] || 0)); if (r) return r; }
   return Object.fromEntries(ms.map(m => [m.id, 1 / ms.length]));
 }
+// Une dépense peut avoir sa propre répartition (sp) : 'moitie', 'revenus', ou { c: montants par membre }.
+// Les montants personnalisés valent comme proportions : si le total de la dépense change, ils suivent.
+const itemShares = (k, i) => !i.sp ? shares(k) : i.sp.c ? shares(k, null, i.sp.c) : shares(k, i.sp);
+const SP_LABEL = { moitie: 'parts égales', revenus: 'au prorata des revenus' };
+const spLabel = sp => !sp ? '' : sp.c ? 'répartition personnalisée' : SP_LABEL[sp] || '';
 function potStats(k) {
   const p = potOf(k), sh = shares(k), items = potItems(k);
   const total = items.reduce((t, i) => t + i.a, 0);
@@ -967,10 +975,13 @@ function potStats(k) {
     const regs = (p.transfers || []).filter(t => t.reg !== false);
     out[m.id] = regs.filter(t => t.from === m.id).reduce((t, x) => t + x.a, 0);
     inn[m.id] = regs.filter(t => t.to === m.id).reduce((t, x) => t + x.a, 0);
-    due[m.id] = total * (sh[m.id] || 0);
+    due[m.id] = items.reduce((t, i) => t + i.a * ((i.sp ? itemShares(k, i) : sh)[m.id] || 0), 0);
     net[m.id] = paid[m.id] + out[m.id] - inn[m.id] - due[m.id] + (p.carry?.[m.id] || 0);
   }
-  return { p, items, total, paid, due, net, out, inn, sh };
+  // Part effective du mois : tient compte des dépenses réparties autrement que par défaut
+  const mixed = items.some(i => i.sp);
+  const eff = mixed && total > 0 ? Object.fromEntries(members().map(m => [m.id, due[m.id] / total])) : sh;
+  return { p, items, total, paid, due, net, out, inn, sh: eff, shDefault: sh, mixed };
 }
 // Qui doit combien à qui, une fois les charges et les virements pris en compte
 // Écart laissé par le mois précédent, faute de virement de régularisation
@@ -1148,7 +1159,7 @@ function summary(F) {
   if (S.household.on && members().length > 1) {
     const st = potStats(F), SPL = { moitie: 'parts égales', revenus: 'au prorata des revenus', manuel: 'parts choisies' };
     if (st.total > 0) {
-      L.push('', `Charges communes du foyer : ${R(st.total)}, réparties ${SPL[S.household.split.mode]}.`);
+      L.push('', `Charges communes du foyer : ${R(st.total)}, réparties ${SPL[S.household.split.mode]}${st.mixed ? ' (certaines dépenses réparties autrement)' : ''}.`);
       for (const m of members()) L.push(`- ${mLabel(m.id)} : part ${pct(st.sh[m.id] || 0)}, payé ${R(st.paid[m.id])}, dû ${R(st.due[m.id])}${incomeOf(F, m.id) ? `, soit ${pct(st.due[m.id] / incomeOf(F, m.id))} de ses revenus` : ''}`);
       const d = settle(st);
       if (d.length) d.forEach(x => L.push(`- Régularisation attendue : ${mLabel(x.from)} doit ${R(x.a)} à ${mLabel(x.to)}`));
@@ -1438,7 +1449,7 @@ function vFoyer() {
       <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>
     <section id="sec-communes"><h2>Dépenses du mois</h2>
       ${st.p.from && st.p.items.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Dépenses fixes reprises ${deM(monthLabel(st.p.from))} : vérifie les montants qui ont changé.</p>` : ''}
-      ${items.length ? `<ul class="list">${items.map(i => { const b = `<span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : i.r === false ? ' · ponctuelle' : ' · fixe'}</span></span><span class="num">${eur(i.a)}</span>`; return i.src ? `<li><button data-act="srcinfo" data-id="${i.id}">${b}</button></li>` : ptRow(i, 'c', b); }).join('')}</ul>${ptHint(items.filter(i => !i.src))}`
+      ${items.length ? `<ul class="list">${items.map(i => { const b = `<span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : i.r === false ? ' · ponctuelle' : ' · fixe'}${i.sp ? ' · ' + spLabel(i.sp) : ''}</span></span><span class="num">${eur(i.a)}</span>`; return i.src ? `<li><button data-act="srcinfo" data-id="${i.id}">${b}</button></li>` : ptRow(i, 'c', b); }).join('')}</ul>${ptHint(items.filter(i => !i.src))}`
         : '<p class="muted">Aucune dépense commune enregistrée pour ce mois.</p>'}
       <div class="actions"><button class="btn primary wide" data-act="newcharge">Ajouter une dépense</button>
         ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre à nouveau les dépenses ${deM(monthName(addMonths(k, -1)))}</button>` : ''}</div></section>
@@ -2385,6 +2396,37 @@ function sheetPerso(id) {
       ${it.id ? `<button class="btn danger wide" type="button" data-act="delperso" data-id="${it.id}">Supprimer</button>` : ''}
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
 }
+// Répartition propre à une dépense : par défaut celle des réglages, ou une autre pour cette dépense seulement
+const SPLIT_NAMES = { moitie: 'parts égales', revenus: 'au prorata des revenus', manuel: 'parts choisies' };
+function spFields(it) {
+  const sel = !it.sp ? '' : it.sp.c ? 'perso' : it.sp, ms = members();
+  // Montants affichés : ceux enregistrés, remis à l'échelle si le total a changé, sinon la répartition par défaut
+  const base = it.sp?.c, bt = base ? ms.reduce((t, m) => t + (base[m.id] || 0), 0) : 0, sh = shares(potMonth);
+  const val = m => it.a == null ? '' : numStr(Math.round((bt ? (base[m.id] || 0) / bt : sh[m.id] || 0) * it.a * 100) / 100);
+  return `<label>Répartition<select id="c-sp">
+      <option value="" ${sel === '' ? 'selected' : ''}>Par défaut (${SPLIT_NAMES[S.household.split.mode]})</option>
+      <option value="moitie" ${sel === 'moitie' ? 'selected' : ''}>Parts égales</option>
+      <option value="revenus" ${sel === 'revenus' ? 'selected' : ''}>Au prorata des revenus</option>
+      <option value="perso" ${sel === 'perso' ? 'selected' : ''}>Personnalisée</option></select></label>
+    <div id="c-custom" class="${ms.length === 2 ? 'row2' : 'fields'}" ${sel === 'perso' ? '' : 'hidden'}>${ms.map((m, n) => `<label>${esc(m.name)} (€)<input inputmode="decimal" data-cs="${m.id}" value="${esc(val(m))}" ${n === ms.length - 1 ? 'readonly' : ''}></label>`).join('')}</div>
+    <p class="small" id="c-sphint" style="margin:-4px 0 0" ${sel === 'perso' ? '' : 'hidden'}>${esc(ms[ms.length - 1].name)} prend automatiquement le reste du montant.</p>`;
+}
+// Personnalisée : le dernier membre complète jusqu'au montant de la dépense.
+// Les proportions sont mémorisées pour suivre un changement du montant total.
+const r2 = x => Math.round(x * 100) / 100;
+function spRatio() {
+  const ins = $$('#c-custom [data-cs]'), v = ins.map(i => num(i.value) || 0), t = v.reduce((a, b) => a + b, 0);
+  if (t > 0) $('#c-custom').dataset.ratio = JSON.stringify(v.map(x => x / t));
+}
+function spFill(mode) {
+  const a = num($('#c-a')?.value), ins = $$('#c-custom [data-cs]'); if (!ins.length) return;
+  if (!Number.isFinite(a)) return;
+  if (mode === 'prefill') { const sh = shares(potMonth); ins.forEach(i => { i.value = numStr(r2((sh[i.dataset.cs] || 0) * a)); }); }
+  else if (mode === 'scale') { const R = JSON.parse($('#c-custom').dataset.ratio || 'null'); if (R) ins.forEach((i, n) => { i.value = numStr(r2(R[n] * a)); }); }
+  const others = ins.slice(0, -1).reduce((t, i) => t + (num(i.value) || 0), 0);
+  ins[ins.length - 1].value = numStr(r2(a - others));
+  if (mode !== 'scale') spRatio();
+}
 function sheetCharge(id) {
   const it = potOf(potMonth).items.find(x => x.id === id) || { id: null, n: '', a: null, by: 'moi' };
   openSheet(`<h2>${it.id ? 'Modifier la dépense' : 'Nouvelle dépense'}</h2>
@@ -2393,6 +2435,7 @@ function sheetCharge(id) {
       <label>Libellé<input id="c-n" value="${esc(it.n)}" placeholder="ex. loyer, courses, énergie" required></label>
       <label>Montant (€)<input id="c-a" inputmode="decimal" value="${esc(numStr(it.a))}" required></label>
       <label>Payé par<select id="c-by">${members().map(m => `<option value="${m.id}" ${m.id === it.by ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
+      ${members().length > 1 ? spFields(it) : ''}
       <label class="check"><input type="checkbox" id="c-rec" ${it.r === false ? '' : 'checked'}>Dépense fixe, reprise chaque mois</label>
       <p class="small" style="margin:0">Décoche pour une dépense ponctuelle, qui ne sera pas reportée au mois suivant.</p>
       <button class="btn primary wide" type="submit">Enregistrer</button>
@@ -3005,6 +3048,11 @@ document.addEventListener('click', e => {
   uLog('tap', act, uDetail(t));
   ACT[t.dataset.act](t, e);
 });
+document.addEventListener('input', e => {
+  if ($('#c-sp')?.value !== 'perso') return;
+  if (e.target.id === 'c-a') { if (!$('#c-custom').dataset.ratio) spRatio(); spFill('scale'); }
+  else if (e.target.dataset?.cs) spFill();
+});
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); else if (e.key === 'Enter' && e.target.matches?.('li[data-act]')) e.target.click(); });
 
 // Balayage horizontal pour masquer un point d'attention. Un mouvement vertical laisse défiler la page.
@@ -3081,6 +3129,10 @@ document.addEventListener('pointercancel', () => endSwipe(true));
 document.addEventListener('change', async e => {
   const t = e.target;
   uLog('change', t.id || Object.keys(t.dataset)[0] || t.type);
+  if (t.id === 'c-sp') {
+    const on = t.value === 'perso'; $('#c-custom').hidden = !on; $('#c-sphint').hidden = !on;
+    if (on) spFill($$('#c-custom [data-cs]').some(i => i.value.trim()) ? null : 'prefill'); return;
+  }
   if (t.id === 'u-on') {
     if (!t.checked) uLog('end', 'desactivation');
     S.settings.usage = { ...(S.settings.usage || {}), on: t.checked };
@@ -3248,9 +3300,17 @@ document.addEventListener('submit', async e => {
     const p = (S.pot[potMonth] ||= { items: [], transfers: [] });
     p.transfers ||= [];
     const id = f.dataset.id;
-    const r = $('#c-rec').checked;
-    if (id) Object.assign(p.items.find(i => i.id === id), { n, a, by: $('#c-by').value, r });
-    else p.items.push({ id: uid(), n, a, by: $('#c-by').value, r });
+    const r = $('#c-rec').checked, spv = $('#c-sp')?.value || '';
+    let sp;
+    if (spv === 'perso') {
+      spFill();
+      const c = Object.fromEntries($$('#c-custom [data-cs]').map(i => [i.dataset.cs, num(i.value) || 0]));
+      if (Object.values(c).some(v => v < 0)) return toast('Les parts dépassent le montant de la dépense');
+      sp = { c };
+    } else if (spv) sp = spv;
+    const data = { n, a, by: $('#c-by').value, r, sp };
+    if (id) { const it = p.items.find(i => i.id === id); Object.assign(it, data); if (!sp) delete it.sp; }
+    else { if (!sp) delete data.sp; p.items.push({ id: uid(), ...data }); }
     p.seeded = true; delete p.from;
     await save(); closeSheet(); render();
   }
