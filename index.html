@@ -2389,7 +2389,7 @@ function sheetPerso(id) {
     <form id="f-perso" class="stack-form" data-id="${it.id || ''}">
       <label>Libellé<input id="p-n" value="${esc(it.n)}" placeholder="ex. téléphone, salle de sport" required></label>
       <label>Montant (€)<input id="p-a" inputmode="decimal" value="${esc(numStr(it.a))}" required></label>
-      <label class="check"><input type="checkbox" id="p-rec" ${it.r === false ? '' : 'checked'}>Charge fixe, reprise chaque mois</label>
+      <label class="check"><input type="checkbox" id="p-rec" ${it.id && it.r !== false ? 'checked' : ''}>Charge fixe, reprise chaque mois</label>
       <button class="btn primary wide" type="submit">Enregistrer</button>
       ${it.id ? (() => { const back = refundsOf(it.id); return `${back.length ? `<p class="small" style="margin:0">Remboursé : ${back.map(r => `${esc(eur(r.a))} en ${monthName(r.k)}`).join(', ')}.</p>` : ''}
         <button class="btn wide" type="button" data-act="refundfor" data-id="${it.id}">Enregistrer un remboursement</button>`; })() : ''}
@@ -2436,8 +2436,8 @@ function sheetCharge(id) {
       <label>Montant (€)<input id="c-a" inputmode="decimal" value="${esc(numStr(it.a))}" required></label>
       <label>Payé par<select id="c-by">${members().map(m => `<option value="${m.id}" ${m.id === it.by ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
       ${members().length > 1 ? spFields(it) : ''}
-      <label class="check"><input type="checkbox" id="c-rec" ${it.r === false ? '' : 'checked'}>Dépense fixe, reprise chaque mois</label>
-      <p class="small" style="margin:0">Décoche pour une dépense ponctuelle, qui ne sera pas reportée au mois suivant.</p>
+      <label class="check"><input type="checkbox" id="c-rec" ${it.id && it.r !== false ? 'checked' : ''}>Dépense fixe, reprise chaque mois</label>
+      <p class="small" style="margin:0">Laisse décoché pour une dépense ponctuelle. Coche seulement pour une nouvelle dépense régulière : elle sera reprise automatiquement les mois suivants.</p>
       <button class="btn primary wide" type="submit">Enregistrer</button>
       ${it.id ? `<button class="btn danger wide" type="button" data-act="delcharge" data-id="${it.id}">Supprimer</button>` : ''}
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
