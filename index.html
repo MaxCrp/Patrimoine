@@ -1614,6 +1614,9 @@ function vObjectifs() {
   const counted = f => active().filter(f).map(a => esc(a.name)).join(', ') || 'aucun compte';
   const money = /target|monthly/;
   const inp = (path, label, val, attrs = '') => `<label${attrs.includes('full') ? ' class="full"' : ''}>${label}<input ${attrs.replace('full', '')} ${masked && money.test(path) ? 'readonly' : `data-goal="${path}"`} value="${esc(masked && money.test(path) ? (val == null ? '' : MASK) : (val ?? ''))}"></label>`;
+  // Objectif personnel : un montant mensuel choisi librement, souvent au-delà du minimum calculé
+  const own = (key, label, hint) => `<label class="full">${label}<input ${masked ? `readonly value="${S.goals.inter?.[key] != null ? MASK : ''}"` : `inputmode="decimal" data-inter="${key}" value="${esc(numStr(S.goals.inter?.[key]))}" placeholder="${esc(hint)}"`}></label>`;
+  const ex = v => v != null && v > 0 ? 'ex. ' + Math.max(50, Math.ceil(v * 1.2 / 50) * 50) : 'ex. 800';
   let ra = '';
   if (ga) {
     ra = `<div class="result"><p class="big num">${eur(ga.cur)}</p><p class="small">disponibles sur ${eur(g.apport.target)} visés</p>
@@ -1635,38 +1638,43 @@ function vObjectifs() {
   }
   return `
     <section><div class="goal"><h2>Apport immobilier</h2>
-      <div class="fields">${inp('apport.target', 'Montant visé (€)', g.apport.target, 'inputmode="decimal"')}${inp('apport.date', 'Échéance', g.apport.date, 'type="month"')}</div>${ra}</div></section>
+      <div class="fields">${inp('apport.target', 'Montant visé (€)', g.apport.target, 'inputmode="decimal"')}${inp('apport.date', 'Échéance', g.apport.date, 'type="month"')}
+        ${own('apport', 'Mon objectif d’épargne pour l’apport (€ par mois)', ex(ga?.need))}
+        ${own('apportPalier', 'Palier intermédiaire (€ disponibles)', g.apport.target ? 'ex. ' + Math.round(g.apport.target / 2 / 1000) * 1000 : 'ex. 50000')}</div>${ra}</div></section>
     <section><div class="goal"><h2>Rente future</h2>
       <div class="fields">
         ${inp('rente.birthYear', 'Année de naissance', g.rente.birthYear, 'inputmode="numeric"')}${inp('rente.retireAge', 'Âge de départ', g.rente.retireAge, 'inputmode="numeric"')}
         ${inp('rente.monthly', 'Rente visée par mois (€ d’aujourd’hui)', g.rente.monthly, 'inputmode="decimal" full')}
         ${inp('rente.ret', 'Rendement annuel (%, net d’inflation)', numStr(g.rente.ret), 'inputmode="decimal"')}${inp('rente.withdraw', 'Retrait annuel (%)', numStr(g.rente.withdraw), 'inputmode="decimal"')}
+        ${own('rente', 'Mon objectif de versement retraite (€ par mois)', ex(gr?.need))}
       </div>${rr}</div></section>
-    ${vPrimes()}
+    <section><div class="goal"><h2>Épargne mensuelle</h2>
+      <p class="small" style="margin:0 0 12px">${ga?.need != null || gr?.need != null ? `Minimum requis par tes objectifs : ${eur((ga?.need || 0) + (gr?.need || 0))} par mois${primePlan() ? ' hors primes' : ''}. ` : ''}Fixe ton propre objectif, par exemple plus ambitieux : il apparaît sur les graphiques de l’accueil à côté du minimum requis.</p>
+      <div class="fields">${own('all', 'Mon objectif d’épargne totale (€ par mois)', ex((ga?.need || 0) + (gr?.need || 0) || null))}</div>
+      ${primePlan() ? `<p class="small" style="margin:10px 0 0">Primes prévues : ${primePlan().list.map(e => MONTHS_FR[e.m - 1]).join(', ')}, affectées à ${PRIME_TO[primePlan().to]}. À modifier dans Réglages › Foyer.</p>` : ''}</div></section>
     ${vLoan(F, ga)}
     <p class="explain">Les comptes pris en compte pour l’apport et la retraite se choisissent dans la fiche de chaque compte.</p>`;
 }
 
 // Primes exceptionnelles prévues : mêmes mois chaque année, montant estimé (la part variable change)
-function vPrimes() {
+function primesInner() {
   const P = primeCfg(), opt = sel => MONTHS_FR.map((n, i) => `<option value="${i + 1}" ${sel === i + 1 ? 'selected' : ''}>${cap(n)}</option>`).join('');
   // Dernière prime perçue pour un mois de l'année : aide à ajuster l'estimation
   const last = m => Object.keys(S.pot).filter(k => +k.slice(5) === m && primeOf(k)).sort().pop();
   const rows = P.list.map((e, i) => {
     const lk = last(e.m);
-    return `<div class="mrow"><div class="fields"><label>Mois<select data-prm="m" data-i="${i}">${opt(e.m)}</select></label>
+    return `<div class="mrow"><div class="row2"><label>Mois<select data-prm="m" data-i="${i}">${opt(e.m)}</select></label>
       <label>Montant estimé (€)<input ${masked ? `readonly value="${e.a == null ? '' : MASK}"` : `inputmode="decimal" data-prm="a" data-i="${i}" value="${esc(numStr(e.a))}"`}></label></div>
-      <p class="small" style="margin:6px 0 0">${lk ? `Dernière perçue : ${eur(primeOf(lk))} en ${monthLabel(lk)}. ` : ''}<button class="inline" data-act="primedel" data-i="${i}">Retirer</button></p></div>`;
+      <p class="small" style="margin:6px 0 0">${lk ? `Dernière perçue : ${eur(primeOf(lk))} en ${monthLabel(lk)}. ` : ''}<button class="inline" type="button" data-act="primedel" data-i="${i}">Retirer</button></p></div>`;
   }).join('');
-  return `<section><div class="goal"><h2>Primes exceptionnelles</h2>
-    <p class="small" style="margin:0 0 12px">Indique les mois où tombent tes primes chaque année, avec une estimation du montant net. Les objectifs les intègrent : l’effort mensuel affiché ne porte plus que sur ton salaire. Le montant réellement perçu se saisit chaque mois dans Comptes › Foyer.</p>
-    ${rows}
-    <button class="btn wide" data-act="primeadd">${P.list.length ? 'Ajouter un autre mois de prime' : 'Ajouter une prime'}</button>
-    ${P.list.length ? `<div class="fields" style="margin-top:14px">
+  return `${rows}
+    <button class="btn wide" type="button" data-act="primeadd">${P.list.length ? 'Ajouter un autre mois de prime' : 'Ajouter une prime'}</button>
+    ${P.list.length ? `<div class="row2" style="margin-top:14px">
       <label>Part épargnée (%)<input inputmode="decimal" data-prm="pct" value="${esc(numStr(P.pct ?? 100))}"></label>
-      <label>Affectée à<select data-prm="to">${Object.entries({ apport: 'Apport', rente: 'Retraite', moitie: 'Moitié-moitié' }).map(([v, l]) => `<option value="${v}" ${P.to === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>` : ''}
-  </div></section>`;
+      <label>Affectée à<select data-prm="to">${Object.entries({ apport: 'Apport', rente: 'Retraite', moitie: 'Moitié-moitié' }).map(([v, l]) => `<option value="${v}" ${P.to === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>` : ''}`;
 }
+// Rafraîchit la seule section des primes, sans toucher aux autres champs de la fiche en cours de saisie
+const primesRefresh = () => { const b = $('#primes-box'); if (b) b.innerHTML = primesInner(); };
 function vLoan(F, ga) {
   const g = loanCfg(), R = LOAN_RATES[g.duree] || LOAN_RATES[25];
   const hh = S.household.on && members().length > 1;
@@ -1901,14 +1909,14 @@ function vStats() {
   const pctTxt = v => pct(v, v < 0.1 ? 1 : 0);
   const growth = tl.length > 1 ? tl[tl.length - 1].t - tl[0].t : 0;
   const goalName = { all: 'l’épargne totale', apport: 'l’apport immobilier', rente: 'la retraite' }[statGoal];
-  const needTxt = need != null ? `Objectif : ${eur(need)} par mois pour ${goalName}` : null;
+  const needTxt = need != null ? `Minimum requis : ${eur(need)} par mois pour ${goalName}${mid != null ? `, ton objectif : ${eur(mid)}` : ''}.` : mid != null ? `Ton objectif : ${eur(mid)} par mois.` : null;
   const hh = S.household.on && members().length > 1;
   let html = `
     <div class="chips tight" role="group" aria-label="Période">${[6, 12, 24].map(v => `<button class="${N === v ? 'on' : ''}" data-act="statn" data-v="${v}">${v} mois</button>`).join('')}</div>
     <div class="tiles">
-      ${statTile(`Épargne moyenne sur ${plural(n, 'mois', 'mois')}`, eur(avg), `${primeIn ? `${eur(avgReg)} hors primes${need != null ? ' · ' : ''}` : ''}${need != null ? (avgCmp >= need ? `au-dessus de l’objectif de ${eur(need)}` : `${eur(need - avgCmp)} sous l’objectif`) : primeIn ? '' : 'par mois'}`, need != null ? (avgCmp >= need ? 'up' : 'down') : '')}
-      ${statTile('Mois à l’objectif', hit != null ? `${hit} / ${n}` : hitMid != null ? `${hitMid} / ${n}` : '—',
-        hit != null ? `mois où l’épargne a atteint l’objectif${hitMid != null ? ` · ${hitMid} / ${n} pour l’intermédiaire` : ''}` : hitMid != null ? 'mois où l’épargne a atteint l’objectif intermédiaire' : 'aucun objectif chiffré')}
+      ${statTile(`Épargne moyenne sur ${plural(n, 'mois', 'mois')}`, eur(avg), `${primeIn ? `${eur(avgReg)} hors primes${need != null ? ' · ' : ''}` : ''}${need != null ? (mid != null ? (avgCmp >= mid ? `au-dessus de ton objectif de ${eur(mid)}` : `${eur(mid - avgCmp)} sous ton objectif`) : avgCmp >= need ? `au-dessus du minimum requis de ${eur(need)}` : `${eur(need - avgCmp)} sous le minimum requis`) : primeIn ? '' : 'par mois'}`, need != null ? (avgCmp >= need ? 'up' : 'down') : '')}
+      ${statTile('Mois à l’objectif', hitMid != null ? `${hitMid} / ${n}` : hit != null ? `${hit} / ${n}` : '—',
+        hitMid != null ? `mois où l’épargne a atteint ton objectif${hit != null ? ` · ${hit} / ${n} pour le minimum requis` : ''}` : hit != null ? 'mois où l’épargne a atteint le minimum requis' : 'aucun objectif chiffré')}
       ${statTile('Meilleur mois', eur(best), cap(monthLabel(bestK)) + (meIn && primeOf(bestK) ? ' · mois de prime' : ''))}
       ${statTile(rev ? 'Taux d’épargne moyen' : 'Gain des marchés', rev ? pctTxt(rate) : signed(perfTot),
         rev ? `${low ? `sous le seuil de ${pctTxt(seuil)} · ` : ''}${rateReg != null ? `${pctTxt(rateReg)} hors primes · ` : ''}sur ${eur(rev)} de revenus mensuels${esc(scopeName)}${primesRev ? ', primes comprises' : ''}` : `sur ${plural(n, 'mois', 'mois')}`,
@@ -1916,16 +1924,15 @@ function vStats() {
     </div>
     <section><h2>Argent mis de côté</h2>
       <div class="chips tight" role="group" aria-label="Objectif">${goals.map(([v, l]) => `<button class="${statGoal === v ? 'on' : ''}" data-act="statgoal" data-v="${v}">${l}</button>`).join('')}</div>
-      <p class="small" style="margin:8px 0 10px">${split ? 'Primes affichées à part : l’objectif et la moyenne lissée portent sur l’épargne hors primes. ' : ''}${needTxt || (statGoal === 'all' ? 'Renseigne un objectif d’apport ou de rente pour afficher la ligne d’objectif.' : `Renseigne l’objectif ${statGoal === 'apport' ? 'd’apport (montant et échéance)' : 'de rente'} dans l’onglet Objectifs pour afficher la ligne.`)}</p>
+      <p class="small" style="margin:8px 0 10px">${mid == null && need != null ? 'Tu peux fixer ton propre objectif mensuel, au-delà du minimum requis, dans l’onglet Objectifs. ' : ''}${split ? 'Primes affichées à part : l’objectif et la moyenne lissée portent sur l’épargne hors primes. ' : ''}${needTxt || (statGoal === 'all' ? 'Renseigne un objectif d’apport ou de rente pour afficher la ligne d’objectif.' : `Renseigne l’objectif ${statGoal === 'apport' ? 'd’apport (montant et échéance)' : 'de rente'} dans l’onglet Objectifs pour afficher la ligne.`)}</p>
       ${svgChart({ id: 'sav', labels: lbl, full, aria: `Épargne mensuelle sur ${n} mois${need != null ? `, objectif ${eur(need)} par mois` : ''}`,
         bars: { vals: dep, name: split ? 'Épargne hors primes' : 'Épargne du mois', neg: true },
         bars2: split ? { vals: primeBars, name: 'Primes épargnées', cls: 'v3' } : null,
         lines: [{ vals: smooth, name: `Moyenne lissée ${Wn} mois`, cls: 'v2',
           warn: showWarn ? winRate.map(r => r != null && r < seuil) : null, warnName: `Taux sous ${pctTxt(seuil)}`,
           note: showWarn ? winRate.map(r => r == null ? null : `taux ${pctTxt(r)}`) : null }],
-        ref: need != null ? { v: need, label: `objectif ${eurC(need)}`, name: 'Objectif mensuel' } : null,
-        ref2: mid != null ? { v: mid, label: `intermédiaire ${eurC(mid)}`, name: 'Objectif intermédiaire' } : null })
-        .replace('<details', `<label class="midin">Objectif intermédiaire (€ par mois)<input inputmode="decimal" data-inter="${statGoal}" value="${esc(numStr(mid))}" placeholder="${need != null ? 'ex. ' + Math.round(need * 0.7 / 50) * 50 : 'ex. 800'}"></label>` + '<details')
+        ref: need != null ? { v: need, label: `requis ${eurC(need)}`, name: 'Minimum requis' } : null,
+        ref2: mid != null ? { v: mid, label: `mon objectif ${eurC(mid)}`, name: 'Mon objectif' } : null })
         .replace('<details', `<div class="chips tight" role="group" aria-label="Lissage" style="margin-top:10px">${[3, 6].map(v => `<button class="${Wn === v ? 'on' : ''}" data-act="statw" data-v="${v}">Lissage ${v} mois</button>`).join('')}</div>${seuil > 0 && rev ? `<p class="small" style="margin:8px 0 0">${showWarn ? `La moyenne lissée passe en rouge quand le taux d’épargne de la période tombe sous ${pctTxt(seuil)} des revenus.` : `Le seuil de ${pctTxt(seuil)} s’applique à l’épargne totale : choisis « Tout » pour le voir sur la courbe.`}</p>` : ''}<details`)}
     </section>`;
   if (ks.some(k => k > first)) html += `<section><h2>Performance des marchés</h2>
@@ -1938,8 +1945,7 @@ function vStats() {
       ${svgChart({ id: 'app', labels: lbl, full, aria: `Apport disponible, objectif ${eur(S.goals.apport.target)}`,
         lines: [{ vals: ap, name: 'Apport disponible', cls: 'v1', area: true, solo: true }],
         ref: { v: S.goals.apport.target, label: `objectif ${eurC(S.goals.apport.target)}`, name: 'Apport visé' },
-        ref2: S.goals.inter?.apportPalier != null ? { v: S.goals.inter.apportPalier, label: `palier ${eurC(S.goals.inter.apportPalier)}`, name: 'Palier intermédiaire' } : null })
-        .replace('<details', `<label class="midin">Palier intermédiaire (€)<input inputmode="decimal" data-inter="apportPalier" value="${esc(numStr(S.goals.inter?.apportPalier))}" placeholder="ex. ${Math.round(S.goals.apport.target / 2 / 1000) * 1000}"></label><details`)}</section>`;
+        ref2: S.goals.inter?.apportPalier != null ? { v: S.goals.inter.apportPalier, label: `palier ${eurC(S.goals.inter.apportPalier)}`, name: 'Palier intermédiaire' } : null })}</section>`;
   }
   {
     // Charges communes (total du foyer, ou part due par le membre affiché) et charges perso (toi seulement)
@@ -2072,6 +2078,9 @@ function sheetSetPage(k) {
         ${m.id === 'moi' ? '' : `<button class="link" type="button" data-act="delmember" data-id="${m.id}">Retirer ${esc(m.name)}</button>`}</div>`).join('')}
       <p class="small" style="margin:0">Le revenu de référence sert par défaut. Si les revenus varient, saisis-les mois par mois dans Comptes &gt; Foyer.</p>
       <button class="btn wide" type="button" data-act="addmember">Ajouter un membre</button>
+      <h3>Mes primes exceptionnelles</h3>
+      <p class="small" style="margin:0">Les mois où tombent tes primes chaque année, avec une estimation du montant net. Elles ne comptent pas dans la répartition des charges ; les objectifs les intègrent, et l’effort mensuel affiché ne porte plus que sur ton salaire. Le montant perçu se saisit chaque mois dans Comptes &gt; Foyer. Ces champs sont enregistrés aussitôt.</p>
+      <div id="primes-box">${primesInner()}</div>
       <h3>Répartition des charges</h3>
       <label>Mode<select id="s-mode">
         <option value="moitie" ${H.split.mode === 'moitie' ? 'selected' : ''}>Parts égales</option>
@@ -2785,8 +2794,8 @@ const ACT = {
   back: () => { subview = null; render(); window.scrollTo(0, 0); },
   gofoyer: () => { compteTab = 'foyer'; go('comptes'); },
   usageview: () => sheetUsage(),
-  primeadd: async () => { const P = primeCfg(), used = new Set(P.list.map(e => e.m)); let m = +monthKey().slice(5); for (let i = 0; i < 12 && used.has(m); i++) m = m % 12 + 1; P.list.push({ m, a: null }); await save(); render(); },
-  primedel: async t => { primeCfg().list.splice(+t.dataset.i, 1); await save(); render(); },
+  primeadd: async () => { const P = primeCfg(), used = new Set(P.list.map(e => e.m)); let m = +monthKey().slice(5); for (let i = 0; i < 12 && used.has(m); i++) m = m % 12 + 1; P.list.push({ m, a: null }); await save(); render(); primesRefresh(); },
+  primedel: async t => { primeCfg().list.splice(+t.dataset.i, 1); await save(); render(); primesRefresh(); },
   usageexport: () => usageExport(),
   usageclear: async () => {
     if (!confirm('Effacer le journal d’utilisation ?')) return;
@@ -3258,7 +3267,7 @@ document.addEventListener('change', async e => {
     else if (w === 'pct') { const v = num(t.value); P.pct = Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 100; }
     else if (w === 'to') P.to = t.value;
     P.list.sort((a, b) => a.m - b.m);
-    await save(); render();
+    await save(); render(); if (w === 'm') primesRefresh();
   }
   else if (t.dataset.prime) {
     const v = num(t.value), p = (S.pot[potMonth] ||= { items: [], transfers: [] });
