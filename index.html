@@ -858,6 +858,20 @@ function loanCapacity(revenus, g) {
   return { M, C, taux, n, mensCredit, mensAssur: C * a, cout: mensCredit * n - C, coutAssur: C * a * n };
 }
 const loanPrice = (C, apport, g) => (C + apport) / (1 + (g.frais || 0) / 100);
+// Plafond de déduction PER de l'année : versements nets de janvier au mois F sur les PER
+// (et les PERCOL/PERECO si l'option est cochée), reste à verser et mois restants jusqu'à décembre inclus.
+function perDeduction(F) {
+  const P = S.settings.perPlafond; if (!P) return null;
+  const types = S.settings.perPercol ? ['per', 'percol'] : ['per'];
+  const pers = active().filter(a => types.includes(a.type) && (a.owner || 'moi') === 'moi');
+  const y = F.slice(0, 4), mois = 12 - +F.slice(5) + 1;
+  const verse = Math.max(0, months().filter(k => k.startsWith(y) && k <= F).reduce((s, k) => s + pers.reduce((t, a) => t + dep(k, a), 0), 0));
+  const reste = Math.max(0, P - verse);
+  // Le mois en cours compte encore : on répartit le reste sur ce mois et les suivants
+  return { plafond: P, verse, reste, mois, mensuel: reste / mois, n: pers.length };
+}
+// Objectif personnel du moment : saisi, ou calculé pour la retraite à partir du plafond PER
+const ownGoal = key => key === 'rente' && S.goals.inter?.renteAuto ? (perDeduction(focusMonth())?.mensuel || null) : S.goals.inter?.[key] ?? null;
 // Rythme d'épargne des 6 derniers mois, primes épargnées retirées
 function paceReg(F, A, goal) {
   if (!A.n) return 0;
@@ -1072,13 +1086,12 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
     for (const k of months()) { if (k > F) break; const e = entry(k, a); if (!e) continue; versed += (k === first ? e.value : moveSum(e)); }
     if (versed > 0.8 * 150000) out.push({ l: 'info', k: `peaverse:${a.id}`, s: Math.round(versed / 1000), t: `${forSummary ? 'PEA' : a.name} : environ ${eur(versed)} versés sur 150 000 € autorisés (estimation depuis le début du suivi).` });
   }
-  const pers = acc.filter(a => a.type === 'per');
+  const pers = acc.filter(a => a.type === 'per' || (S.settings.perPercol && a.type === 'percol'));
   if (pers.length && mm >= 9) {
-    const y = String(yy);
-    const verse = months().filter(k => k.startsWith(y) && k <= F).reduce((s, k) => s + pers.reduce((t, a) => t + dep(k, a), 0), 0);
-    if (S.settings.perPlafond) {
-      const reste = S.settings.perPlafond - verse;
-      if (reste > 0) out.push({ l: 'info', k: 'perplafond', s: Math.round(reste / 100), t: `PER : environ ${E(reste)} de plafond de déduction encore utilisable avant le 31 décembre (${E(verse)} versés cette année).` });
+    const pd = perDeduction(F);
+    if (pd) {
+      const { reste, verse } = pd;
+      if (reste > 0) out.push({ l: 'info', k: 'perplafond', s: Math.round(reste / 100), t: `PER : environ ${E(reste)} de plafond de déduction encore utilisable avant le 31 décembre (${E(verse)} versés cette année), soit ${E(pd.mensuel)} par mois d’ici là.` });
     } else if (!forSummary) out.push({ l: 'info', k: 'pernonrenseigne', s: 'x', t: 'Renseigne ton plafond de déduction PER (sur ton avis d’impôt) dans les réglages pour suivre ce qu’il te reste à déduire cette année.' });
   }
   if (S.settings.depenses && mine) {
@@ -1617,6 +1630,15 @@ function vObjectifs() {
   // Objectif personnel : un montant mensuel choisi librement, souvent au-delà du minimum calculé
   const own = (key, label, hint) => `<label class="full">${label}<input ${masked ? `readonly value="${S.goals.inter?.[key] != null ? MASK : ''}"` : `inputmode="decimal" data-inter="${key}" value="${esc(numStr(S.goals.inter?.[key]))}" placeholder="${esc(hint)}"`}></label>`;
   const ex = v => v != null && v > 0 ? 'ex. ' + Math.max(50, Math.ceil(v * 1.2 / 50) * 50) : 'ex. 800';
+  // Retraite : objectif saisi, ou calculé pour utiliser tout le plafond de déduction PER avant le 31 décembre
+  const perAutoField = () => {
+    const pd = perDeduction(F), auto = !!S.goals.inter?.renteAuto;
+    return `<label class="check full"><input type="checkbox" data-renteauto="1" ${auto ? 'checked' : ''} ${pd ? '' : 'disabled'}>Calculer mon objectif retraite à partir du plafond de déduction PER</label>
+      ${auto && pd ? `<div class="full plafond"><p class="small" style="margin:0">Mon objectif de versement retraite</p><p class="big num" style="margin:0">${eur(pd.mensuel)} <span class="small">par mois</span></p>
+        <p class="small" style="margin:2px 0 0">${pd.reste > 0 ? `${eur(pd.reste)} restant à verser sur ${eur(pd.plafond)} de plafond (${eur(pd.verse)} déjà versés), réparti sur ${plural(pd.mois, 'mois', 'mois')} jusqu’à décembre.` : `Plafond de ${eur(pd.plafond)} atteint cette année : rien de plus à verser pour la déduction.`}</p></div>`
+        : own('rente', 'Mon objectif de versement retraite (€ par mois)', ex(gr?.need))}
+      ${pd ? '' : '<p class="small full" style="margin:0">Renseigne ton plafond de déduction PER dans Réglages › Budget de référence pour activer ce calcul.</p>'}`;
+  };
   let ra = '';
   if (ga) {
     ra = `<div class="result"><p class="big num">${eur(ga.cur)}</p><p class="small">disponibles sur ${eur(g.apport.target)} visés</p>
@@ -1646,7 +1668,7 @@ function vObjectifs() {
         ${inp('rente.birthYear', 'Année de naissance', g.rente.birthYear, 'inputmode="numeric"')}${inp('rente.retireAge', 'Âge de départ', g.rente.retireAge, 'inputmode="numeric"')}
         ${inp('rente.monthly', 'Rente visée par mois (€ d’aujourd’hui)', g.rente.monthly, 'inputmode="decimal" full')}
         ${inp('rente.ret', 'Rendement annuel (%, net d’inflation)', numStr(g.rente.ret), 'inputmode="decimal"')}${inp('rente.withdraw', 'Retrait annuel (%)', numStr(g.rente.withdraw), 'inputmode="decimal"')}
-        ${own('rente', 'Mon objectif de versement retraite (€ par mois)', ex(gr?.need))}
+        ${perAutoField()}
       </div>${rr}</div></section>
     <section><div class="goal"><h2>Épargne mensuelle</h2>
       <p class="small" style="margin:0 0 12px">${ga?.need != null || gr?.need != null ? `Minimum requis par tes objectifs : ${eur((ga?.need || 0) + (gr?.need || 0))} par mois${primePlan() ? ' hors primes' : ''}. ` : ''}Fixe ton propre objectif, par exemple plus ambitieux : il apparaît sur les graphiques de l’accueil à côté du minimum requis.</p>
@@ -1879,7 +1901,7 @@ function vStats() {
   const saved = split ? regSaved : rawSaved, dep = split ? reg : depAll;
   const smooth = ks.map((k, i) => { const w = Array.from({ length: Wn }, (_, j) => addMonths(k, -j)).filter(m => m >= first); return w.length ? w.reduce((t, m) => t + saved(m), 0) / w.length : null; });
   const avg = depAll.reduce((t, v) => t + v, 0) / n, avgReg = reg.reduce((t, v) => t + v, 0) / n, avgCmp = split ? avgReg : avg;
-  const mid = S.goals.inter?.[statGoal] ?? null;
+  const mid = ownGoal(statGoal);
   const hit = need != null ? dep.filter(v => v >= need).length : null;
   const hitMid = mid != null ? dep.filter(v => v >= mid).length : null;
   const best = Math.max(...depAll), bestK = ks[depAll.indexOf(best)];
@@ -2112,7 +2134,9 @@ function sheetSetPage(k) {
       <label>Seuil d’alerte du taux d’épargne (%)<input inputmode="decimal" data-set="seuilEpargne" value="${esc(numStr(st.seuilEpargne))}" placeholder="20"></label>
       <p class="small" style="margin:0">En dessous, le taux d’épargne moyen et la courbe lissée des statistiques passent en rouge. Mets 0 pour désactiver.</p>
       <label>Plafond de déduction PER de l’année (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="perPlafond" value="${esc(numStr(st.perPlafond))}"`}></label>
-      <p class="small" style="margin:0">Le plafond PER figure sur ton avis d’impôt.</p>
+      <p class="small" style="margin:0">Le plafond PER figure sur ton avis d’impôt. À mettre à jour chaque année : il ne concerne que les versements de l’année civile.</p>
+      <label class="check"><input type="checkbox" data-set2="perPercol.x" ${st.perPercol ? 'checked' : ''}>Compter aussi mes versements sur le PERCOL / PERECO</label>
+      <p class="small" style="margin:0">Coche si tu y fais des versements volontaires : ils sont déductibles et consomment le même plafond. Laisse décoché si ce compte ne reçoit que l’intéressement, la participation ou l’abondement, qui n’en consomment pas.</p>
       <h3>Évolution des revenus</h3>
       <label class="check"><input type="checkbox" data-set2="raise.on" ${st.raise?.on ? 'checked' : ''}>Tenir compte d’une augmentation de salaire moyenne</label>
       <label>Augmentation annuelle (%)<input inputmode="decimal" data-set2="raise.pct" value="${esc(numStr(st.raise?.pct))}" placeholder="2"></label>
@@ -3235,13 +3259,15 @@ document.addEventListener('change', async e => {
     if (t.checked) { U ||= uNew(); uSess = ++U.n; uScreen = ''; uLog('start', 'activation'); uScreenCheck(); }
     await uFlush(); sheetSetPage('backup'); return;
   }
-  if (t.dataset.set2) {
+  if (t.dataset.set2 === 'perPercol.x') { S.settings.perPercol = t.checked; await save(); render(); }
+  else if (t.dataset.set2) {
     const [g, k] = t.dataset.set2.split('.');
     S.settings[g] ||= {};
     S.settings[g][k] = t.type === 'checkbox' ? t.checked : (Number.isNaN(num(t.value)) ? null : num(t.value));
     await save(); render();
   }
   else if (t.dataset.set) { const v = num(t.value); S.settings[t.dataset.set] = Number.isNaN(v) ? null : v; await save(); render(); }
+  else if (t.dataset.renteauto) { S.goals.inter ||= {}; S.goals.inter.renteAuto = t.checked; await save(); render(); }
   else if (t.dataset.inter) {
     const v = num(t.value);
     S.goals.inter ||= {};
