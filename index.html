@@ -718,7 +718,7 @@ let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', subview 
 const emptyData = () => ({
   v: 1, accounts: [], entries: {}, pot: {}, rules: {}, dismissed: {},
   household: { on: false, members: [{ id: 'moi', name: 'Moi', income: null }], split: { mode: 'moitie', shares: {} } },
-  settings: { depenses: null, revenus: null, perPlafond: null, lastExport: null, ai: null, raise: { on: false, pct: 2 }, usage: { on: true } },
+  settings: { depenses: null, revenus: null, perAvis: null, lastExport: null, ai: null, raise: { on: false, pct: 2 }, usage: { on: true } },
   analyses: {},
   goals: { apport: { target: null, date: null }, rente: { birthYear: null, retireAge: 64, monthly: null, ret: 3, withdraw: 4 },
     loan: { v: 2, scope: 'moi', duree: 25, taux: null, endettement: 35, assurance: 0.15, frais: 7.5 },
@@ -729,6 +729,9 @@ function normalize(d) {
   const e = emptyData();
   d.settings = { ...e.settings, ...(d.settings || {}) };
   d.settings.raise = { ...e.settings.raise, ...(d.settings.raise || {}) };
+  // Ancien champ unique « plafond PER de l'année » : devient le plafond de l'année dans l'encadré de l'avis
+  if (d.settings.perPlafond && !d.settings.perAvis) d.settings.perAvis = { year: +monthKey().slice(0, 4), cur: d.settings.perPlafond, u: {} };
+  delete d.settings.perPlafond;
   d.goals = { apport: { ...e.goals.apport, ...(d.goals?.apport || {}) }, rente: { ...e.goals.rente, ...(d.goals?.rente || {}) }, loan: { ...e.goals.loan, ...(d.goals?.loan || {}), ...(d.goals?.loan && d.goals.loan.v !== 2 ? { scope: 'moi', v: 2 } : {}) }, inter: { ...e.goals.inter, ...(d.goals?.inter || {}) }, prime: { ...e.goals.prime, ...(d.goals?.prime || {}) } };
   d.accounts = (d.accounts || []).map(a => ({ owner: 'moi', ...a })); // « owner » : prévu pour la gestion familiale
   d.entries = d.entries || {};
@@ -858,17 +861,59 @@ function loanCapacity(revenus, g) {
   return { M, C, taux, n, mensCredit, mensAssur: C * a, cout: mensCredit * n - C, coutAssur: C * a * n };
 }
 const loanPrice = (C, apport, g) => (C + apport) / (1 + (g.frais || 0) / 100);
-// Plafond de déduction PER de l'année : versements nets de janvier au mois F sur les PER
-// (et les PERCOL/PERECO si l'option est cochée), reste à verser et mois restants jusqu'à décembre inclus.
-function perDeduction(F) {
-  const P = S.settings.perPlafond; if (!P) return null;
+/* ---------- Plafond épargne retraite (PER, PERCOL) ----------
+   Saisie : l'avis d'impôt de l'année A, qui donne le plafond calculé sur les revenus A−1 (pour les versements de A)
+   et les plafonds non utilisés des années précédentes.
+   Règles fiscales appliquées :
+   - un versement s'impute d'abord sur le plafond de l'année, puis sur les plafonds non utilisés, le plus ancien d'abord ;
+   - un plafond non utilisé se reporte 3 ans (plafonds jusqu'à 2025), 5 ans pour les plafonds 2026 et suivants (loi de finances 2026).
+   Objectif « sans perte » : verser dans l'année le plafond de l'année plus les reports qui expirent au 31 décembre,
+   puisque ces reports ne sont atteints qu'une fois le plafond de l'année consommé. */
+const perExp = y => y + (y >= 2026 ? 5 : 3);
+const perAvis = () => { const a = S.settings.perAvis; return a && (a.cur || Object.values(a.u || {}).some(v => v > 0)) ? a : null; };
+function perVerse(y, F) {
   const types = S.settings.perPercol ? ['per', 'percol'] : ['per'];
-  const pers = active().filter(a => types.includes(a.type) && (a.owner || 'moi') === 'moi');
-  const y = F.slice(0, 4), mois = 12 - +F.slice(5) + 1;
-  const verse = Math.max(0, months().filter(k => k.startsWith(y) && k <= F).reduce((s, k) => s + pers.reduce((t, a) => t + dep(k, a), 0), 0));
-  const reste = Math.max(0, P - verse);
-  // Le mois en cours compte encore : on répartit le reste sur ce mois et les suivants
-  return { plafond: P, verse, reste, mois, mensuel: reste / mois, n: pers.length };
+  const pers = S.accounts.filter(a => types.includes(a.type) && (a.owner || 'moi') === 'moi');
+  return Math.max(0, months().filter(k => k.startsWith(String(y)) && (!F || k <= F)).reduce((s, k) => s + pers.reduce((t, a) => t + dep(k, a), 0), 0));
+}
+// Impute un versement : plafond de l'année d'abord, puis les reports du plus ancien au plus récent
+function perImpute(buckets, year, v) {
+  const order = [...buckets.filter(b => b.y === year), ...buckets.filter(b => b.y !== year).sort((a, b) => a.y - b.y)];
+  for (const b of order) { const u = Math.min(b.left, v); b.left -= u; v -= u; if (v <= 0) break; }
+  return v; // versement au-delà du plafond disponible (non déductible)
+}
+function perPlan(F) {
+  const A = perAvis(); if (!A) return null;
+  const N = +F.slice(0, 4), mois = 12 - +F.slice(5) + 1;
+  let b = [{ y: A.year, a: A.cur || 0, est: false }, ...Object.entries(A.u || {}).map(([y, a]) => ({ y: +y, a: +a || 0, est: false }))]
+    .filter(x => x.a > 0 && perExp(x.y) >= A.year).map(x => ({ ...x, left: x.a }));
+  // Avis d'une année antérieure : on avance d'année en année avec les versements enregistrés,
+  // et un plafond estimé égal au dernier connu, en attendant le nouvel avis.
+  for (let y = A.year; y < N; y++) {
+    perImpute(b, y, perVerse(y));
+    b = b.filter(x => perExp(x.y) > y && x.left > 0).map(x => ({ ...x, a: x.left }));
+    b.push({ y: y + 1, a: A.cur || 0, left: A.cur || 0, est: true });
+  }
+  const start = b.map(x => ({ ...x }));
+  const V = perVerse(N, F), over = perImpute(b, N, V);
+  const curB = start.find(x => x.y === N) || { a: 0, est: false };
+  const expiring = start.filter(x => x.y !== N && perExp(x.y) === N);
+  const E = expiring.reduce((t, x) => t + x.a, 0);
+  const total = start.reduce((t, x) => t + x.a, 0);
+  const target = curB.a + E, reste = Math.max(0, target - V), resteMax = Math.max(0, total - V);
+  const perdu = expiring.reduce((t, x) => t + b.find(z => z.y === x.y).left, 0); // perdu si plus rien n'est versé
+  // L'an prochain, si l'objectif est tenu : plafond estimé + reports qui expireront fin N+1
+  const nb = start.map(x => ({ ...x, left: x.a })); perImpute(nb, N, Math.max(V, target));
+  const nextExp = nb.filter(x => perExp(x.y) === N + 1).reduce((t, x) => t + x.left, 0);
+  const nextYears = nb.filter(x => perExp(x.y) === N + 1 && x.left > 0).map(x => x.y);
+  return { N, mois, V, over, P: curB.a, Pest: curB.est, expiring: expiring.map(x => ({ y: x.y, a: x.a })), E, total, target, reste, resteMax, perdu,
+    mensuel: reste / mois, mensuelMax: resteMax / mois, next: { P: A.cur || 0, E: nextExp, years: nextYears, total: (A.cur || 0) + nextExp }, avisYear: A.year };
+}
+// Compatibilité : plafond restant à utiliser dans l'année selon le mode choisi
+function perDeduction(F) {
+  const p = perPlan(F); if (!p) return null;
+  const max = S.goals.inter?.perMode === 'max';
+  return { ...p, reste: max ? p.resteMax : p.reste, mensuel: max ? p.mensuelMax : p.mensuel, plafond: max ? p.total : p.target, verse: p.V, max };
 }
 // Objectif personnel du moment : saisi, ou calculé pour la retraite à partir du plafond PER
 const ownGoal = key => key === 'rente' && S.goals.inter?.renteAuto ? (perDeduction(focusMonth())?.mensuel || null) : S.goals.inter?.[key] ?? null;
@@ -1090,9 +1135,10 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
   if (pers.length && mm >= 9) {
     const pd = perDeduction(F);
     if (pd) {
-      const { reste, verse } = pd;
-      if (reste > 0) out.push({ l: 'info', k: 'perplafond', s: Math.round(reste / 100), t: `PER : environ ${E(reste)} de plafond de déduction encore utilisable avant le 31 décembre (${E(verse)} versés cette année), soit ${E(pd.mensuel)} par mois d’ici là.` });
-    } else if (!forSummary) out.push({ l: 'info', k: 'pernonrenseigne', s: 'x', t: 'Renseigne ton plafond de déduction PER (sur ton avis d’impôt) dans les réglages pour suivre ce qu’il te reste à déduire cette année.' });
+      const pp = perPlan(F);
+      if (pp.perdu > 0) out.push({ l: 'warn', k: 'perperte', s: Math.round(pp.perdu / 100), t: `PER : ${E(pp.perdu)} de plafond non utilisé (${pp.expiring.map(x => x.y).join(', ')}) seront perdus au 31 décembre. Pour ne rien perdre, verse encore ${E(pp.reste)} d’ici là, soit ${E(pp.mensuel)} par mois${pp.V < pp.P ? ` (le plafond ${pp.N} est consommé en premier)` : ''}.` });
+      else if (pp.reste > 0) out.push({ l: 'info', k: 'perplafond', s: Math.round(pp.reste / 100), t: `PER : encore ${E(pp.reste)} de plafond ${pp.N} à utiliser avant le 31 décembre (${E(pp.V)} versés cette année), soit ${E(pp.mensuel)} par mois. Non utilisé, il reste reportable.` });
+    } else if (!forSummary) out.push({ l: 'info', k: 'pernonrenseigne', s: 'x', t: 'Renseigne les plafonds épargne retraite de ton avis d’impôt dans les réglages pour suivre ce qu’il te reste à déduire cette année.' });
   }
   if (S.settings.depenses && mine) {
     const liv = totalAt(F, a => f(a) && TYPES[a.type].cat === 'livrets'), n = liv / S.settings.depenses;
@@ -1632,12 +1678,24 @@ function vObjectifs() {
   const ex = v => v != null && v > 0 ? 'ex. ' + Math.max(50, Math.ceil(v * 1.2 / 50) * 50) : 'ex. 800';
   // Retraite : objectif saisi, ou calculé pour utiliser tout le plafond de déduction PER avant le 31 décembre
   const perAutoField = () => {
-    const pd = perDeduction(F), auto = !!S.goals.inter?.renteAuto;
+    const pd = perDeduction(F), auto = !!S.goals.inter?.renteAuto, M = v => masked ? MASK : eur(v);
+    const yrs = l => l.map(x => `${M(x.a)} de ${x.y}`).join(' et ');
     return `<label class="check full"><input type="checkbox" data-renteauto="1" ${auto ? 'checked' : ''} ${pd ? '' : 'disabled'}>Calculer mon objectif retraite à partir du plafond de déduction PER</label>
-      ${auto && pd ? `<div class="full plafond"><p class="small" style="margin:0">Mon objectif de versement retraite</p><p class="big num" style="margin:0">${eur(pd.mensuel)} <span class="small">par mois</span></p>
-        <p class="small" style="margin:2px 0 0">${pd.reste > 0 ? `${eur(pd.reste)} restant à verser sur ${eur(pd.plafond)} de plafond (${eur(pd.verse)} déjà versés), réparti sur ${plural(pd.mois, 'mois', 'mois')} jusqu’à décembre.` : `Plafond de ${eur(pd.plafond)} atteint cette année : rien de plus à verser pour la déduction.`}</p></div>`
+      ${auto && pd ? `<label class="full">Calcul<select data-permode="1">
+          <option value="" ${pd.max ? '' : 'selected'}>Sans perte (recommandé)</option>
+          <option value="max" ${pd.max ? 'selected' : ''}>Tout le disponible</option></select></label>
+        <div class="full plafond"><p class="small" style="margin:0">Mon objectif de versement retraite</p><p class="big num" style="margin:0">${M(pd.mensuel)} <span class="small">par mois</span></p>
+        <p class="small" style="margin:2px 0 0">${pd.reste > 0 ? `${M(pd.reste)} à verser d’ici le 31 décembre, sur ${plural(pd.mois, 'mois', 'mois')}${pd.V ? ` (${M(pd.V)} déjà versés en ${pd.N})` : ''}.` : `Objectif ${pd.N} atteint : rien de plus à verser cette année.`}</p>
+        <ul class="kv">
+          <li><span>Plafond ${pd.N}${pd.Pest ? ' (estimé)' : ''}</span><span class="num">${M(pd.P)}</span></li>
+          ${pd.E ? `<li><span>Reports qui expirent fin ${pd.N}</span><span class="num">${M(pd.E)}</span></li>` : ''}
+          <li><span>${pd.max ? 'Total disponible' : 'À verser pour ne rien perdre'}</span><span class="num">${M(pd.plafond)}</span></li>
+          ${pd.max ? '' : `<li><span>Total disponible cette année</span><span class="num">${M(pd.total)}</span></li>`}
+        </ul>
+        <p class="small" style="margin:8px 0 0">${pd.max ? 'Tout le disponible est visé : plafond de l’année et reports.' : `Les versements consomment d’abord le plafond ${pd.N}, puis les reports du plus ancien au plus récent : pour sauver ${pd.E ? yrs(pd.expiring) : 'les reports'}, il faut donc d’abord avoir versé le plafond ${pd.N}. Le reste du disponible reste reportable.`}
+          L’an prochain (estimation) : ${M(pd.next.total)} pour ne rien perdre${pd.next.E ? `, dont ${M(pd.next.E)} de reports ${pd.next.years.join(', ')} qui expireront` : ''}.${pd.avisYear < pd.N ? ` Calculé à partir de l’avis ${pd.avisYear} : le plafond ${pd.N} est estimé en attendant ton nouvel avis.` : ''}</p></div>`
         : own('rente', 'Mon objectif de versement retraite (€ par mois)', ex(gr?.need))}
-      ${pd ? '' : '<p class="small full" style="margin:0">Renseigne ton plafond de déduction PER dans Réglages › Budget de référence pour activer ce calcul.</p>'}`;
+      ${pd ? '' : '<p class="small full" style="margin:0">Renseigne les plafonds de ton avis d’impôt dans Réglages › Budget de référence pour activer ce calcul.</p>'}`;
   };
   let ra = '';
   if (ga) {
@@ -2086,6 +2144,19 @@ function sheetSettings() {
     <button class="btn wide" style="margin-top:14px" data-act="close">Fermer</button>`);
 }
 const setBack = '<button class="link" data-act="settings">Retour aux réglages</button>';
+// Plafond épargne retraite : recopie de l'encadré de l'avis d'impôt
+const perTotTxt = A => { const t = (A.cur || 0) + [1, 2, 3].reduce((s, d) => s + (+A.u?.[A.year - d] || 0), 0); return t ? `Plafond pour les versements ${A.year} : ${masked ? MASK : eur(t)}. ` : ''; };
+function perAvisFields(st) {
+  const A = st.perAvis || { year: +monthKey().slice(0, 4), cur: null, u: {} }, Y = A.year;
+  const f = (key, label, val) => `<label>${label}<input ${masked ? `readonly value="${val ? MASK : ''}"` : `inputmode="decimal" data-pera="${key}" value="${esc(numStr(val))}"`}></label>`;
+  return `<h3>Plafond épargne retraite</h3>
+    <p class="small" style="margin:0">Recopie l’encadré « Plafond épargne retraite » de ton dernier avis d’impôt.</p>
+    <label>Année de l’avis<select data-pera="year">${[0, 1, 2].map(d => +monthKey().slice(0, 4) - d).map(y => `<option value="${y}" ${y === Y ? 'selected' : ''}>Avis ${y} (revenus ${y - 1})</option>`).join('')}</select></label>
+    ${f('cur', `Plafond calculé sur les revenus ${Y - 1} (€)`, A.cur)}
+    <div class="row2">${f(String(Y - 1), `Non utilisé ${Y - 1} (€)`, A.u?.[Y - 1])}${f(String(Y - 2), `Non utilisé ${Y - 2} (€)`, A.u?.[Y - 2])}</div>
+    ${f(String(Y - 3), `Non utilisé ${Y - 3} (€)`, A.u?.[Y - 3])}
+    <p class="small" style="margin:0"><span id="per-tot">${perTotTxt(A)}</span>Les reports non utilisés expirent au bout de 3 ans (5 ans pour les plafonds 2026 et suivants). Mets ces montants à jour à chaque nouvel avis.</p>`;
+}
 function sheetSetPage(k) {
   setPage = k;
   const st = S.settings, H = S.household, sh = shares(potMonth);
@@ -2133,8 +2204,7 @@ function sheetSetPage(k) {
       <label>Revenus nets mensuels (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="revenus" value="${esc(numStr(st.revenus))}"`}></label>
       <label>Seuil d’alerte du taux d’épargne (%)<input inputmode="decimal" data-set="seuilEpargne" value="${esc(numStr(st.seuilEpargne))}" placeholder="20"></label>
       <p class="small" style="margin:0">En dessous, le taux d’épargne moyen et la courbe lissée des statistiques passent en rouge. Mets 0 pour désactiver.</p>
-      <label>Plafond de déduction PER de l’année (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="perPlafond" value="${esc(numStr(st.perPlafond))}"`}></label>
-      <p class="small" style="margin:0">Le plafond PER figure sur ton avis d’impôt. À mettre à jour chaque année : il ne concerne que les versements de l’année civile.</p>
+      ${perAvisFields(st)}
       <label class="check"><input type="checkbox" data-set2="perPercol.x" ${st.perPercol ? 'checked' : ''}>Compter aussi mes versements sur le PERCOL / PERECO</label>
       <p class="small" style="margin:0">Coche si tu y fais des versements volontaires : ils sont déductibles et consomment le même plafond. Laisse décoché si ce compte ne reçoit que l’intéressement, la participation ou l’abondement, qui n’en consomment pas.</p>
       <h3>Évolution des revenus</h3>
@@ -3267,6 +3337,17 @@ document.addEventListener('change', async e => {
     await save(); render();
   }
   else if (t.dataset.set) { const v = num(t.value); S.settings[t.dataset.set] = Number.isNaN(v) ? null : v; await save(); render(); }
+  else if (t.dataset.pera) {
+    const A = (S.settings.perAvis ||= { year: +monthKey().slice(0, 4), cur: null, u: {} }); A.u ||= {};
+    const w = t.dataset.pera, v = num(t.value);
+    if (w === 'year') {
+      // Changer d'année décale les colonnes : on garde les montants rattachés à leur année
+      A.year = +t.value;
+    } else if (w === 'cur') A.cur = Number.isFinite(v) && v > 0 ? v : null;
+    else { if (Number.isFinite(v) && v > 0) A.u[w] = v; else delete A.u[w]; }
+    await save(); render(); if (w === 'year') sheetSetPage('budget'); else if ($('#per-tot')) $('#per-tot').textContent = perTotTxt(A);
+  }
+  else if (t.dataset.permode) { S.goals.inter ||= {}; S.goals.inter.perMode = t.value; await save(); render(); }
   else if (t.dataset.renteauto) { S.goals.inter ||= {}; S.goals.inter.renteAuto = t.checked; await save(); render(); }
   else if (t.dataset.inter) {
     const v = num(t.value);
@@ -3782,7 +3863,7 @@ function demoData() {
     }
     d.entries[k] = e;
   }
-  d.settings = { depenses: 2600, revenus: 4300, perPlafond: 4400, lastExport: null };
+  d.settings = { depenses: 2600, revenus: 4300, perPlafond: 4400, lastExport: null }; // converti par normalize()
   d.goals = { apport: { target: 100000, date: addMonths(cur, 30) }, rente: { birthYear: 1990, retireAge: 64, monthly: 1200, ret: 3, withdraw: 4 } };
   return d;
 }
