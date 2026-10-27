@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-Ebm+FmSki9Ry0DWa5Ge6OPWOiOQm7dNHyVqHco2JXcM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -52,6 +52,7 @@ button{cursor:pointer}
 .lock-form{display:grid;gap:14px}
 .lock-links{display:grid;gap:4px;margin-top:22px;justify-items:start}
 .err{color:var(--red);margin:0;font-size:15px}
+html.veil #app,html.veil #layer,html.veil #toast{visibility:hidden}
 .codebar{padding:calc(12px + var(--safe-t)) 18px 14px;background:var(--amber-soft);font-size:14px;line-height:1.4}
 .codebar.bad{background:var(--red-soft)}
 .codebar p{margin:0 0 10px}
@@ -436,7 +437,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const app = $('#app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)).slice(0, 12);
-const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+const plural = (n, one, many) => `${esc(n)} ${n > 1 ? many : one}`;   // n échappé : il peut venir d'une sauvegarde
 
 const pad = n => String(n).padStart(2, '0');
 const monthKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
@@ -458,15 +459,25 @@ const pct = (v, d = 0) => (v * 100).toLocaleString('fr-FR', { maximumFractionDig
 const spct = (v, d = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + pct(Math.abs(v), d);
 function approx(v) {
   if (masked) return MASK;
-  const a = Math.abs(v || 0);
+  const a = Math.abs(v || 0), sg = v <= -0.5 ? '−' : '';
+  return sg + approxAbs(a);
+}
+function approxAbs(a) {
   if (a >= 10000) return (Math.round(a / 500) / 2).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' k€';
   if (a >= 1000) return fmtE.format(Math.round(a / 100) * 100);
   return fmtE.format(Math.round(a / 10) * 10);
 }
+// Saisie d'un nombre au format français : « 1 234,56 », « 1.234,56 », « −50 », « 12,5 € ».
+// Un point seul suivi de groupes de 3 chiffres est un séparateur de milliers (« 1.234 » = 1234).
 function num(s) {
   if (s == null) return null;
-  s = String(s).replace(/[\s\u00a0\u202f€]/g, '').replace(',', '.');
+  s = String(s).replace(/[\s\u00a0\u202f€]/g, '').replace(/[\u2212\u2013]/g, '-');
   if (s === '') return null;
+  const c = s.lastIndexOf(','), d = s.lastIndexOf('.');
+  if (c >= 0 && d >= 0) s = c > d ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  else if (c >= 0) s = s.replace(',', '.');
+  else if (d >= 0 && /^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  if (!/^[-+]?\d*\.?\d+$/.test(s)) return NaN;
   const n = Number(s);
   return Number.isFinite(n) ? n : NaN;
 }
@@ -529,23 +540,40 @@ async function prfKek(secret) {
 }
 async function makePwSlot(raw, pass) { const salt = rand(16); return { salt: b64(salt), iter: ITER, ...(await aesEnc(await pwKek(pass, salt, ITER), raw)) }; }
 const openPwSlot = async (slot, pass) => aesDec(await pwKek(pass, unb64(slot.salt), slot.iter), slot.iv, slot.ct);
+// Tout est capturé avant le premier await : un verrouillage pendant l'écriture ne peut plus produire un coffre sans emplacements
 async function seal() {
-  const w = await aesEnc(dek, enc.encode(JSON.stringify(S)));
-  return { app: 'patrimoine', v: 2, slots, ...w, savedAt: Date.now() };
+  const k = dek, sl = slots, bytes = enc.encode(JSON.stringify(S));
+  if (!k || !sl) throw new Error('coffre verrouillé');
+  const w = await aesEnc(k, bytes);
+  return { app: 'patrimoine', v: 2, slots: sl, ...w, savedAt: Date.now() };
 }
+// Nombre d'itérations lu dans un fichier : borné, pour qu'un fichier piégé ne fige pas l'app
+const iterOk = n => Number.isInteger(n) && n >= 100000 && n <= 10000000;
 // Ouvre le coffre (ou une sauvegarde) avec le mot de passe ou le secret d'une clé d'accès.
 async function openVault(vault, { pass, prf }) {
+  if (!vault || typeof vault !== 'object' || typeof vault.iv !== 'string' || typeof vault.ct !== 'string') throw new Error('format');
   if (!vault.slots) { // ancien format v1 : converti au passage
+    if (typeof vault.salt !== 'string' || !iterOk(vault.iter)) throw new Error('format');
     const data = JSON.parse(dec.decode(await aesDec(await pwKek(pass, unb64(vault.salt), vault.iter), vault.iv, vault.ct)));
     const raw = rand(32);
     return { raw, data, slots: { pw: await makePwSlot(raw, pass) }, migrated: true };
   }
+  if (!prf && (!vault.slots.pw || !iterOk(vault.slots.pw.iter))) throw new Error('format');
   const raw = prf ? await aesDec(await prfKek(prf), vault.slots.pk.iv, vault.slots.pk.ct) : await openPwSlot(vault.slots.pw, pass);
   const data = JSON.parse(dec.decode(await aesDec(await importDek(raw), vault.iv, vault.ct)));
   return { raw, data, slots: vault.slots };
 }
 async function adopt(o) { dekRaw = o.raw; dek = await importDek(o.raw); slots = o.slots; S = normalize(o.data); mode = 'app'; }
-function wipeKeys() { dekRaw?.fill(0); dekRaw = null; dek = null; slots = null; S = null; }
+function wipeKeys() {
+  dekRaw?.fill(0); dekRaw = null; dek = null; slots = null; S = null;
+  // Rien ne doit rester lisible après le verrouillage : caches de graphiques, imports en cours, message affiché
+  try {
+    for (const k of Object.keys(CHARTS)) delete CHARTS[k];
+    cands = []; txDraft = null; pendingImport = null; quick = null;
+    const t = $('#toast'); if (t) { t.textContent = ''; t.classList.remove('show'); }
+    document.querySelectorAll('input[type=file]').forEach(i => { i.value = ''; });
+  } catch {}
+}
 
 /* ---------- Clé d'accès : Face ID via le trousseau iCloud ou un gestionnaire compatible ---------- */
 const pkAvailable = () => !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
@@ -654,7 +682,11 @@ async function checkCode() {
   if (!window.isSecureContext) { code.err = 'Vérification indisponible hors https.'; return; }
   try { code.served = await fpOf(false); } catch (e) { code.err = e.message; return; }
   const saved = await store.get('code');
-  if (!saved || saved.pending) {
+  if (code.status === 'sw') { code.approved = saved?.fp || null; code.at = saved?.at || null; paintCode(); return; }
+  if (saved?.pending && saved.fp && saved.fp !== code.served) {
+    // Retour d'une mise à jour approuvée, mais le code reçu n'est pas celui qui a été approuvé
+    code.approved = saved.fp; code.at = saved.at; code.status = 'changed';
+  } else if (!saved || saved.pending) {
     // Première ouverture, ou retour d'une mise à jour que tu viens d'approuver.
     await store.set('code', { fp: code.served, at: Date.now() });
     code.approved = code.served; code.at = Date.now(); code.status = 'ok';
@@ -670,13 +702,15 @@ async function checkNetwork(manual) {
   if (navigator.onLine === false) { code.err = 'Pas de connexion réseau.'; return false; }
   try { code.net = await fpOf(true); code.err = null; code.checked = Date.now(); }
   catch (e) { code.err = e.message; return false; }
-  if (code.net !== code.approved && code.status !== 'changed') { code.status = 'update'; paintCode(); }
+  if (code.net !== code.approved && code.status !== 'changed' && code.status !== 'sw') { code.status = 'update'; paintCode(); }
   return code.net !== code.approved;
 }
 function paintCode() {
   const el = $('#codebar'); if (!el) return;
   if (code.status === 'update') el.innerHTML = `<div class="codebar"><p>Une nouvelle version du code de l’app est disponible en ligne. Si tu n’en es pas à l’origine, ne l’installe pas.</p>
     <div class="row"><button class="btn primary" data-act="codeupdate">Installer la mise à jour</button><button class="btn" data-act="codeinfo">Détails</button><button class="btn" data-act="codelater">Plus tard</button></div></div>`;
+  else if (code.status === 'sw') el.innerHTML = `<div class="codebar bad"><p><strong>Le programme de l’app vient d’être remplacé chez l’hébergeur, sans passer par ta validation.</strong> Au prochain lancement, ce nouveau code s’exécutera et pourrait lire ton mot de passe. Ne rouvre pas l’app et ne saisis pas ton mot de passe avant d’avoir vérifié l’historique de ton dépôt.</p>
+    <div class="row"><button class="btn" data-act="codeinfo">Que faire ?</button></div></div>`;
   else if (code.status === 'changed') el.innerHTML = `<div class="codebar bad"><p><strong>Le code de l’app a changé</strong> sans que tu l’aies approuvé. Ne saisis pas ton mot de passe avant d’avoir vérifié.</p>
     <div class="row"><button class="btn" data-act="codeinfo">Que faire ?</button></div></div>`;
   else el.innerHTML = '';
@@ -697,6 +731,11 @@ async function applyCodeUpdate() {
   }
 }
 function sheetCode() {
+  if (code.status === 'sw') return openSheet(`<h2>Code remplacé</h2>
+    <p>Le fichier qui installe l’app sur ton iPhone (sw.js) a changé chez l’hébergeur. Une version légitime de l’app ne le modifie jamais : si tu n’es pas à l’origine de ce changement, ton compte d’hébergement a probablement été compromis.</p>
+    <p>Ne déverrouille plus l’app tant que ce n’est pas résolu : le nouveau code s’exécutera au prochain lancement, et la vérification d’empreinte ne pourra plus t’alerter.</p>
+    <p class="small">À faire depuis un ordinateur : consulte l’historique du dépôt, remets les fichiers d’origine, change le mot de passe du compte et active la double authentification. Ensuite, sur l’iPhone, supprime l’app de l’écran d’accueil, efface les données du site dans Réglages › Safari, réinstalle-la et restaure ta dernière sauvegarde.</p>
+    <button class="btn wide" style="margin-top:10px" data-act="close">Fermer</button>`);
   const changed = code.status === 'changed';
   openSheet(`<h2>${changed ? 'Code modifié' : 'Vérification du code'}</h2>
     <p class="small" style="margin:0 0 14px">L’empreinte est un condensé du code de l’app. Elle ne change que si le code change.</p>
@@ -718,7 +757,7 @@ let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', subview 
 const emptyData = () => ({
   v: 1, accounts: [], entries: {}, pot: {}, rules: {}, dismissed: {},
   household: { on: false, members: [{ id: 'moi', name: 'Moi', income: null }], split: { mode: 'moitie', shares: {} } },
-  settings: { depenses: null, revenus: null, perAvis: null, lastExport: null, ai: null, raise: { on: false, pct: 2 }, usage: { on: true } },
+  settings: { depenses: null, revenus: null, perAvis: null, lastExport: null, ai: null, raise: { on: false, pct: 2 }, usage: { on: false } },
   analyses: {},
   goals: { apport: { target: null, date: null }, rente: { birthYear: null, retireAge: 64, monthly: null, ret: 3, withdraw: 4 },
     loan: { v: 2, scope: 'moi', duree: 25, taux: null, endettement: 35, assurance: 0.15, frais: 7.5 },
@@ -746,8 +785,17 @@ function normalize(d) {
   return d;
 }
 async function save() {
-  if (mode !== 'app') return;
+  if (mode !== 'app' || !dek || !slots) return;
+  refreshAuto();
   await store.set('vault', await seal());
+}
+// Soldes calculés (« auto ») : recalculés à partir du solde précédent, pour qu'une correction d'un mois passé se propage
+function refreshAuto() {
+  const ms = months();
+  for (const a of S.accounts) for (const k of ms) {
+    const e = S.entries[k]?.[a.id];
+    if (e?.auto && e.value != null) e.value = valueAt(a, addMonths(k, -1)) + moveSum(e);
+  }
 }
 
 /* ---------- Calculs ---------- */
@@ -774,7 +822,7 @@ function syncBalance(m, a, delta) {
   if (e.auto || e.value == null) { e.value = base + moveSum(e); e.auto = true; }
   else e.value += delta;
 }
-const dayLabel = (mk, d) => `${d} ${monthName(mk)}`;
+const dayLabel = (mk, d) => `${esc(d)} ${monthName(mk)}`;
 function firstMonthOf(a) { for (const k of months()) if (S.entries[k][a.id]?.value != null) return k; return null; }
 function lastUpdate(a) { const ms = months(); for (let i = ms.length - 1; i >= 0; i--) if (S.entries[ms[i]][a.id]?.value != null) return ms[i]; return null; }
 function valueAt(a, m) {
@@ -884,8 +932,11 @@ function perImpute(buckets, year, v) {
 }
 function perPlan(F) {
   const A = perAvis(); if (!A) return null;
-  const N = +F.slice(0, 4), mois = 12 - +F.slice(5) + 1;
-  let b = [{ y: A.year, a: A.cur || 0, est: false }, ...Object.entries(A.u || {}).map(([y, a]) => ({ y: +y, a: +a || 0, est: false }))]
+  // Année et mois de référence : le mois en cours, même si sa saisie n'est pas encore faite (les versements, eux, s'arrêtent à F)
+  const C = F > monthKey() ? F : monthKey(), N = +C.slice(0, 4), mois = 12 - +C.slice(5) + 1;
+  if (A.year > N) return null;
+  // Seuls les reports des trois années précédant l'avis sont lus (des valeurs d'une autre année d'avis peuvent rester enregistrées)
+  let b = [{ y: A.year, a: A.cur || 0, est: false }, ...Object.entries(A.u || {}).filter(([y]) => +y >= A.year - 3 && +y < A.year).map(([y, a]) => ({ y: +y, a: +a || 0, est: false }))]
     .filter(x => x.a > 0 && perExp(x.y) >= A.year).map(x => ({ ...x, left: x.a }));
   // Avis d'une année antérieure : on avance d'année en année avec les versements enregistrés,
   // et un plafond estimé égal au dernier connu, en attendant le nouvel avis.
@@ -947,7 +998,8 @@ function goalApport(F) {
 }
 function goalRente(F) {
   const g = S.goals.rente; if (!g.birthYear || !g.retireAge) return null;
-  const f = a => a.retraite, P = primePlan() && primeFactor('rente') > 0 ? primePlan() : null, A = avgDep(F, 6, f);
+  // La rente est la tienne (ton âge, ton départ) : seuls tes comptes retraite comptent, pas ceux de ton conjoint
+  const f = a => a.retraite && (a.owner || 'moi') === 'moi', P = primePlan() && primeFactor('rente') > 0 ? primePlan() : null, A = avgDep(F, 6, f);
   const C = totalAt(F, f), m = Math.max(0, P ? paceReg(F, A, 'rente') : A.avg);
   const [y, mo] = F.split('-').map(Number);
   const n = Math.max(0, (g.birthYear + g.retireAge - y) * 12 - (mo - 1));
@@ -971,10 +1023,16 @@ const mLabel = id => id === 'moi' ? 'moi' : members().length === 2 ? 'mon conjoi
 const potOf = m => S.pot[m] || { items: [], transfers: [] };
 // Les dépenses marquées « fixe » sont reprises d'office le mois suivant, une seule fois :
 // si tu en supprimes une, elle ne revient pas.
+// Dernier mois tenu (sur les 12 précédents) : un mois jamais ouvert est sauté, mais un mois où tu as supprimé
+// des charges fixes fait foi, pour qu'elles ne réapparaissent pas.
+function lastPotWith(k, has) {
+  for (let i = 1; i <= 12; i++) { const m = addMonths(k, -i); if (S.pot[m] && has(S.pot[m])) return m; }
+  return null;
+}
 async function seedMonth(k) {
   await seedPerso(k);
   if (S.pot[k]?.seeded) return 0;
-  const prevK = addMonths(k, -1), rec = potOf(prevK).items.filter(i => i.r !== false);
+  const prevK = lastPotWith(k, p => p.seeded || (p.items || []).length), rec = prevK ? potOf(prevK).items.filter(i => i.r !== false) : [];
   const cur = (S.pot[k] ||= { items: [], transfers: [] });
   cur.transfers ||= [];
   if (!rec.length) { if (S.pot[k].items.length) cur.seeded = true; return 0; }
@@ -998,7 +1056,7 @@ function refundsOf(chargeId) {
 }
 async function seedPerso(k) {
   if (S.pot[k]?.persoSeeded) return 0;
-  const prevK = addMonths(k, -1), rec = persoOf(prevK).filter(i => i.r !== false && !i.rb);
+  const prevK = lastPotWith(k, p => p.persoSeeded || (p.perso || []).length), rec = prevK ? persoOf(prevK).filter(i => i.r !== false && !i.rb) : [];
   const cur = (S.pot[k] ||= { items: [], transfers: [] });
   cur.perso ||= [];
   if (!rec.length) { if (cur.perso.length) cur.persoSeeded = true; return 0; }
@@ -1019,7 +1077,8 @@ function resteOf(k, id) {
 // Dépenses communes du mois : saisies à la main, opérations de compte courant classées « charge », enveloppes
 function potItems(k) {
   const out = potOf(k).items.map(i => ({ ...i }));
-  for (const a of cashAccounts().filter(x => x.potCharge)) {
+  // Comptes clôturés : leurs dépenses restent comptées pour les mois antérieurs à la clôture
+  for (const a of S.accounts.filter(x => isCash(x) && x.potCharge && (!x.closed || x.closed >= k))) {
     if (isSimple(a)) { const d = dotOf(k, a); if (d > 0) out.push({ id: 'env:' + a.id, n: a.name, a: d, by: a.owner || 'moi', src: 'env', accId: a.id }); continue; }
     for (const t of txOf(k, a)) if (t.c === 'charge' && t.a < 0) out.push({ id: 'tx:' + t.id, n: t.n, a: -t.a, by: a.owner || 'moi', src: 'tx', accId: a.id });
   }
@@ -1132,7 +1191,7 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
     if (versed > 0.8 * 150000) out.push({ l: 'info', k: `peaverse:${a.id}`, s: Math.round(versed / 1000), t: `${forSummary ? 'PEA' : a.name} : environ ${eur(versed)} versés sur 150 000 € autorisés (estimation depuis le début du suivi).` });
   }
   const pers = acc.filter(a => a.type === 'per' || (S.settings.perPercol && a.type === 'percol'));
-  if (pers.length && mm >= 9) {
+  if (pers.length && +(F > monthKey() ? F : monthKey()).slice(5) >= 9) {
     const pd = perDeduction(F);
     if (pd) {
       const pp = perPlan(F);
@@ -1201,11 +1260,14 @@ async function dismissAlert(k, sig) {
 }
 
 /* ---------- Résumé mensuel ---------- */
+// Libellé importé envoyé à l'IA : sans code ISIN ni suite de chiffres (numéro de contrat, de compte…)
+const anon = t => String(t).replace(/\b[A-Z]{2}[A-Z0-9]{9}\d\b/g, '').replace(/\d[\d\s.\-/]{3,}\d/g, '').replace(/\s+/g, ' ').trim() || 'support';
 function summary(F) {
   const R = v => rounding ? approx(v) : eur(v);
   const SR = v => (v > 0.5 ? '+' : v < -0.5 ? '−' : '') + R(Math.abs(v));
   const mineF = a => (a.owner || 'moi') === 'moi';          // le résumé reste ton périmètre personnel
-  const ms = months(), b = breakdown(F, mineF), L = [];
+  const ms = months(); if (!ms.length) return 'Aucune donnée saisie pour le moment.';
+  const b = breakdown(F, mineF), L = [];
   L.push(`Résumé de mes finances : ${monthLabel(F)}`);
   L.push(`Suivi personnel${rounding ? ', montants arrondis' : ''}, sans nom d’établissement.`);
   L.push('');
@@ -1225,7 +1287,7 @@ function summary(F) {
   const gin = mine.reduce((t, a) => t + movesIn(entry(F, a)), 0), gout = mine.reduce((t, a) => t + movesOut(entry(F, a)), 0);
   L.push(`Épargne du mois : ${R(b.dep)}${gout > 0 ? ` (${R(gin)} versés, ${R(gout)} repris en cours de mois)` : ''}${prev.n >= 2 ? ` — moyenne des ${prev.n} mois précédents : ${R(prev.avg)} par mois` : ''}.`);
   const myRev = scopeIncome(F, 'moi');
-  if (myRev) L.push(`Taux d’épargne : ${pct(b.dep / myRev)} des revenus nets mensuels${primeOf(F) ? `, prime exceptionnelle de ${R(primeOf(F))} comprise (hors prime : ${pct(regDep(F, b.dep, 'all') / (myRev - primeOf(F)))})` : ''}.`);
+  if (myRev) L.push(`Taux d’épargne : ${pct(b.dep / myRev)} des revenus nets mensuels${primeOf(F) ? `, prime exceptionnelle de ${R(primeOf(F))} comprise${myRev - primeOf(F) > 0 ? ` (hors prime : ${pct(regDep(F, b.dep, 'all') / (myRev - primeOf(F)))})` : ''}` : ''}.`);
   if (primePlan()) L.push(`Primes annuelles prévues : ${primePlan().list.map(e => `${MONTHS_FR[e.m - 1]} (environ ${R(e.a)})`).join(', ')}, épargnées à ${primePlan().pct ?? 100} %, affectées à ${PRIME_TO[primePlan().to]}.`);
   if (S.settings.depenses) L.push(`Épargne de précaution : ${(totalAt(F, a => mineF(a) && TYPES[a.type].cat === 'livrets') / S.settings.depenses).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} mois de dépenses sur les livrets.`);
   L.push('', 'Répartition :');
@@ -1285,7 +1347,7 @@ function summary(F) {
       lines.push(`- Compte courant : ${R(ch + ho)} de dépenses réelles, dont ${R(ch)} de charges communes et ${R(ho)} hors charges (virements internes exclus)`);
     }
     const env = cash.filter(isSimple).map(a => ({ a, d: dotOf(F, a) })).filter(x => x.d > 0);
-    if (env.length) lines.push(`- Enveloppes envoyées : ${env.map(x => `${x.a.name} ${R(x.d)}`).join(', ')}`);
+    if (env.length) lines.push(`- Enveloppes envoyées : ${env.map((x, i) => `enveloppe ${i + 1} ${R(x.d)}`).join(', ')}`);
     if (lines.length) { L.push('', 'Compte courant et enveloppes :'); lines.forEach(l => L.push(l)); }
   }
   {
@@ -1303,7 +1365,7 @@ function summary(F) {
     for (const a of comp) {
       const tot = a.lines.reduce((t, l) => t + l.v, 0) || 1;
       const top = a.lines.slice().sort((x, y) => y.v - x.v).slice(0, 8);
-      L.push(`- ${TYPES[a.type].label} : ${top.map(l => `${l.n} ${pct(l.v / tot)}`).join(', ')}`);
+      L.push(`- ${TYPES[a.type].label} : ${top.map(l => `${anon(l.n)} ${pct(l.v / tot)}`).join(', ')}`);
     }
   }
   const ech = active().filter(mineF).map(a => ({ a, m: maturityOf(a) })).filter(x => x.m && monthDiff(F, x.m.date) > 0 && monthDiff(F, x.m.date) <= 12);
@@ -1402,11 +1464,11 @@ function vHidden(v) {
     <button class="btn primary" data-act="unmask">Afficher les montants</button></section>`;
 }
 const multi = () => S.household.on && members().length > 1;
-const scopeF = () => { const sc = scope; return sc === 'all' ? () => true : a => (a.owner || 'moi') === sc; };
+const scopeF = () => { const sc = multi() ? scope : 'moi'; return sc === 'all' ? () => true : a => (a.owner || 'moi') === sc; };
 function scopeBar() {
   if (!multi()) return '';
   const opts = [...members().map(m => [m.id, m.name]), ['all', 'Foyer']];
-  return `<div class="chips">${opts.map(([v, l]) => `<button class="${scope === v ? 'on' : ''}" data-act="scope" data-s="${v}">${esc(l)}</button>`).join('')}</div>`;
+  return `<div class="chips">${opts.map(([v, l]) => `<button class="${scope === v ? 'on' : ''}" data-act="scope" data-s="${esc(v)}">${esc(l)}</button>`).join('')}</div>`;
 }
 function vHome() {
   if (!S.accounts.length) return emptyAccounts();
@@ -1705,7 +1767,7 @@ function vObjectifs() {
         <p>Rythme actuel : ${eur(ga.pace)} par mois${ga.plan ? ' hors primes' : ''}${ga.reach ? `, objectif atteint vers ${monthLabel(ga.reach)}${ga.plan ? ' primes comprises' : ''}` : ''}.</p>
         ${ga.need != null ? `<p>${ga.primes && ga.need < 0.5 ? 'Les primes prévues suffisent à tenir l’échéance.' : `Pour tenir l’échéance : ${eur(ga.need)} par mois${ga.primes ? ' sur ton salaire' : ''}${ga.need > ga.pace + 0.5 ? `, soit ${eur(ga.need - ga.pace)} de plus.` : '.'}`}</p>
           ${ga.primes ? `<p class="small">En comptant ${eur(ga.primes)} de primes épargnées d’ici là. Sans elles, il faudrait ${eur(ga.needGross)} par mois.</p>` : ''}` : ''}`}
-      <p class="small">Comptés : ${counted(a => a.apport)}.</p></div>`;
+      <p class="small">Comptés : ${counted(a => a.apport)}${multi() && active().some(a => a.apport && (a.owner || 'moi') !== 'moi') ? ' (comptes du foyer : l’achat est commun)' : ''}.</p></div>`;
   }
   let rr = '';
   if (gr) {
@@ -1714,7 +1776,7 @@ function vObjectifs() {
       ${gr.target ? `<div class="bar"><i style="width:${Math.min(100, gr.fv / gr.target * 100)}%"></i></div>
         <p>Capital nécessaire : ${eur(gr.target)}.</p>
         <p>Versements actuels : ${eur(gr.m)} par mois${gr.plan ? ` hors primes${gr.perYear ? `, plus environ ${eur(gr.perYear)} de primes par an` : ''}` : ''}. ${gr.need != null ? (gr.need <= gr.m ? 'Tu es sur la bonne trajectoire.' : `Il faudrait environ ${eur(gr.need)} par mois${gr.plan && gr.perYear ? ' en plus des primes' : ''}.`) : ''}</p>` : ''}
-      <p class="small">Comptés : ${counted(a => a.retraite)}. Projection indicative, pas une prévision.</p></div>`;
+      <p class="small">Comptés : ${counted(a => a.retraite && (a.owner || 'moi') === 'moi')}. Projection indicative, pas une prévision.</p></div>`;
   }
   return `
     <section><div class="goal"><h2>Apport immobilier</h2>
@@ -1777,9 +1839,9 @@ function vLoan(F, ga) {
   const prixObj = loanPrice(cObj.C, apportObj, g);
   const durees = [15, 20, 25];
   return `<section><div class="goal"><h2>Emprunt immobilier</h2>
-    ${hh ? `<div class="chips tight">${scopes.map(([v, l]) => `<button class="${g.scope === v ? 'on' : ''}" data-act="loanscope" data-s="${v}">${esc(l)}</button>`).join('')}</div>` : ''}
+    ${hh ? `<div class="chips tight">${scopes.map(([v, l]) => `<button class="${g.scope === v ? 'on' : ''}" data-act="loanscope" data-s="${esc(v)}">${esc(l)}</button>`).join('')}</div>` : ''}
     <div class="seg seg3" style="margin-top:10px">${durees.map(d => `<button class="${g.duree === d ? 'on' : ''}" data-act="loandur" data-d="${d}">${d} ans</button>`).join('')}</div>
-    <p class="small" style="margin:10px 0 0">Taux moyens sur ${g.duree} ans en septembre 2026 : de ${tx2(R.min)} % à ${tx2(R.max)} %.</p>
+    <p class="small" style="margin:10px 0 0">Taux moyens sur ${esc(g.duree)} ans en septembre 2026 : de ${tx2(R.min)} % à ${tx2(R.max)} %.</p>
     <div class="fields" style="margin-top:12px">
       <label>Taux du prêt (%)<input inputmode="decimal" data-loan="taux" value="${esc(numStr(g.taux))}" placeholder="${tx2(R.def)}"></label>
       <label>Assurance (% par an)<input inputmode="decimal" data-loan="assurance" value="${esc(numStr(g.assurance))}"></label>
@@ -1790,7 +1852,7 @@ function vLoan(F, ga) {
       <p class="small" style="margin:0">Revenus pris en compte : ${eur(rev)} par mois${hh ? ` · ${esc(g.scope === 'foyer' ? 'foyer' : mName(g.scope))}` : ''}</p>
       ${inc.parts.length ? `<ul class="kv">${inc.parts.map(p => `<li><span>${esc(mName(p.id))}</span><span class="num">${eur(p.v)}<span class="small"> ${p.n ? `moyenne sur ${plural(p.n, 'mois', 'mois')}` : 'revenu de référence'}</span></span></li>`).join('')}</ul>` : ''}
       <p class="big num" style="margin:8px 0 2px">${eur(c.C)}</p>
-      <p class="small">capacité d’emprunt sur ${g.duree} ans à ${tx2(c.taux)} %</p>
+      <p class="small">capacité d’emprunt sur ${esc(g.duree)} ans à ${tx2(c.taux)} %</p>
       <ul class="kv">
         <li><span>Mensualité maximale</span><span class="num">${eur(c.M)}</span></li>
         <li><span>dont assurance</span><span class="num">${eur(c.mensAssur)}</span></li>
@@ -2065,12 +2127,14 @@ function vBilan(F) {
   const parts = [
     { k: 'Épargne', v: cur.sav, c: 'var(--v1)' },
     ...(hh ? [{ k: 'Charges communes', v: cur.share, c: 'var(--v2)', sub: cur.communes ? `ta part de ${eur(cur.communes)}` : '', go: 'c' }] : []),
-    { k: 'Charges perso', v: Math.max(0, cur.perso), c: 'var(--v3)', sub: persoRefunds(F) ? `après ${eur(persoRefunds(F))} de remboursements` : '', go: S.household.on ? 'p' : null },
+    { k: 'Charges perso', v: cur.perso, c: 'var(--v3)', sub: persoRefunds(F) ? `après ${eur(persoRefunds(F))} de remboursements` : '', go: S.household.on ? 'p' : null },
   ];
-  const out = parts.reduce((t, x) => t + x.v, 0), over = cur.rev ? Math.max(0, out - cur.rev) : 0;
-  const base = Math.max(cur.rev, out) || 1;
+  // Des remboursements supérieurs aux charges perso du mois donnent un montant négatif : il augmente le reste à vivre
+  // (même calcul que resteOf), mais n'occupe aucune place dans la barre.
+  const out = parts.reduce((t, x) => t + x.v, 0), pos = parts.reduce((t, x) => t + Math.max(0, x.v), 0);
+  const base = Math.max(cur.rev, pos) || 1;
   const reste = cur.rev - out;
-  const bar = cur.rev ? `<div class="bstack" role="img" aria-label="Répartition des revenus ${deM(monthName(F))}">${parts.filter(x => x.v > 0).map(x => `<i style="width:${x.v / base * 100}%;background:${x.c}"></i>`).join('')}${reste > 0 ? `<i class="rest" style="width:${reste / base * 100}%"></i>` : ''}</div>` : '';
+  const bar = cur.rev ? `<div class="bstack" role="img" aria-label="Répartition des revenus ${deM(monthName(F))}">${parts.filter(x => x.v > 0).map(x => `<i style="width:${x.v / base * 100}%;background:${x.c}"></i>`).join('')}${reste > 0 ? `<i class="rest" style="width:${Math.min(reste, base - pos) / base * 100}%"></i>` : ''}</div>` : '';
   // Les lignes de charges ouvrent la liste correspondante dans Comptes > Foyer, au mois du bilan
   const link = w => w ? ` data-act="bilango" data-w="${w}" data-m="${F}" role="link" tabindex="0"` : '';
   const rows = [...parts, ...(cur.rev ? [{ k: reste >= 0 ? 'Reste à vivre' : 'Dépassement', v: Math.abs(reste), c: reste >= 0 ? 'rest' : 'var(--red)', bad: reste < 0 }] : [])];
@@ -2104,7 +2168,7 @@ function vResumeText(ms) {
   const an = S.analyses[resumeMonth];
   const cfg = S.settings.ai;
   return `
-    <section style="margin-top:14px"><label>Mois<select id="resmonth">${ms.slice().reverse().map(k => `<option value="${k}" ${k === resumeMonth ? 'selected' : ''}>${cap(monthLabel(k))}</option>`).join('')}</select></label></section>
+    <section style="margin-top:14px"><label>Mois<select id="resmonth">${ms.slice().reverse().map(k => `<option value="${esc(k)}" ${k === resumeMonth ? 'selected' : ''}>${cap(monthLabel(k))}</option>`).join('')}</select></label></section>
     ${vBilan(resumeMonth)}
     <section style="margin-top:28px"><h2>Analyse</h2>
       ${an ? `<div class="analysis">${aiHtml(an.t)}<p class="small">Analyse du ${new Date(an.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}, sur ${plural(an.n, 'mois', 'mois')} d’historique. Indicatif : ce n’est pas un conseil financier.</p></div>` : ''}
@@ -2151,11 +2215,16 @@ function perAvisFields(st) {
   const f = (key, label, val) => `<label>${label}<input ${masked ? `readonly value="${val ? MASK : ''}"` : `inputmode="decimal" data-pera="${key}" value="${esc(numStr(val))}"`}></label>`;
   return `<h3>Plafond épargne retraite</h3>
     <p class="small" style="margin:0">Recopie l’encadré « Plafond épargne retraite » de ton dernier avis d’impôt.</p>
-    <label>Année de l’avis<select data-pera="year">${[0, 1, 2].map(d => +monthKey().slice(0, 4) - d).map(y => `<option value="${y}" ${y === Y ? 'selected' : ''}>Avis ${y} (revenus ${y - 1})</option>`).join('')}</select></label>
+    <label>Année de l’avis<select data-pera="year">${[...new Set([0, 1, 2].map(d => +monthKey().slice(0, 4) - d).concat(Y))].sort((a, b) => b - a).map(y => `<option value="${y}" ${y === Y ? 'selected' : ''}>Avis ${y} (revenus ${y - 1})</option>`).join('')}</select></label>
     ${f('cur', `Plafond calculé sur les revenus ${Y - 1} (€)`, A.cur)}
     <div class="row2">${f(String(Y - 1), `Non utilisé ${Y - 1} (€)`, A.u?.[Y - 1])}${f(String(Y - 2), `Non utilisé ${Y - 2} (€)`, A.u?.[Y - 2])}</div>
     ${f(String(Y - 3), `Non utilisé ${Y - 3} (€)`, A.u?.[Y - 3])}
     <p class="small" style="margin:0"><span id="per-tot">${perTotTxt(A)}</span>Les reports non utilisés expirent au bout de 3 ans (5 ans pour les plafonds 2026 et suivants). Mets ces montants à jour à chaque nouvel avis.</p>`;
+}
+// Reporte les noms et revenus saisis dans la fiche Foyer, avant de la redessiner (ajout ou retrait d'un membre)
+function applyMembersForm() {
+  for (const el of $$('[data-mname]')) { const m = members().find(x => x.id === el.dataset.mname); const v = el.value.trim(); if (m && v) m.name = v.slice(0, 40); }
+  for (const el of $$('[data-mincome]')) { const m = members().find(x => x.id === el.dataset.mincome); const v = num(el.value); if (m) m.income = Number.isFinite(v) ? v : null; }
 }
 function sheetSetPage(k) {
   setPage = k;
@@ -2241,7 +2310,7 @@ function sheetSetPage(k) {
     <p class="small" style="margin:0 0 6px">Empreinte approuvée</p>
     <p class="fp">${fpLabel(code.approved)}</p>
     <p class="small">${code.at ? `Approuvée le ${new Date(code.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}. ` : ''}${code.status === 'ok' ? 'Le code installé correspond.' : code.status === 'unknown' ? 'Vérification indisponible ici.' : 'Une différence a été détectée.'}</p>
-    <p class="small">L’app n’installe jamais une nouvelle version sans ta confirmation.</p>
+    <p class="small">L’app te demande de confirmer chaque nouvelle version, et t’alerte si le fichier d’installation est remplacé. Elle ne peut pas empêcher un hébergeur compromis de remplacer le code : protège ton compte d’hébergement (double authentification).</p>
     <div class="stack-form"><button class="btn wide" data-act="codeinfo">Vérifier le code</button>${setBack}</div>`);
 }
 function sheetAccountInfo(id) {
@@ -2335,7 +2404,7 @@ const sheetMsg = msg => openSheet(`<h2>Face ID</h2><p>${esc(msg)}</p><button cla
 function enterApp() {
   view = 'home'; compteTab = 'detail';
   saisieMonth = monthKey(); potMonth = monthKey(); resumeMonth = null;
-  scope = members().some(m => m.id === scope) ? scope : 'moi';
+  scope = multi() && (scope === 'all' || members().some(m => m.id === scope)) ? scope : 'moi';
   masked = !!S.settings.masked;
   uSheet = null;
   uStart({ 'f-unlock': 'motdepasse', pkunlock: 'faceid', 'f-setup': 'creation' }[uPending] || 'restauration').catch(() => {});
@@ -2344,8 +2413,66 @@ function enterApp() {
   // statistiques soient justes même si le volet Foyer n'a pas encore été ouvert.
   if (S.household.on && !S.pot[monthKey()]?.seeded) seedMonth(monthKey()).then(() => render()).catch(() => {});
 }
+// Contrôle d'une sauvegarde avant restauration. Un fichier restauré vient de l'extérieur : identifiants, mois,
+// montants et types sont vérifiés, pour qu'aucune valeur ne puisse injecter du code dans l'app ni la bloquer.
+// Renvoie la première anomalie trouvée, ou null.
+function validateData(d) {
+  const ID = /^[A-Za-z0-9_-]{1,40}$/, MK = /^\d{4}-(0[1-9]|1[0-2])$/;
+  const obj = o => !!o && typeof o === 'object' && !Array.isArray(o);
+  const fin = v => v == null || (typeof v === 'number' && Number.isFinite(v));
+  const str = (v, n = 200) => v == null || (typeof v === 'string' && v.length <= n);
+  const bool = v => v == null || typeof v === 'boolean';
+  const id = v => typeof v === 'string' && ID.test(v);
+  const mk = v => typeof v === 'string' && MK.test(v);
+  const day = v => v == null || (Number.isInteger(v) && v >= 1 && v <= 31);
+  const map = (o, kf, vf) => o == null || (obj(o) && Object.entries(o).every(([k, v]) => kf(k) && vf(v)));
+  const arr = (a, f) => a == null || (Array.isArray(a) && a.length <= 5000 && a.every(f));
+  const checks = [
+    ['données', () => obj(d)],
+    ['comptes', () => Array.isArray(d.accounts) && d.accounts.length <= 500 && d.accounts.every(a => obj(a) && id(a.id) && Object.hasOwn(TYPES, a.type)
+      && str(a.name, 120) && (a.owner == null || id(a.owner)) && (a.closed == null || mk(a.closed)) && (a.open == null || mk(a.open)) && (a.linesAt == null || mk(a.linesAt))
+      && str(a.imp, 200) && arr(a.lines, l => obj(l) && str(l.n, 200) && fin(l.v)) && ['apport', 'retraite', 'simple', 'potCharge'].every(k => bool(a[k])))],
+    ['saisies', () => map(d.entries, mk, m => map(m, id, e => obj(e) && fin(e.value) && fin(e.deposit) && fin(e.dot) && bool(e.auto)
+      && arr(e.moves, x => obj(x) && day(x.d) && fin(x.a) && str(x.n, 200))
+      && arr(e.tx, x => obj(x) && id(x.id) && day(x.d) && fin(x.a) && str(x.n, 200) && (x.c == null || (typeof x.c === 'string' && /^[a-z]{1,12}$/.test(x.c))))))],
+    ['foyer', () => map(d.pot, mk, p => obj(p)
+      && arr(p.items, i => obj(i) && id(i.id) && str(i.n, 200) && fin(i.a) && (i.by == null || id(i.by)) && bool(i.r) && bool(i.pt)
+        && (i.sp == null || i.sp === 'moitie' || i.sp === 'revenus' || (obj(i.sp) && map(i.sp.c, id, fin))))
+      && arr(p.transfers, t => obj(t) && id(t.id) && id(t.from) && id(t.to) && fin(t.a) && bool(t.reg) && str(t.n, 200) && (t.fa == null || id(t.fa)) && (t.ta == null || id(t.ta)))
+      && arr(p.perso, i => obj(i) && id(i.id) && str(i.n, 200) && fin(i.a) && bool(i.r) && bool(i.rb) && bool(i.pt)
+        && (i.of == null || (obj(i.of) && mk(i.of.k) && id(i.of.id) && str(i.of.n, 200))))
+      && map(p.inc, id, fin) && map(p.carry, id, fin) && fin(p.prime) && (p.from == null || mk(p.from)) && (p.persoFrom == null || mk(p.persoFrom))
+      && ['seeded', 'persoSeeded', 'carryDecided'].every(k => bool(p[k])))],
+    ['membres', () => d.household == null || (obj(d.household) && bool(d.household.on)
+      && arr(d.household.members, m => obj(m) && id(m.id) && str(m.name, 80) && fin(m.income))
+      && (d.household.split == null || (obj(d.household.split) && (d.household.split.mode == null || ['moitie', 'revenus', 'manuel'].includes(d.household.split.mode)) && map(d.household.split.shares, id, fin))))],
+    ['objectifs', () => d.goals == null || (obj(d.goals)
+      && (d.goals.apport == null || (obj(d.goals.apport) && fin(d.goals.apport.target) && (d.goals.apport.date == null || mk(d.goals.apport.date))))
+      && (d.goals.rente == null || (obj(d.goals.rente) && ['birthYear', 'retireAge', 'monthly', 'ret', 'withdraw'].every(k => fin(d.goals.rente[k]))))
+      && (d.goals.loan == null || (obj(d.goals.loan) && ['taux', 'endettement', 'assurance', 'frais', 'v'].every(k => fin(d.goals.loan[k]))
+        && (d.goals.loan.duree == null || Object.hasOwn(LOAN_RATES, d.goals.loan.duree)) && (d.goals.loan.scope == null || id(d.goals.loan.scope))))
+      && (d.goals.inter == null || (obj(d.goals.inter) && Object.entries(d.goals.inter).every(([k, v]) => /^[A-Za-z]{1,20}$/.test(k) && (fin(v) || typeof v === 'boolean' || (typeof v === 'string' && /^[a-z]{0,10}$/.test(v))))))
+      && (d.goals.prime == null || (obj(d.goals.prime) && arr(d.goals.prime.list, e => obj(e) && Number.isInteger(e.m) && e.m >= 1 && e.m <= 12 && fin(e.a))
+        && fin(d.goals.prime.pct) && (d.goals.prime.to == null || Object.hasOwn(PRIME_TO, d.goals.prime.to)))))],
+    ['réglages', () => d.settings == null || (obj(d.settings)
+      && ['depenses', 'revenus', 'seuilEpargne', 'lastExport', 'perPlafond'].every(k => fin(d.settings[k])) && bool(d.settings.masked) && bool(d.settings.perPercol)
+      && (d.settings.perAvis == null || (obj(d.settings.perAvis) && Number.isInteger(d.settings.perAvis.year) && fin(d.settings.perAvis.cur) && map(d.settings.perAvis.u, k => /^\d{4}$/.test(k), fin)))
+      && (d.settings.ai == null || (obj(d.settings.ai) && Object.hasOwn(AI, d.settings.ai.provider) && str(d.settings.ai.key, 400) && str(d.settings.ai.model, 80)))
+      && (d.settings.raise == null || (obj(d.settings.raise) && bool(d.settings.raise.on) && fin(d.settings.raise.pct)))
+      && (d.settings.usage == null || (obj(d.settings.usage) && bool(d.settings.usage.on))))],
+    ['analyses', () => map(d.analyses, mk, a => obj(a) && str(a.t, 50000) && fin(a.at) && (a.n == null || (Number.isInteger(a.n) && a.n >= 0 && a.n < 1000)) && str(a.p, 20) && bool(a.rounded))],
+    ['règles', () => map(d.rules, k => k.length <= 200, v => typeof v === 'string' && /^[a-z]{1,12}$/.test(v))],
+    ['alertes masquées', () => map(d.dismissed, k => k.length <= 200, v => obj(v) && str(v.s, 40) && (v.m == null || mk(v.m)) && (v.c == null || mk(v.c)))],
+  ];
+  for (const [label, f] of checks) { try { if (!f()) return label; } catch { return label; } }
+  return null;
+}
 async function finishImport(o) {
+  const bad = validateData(o.data);
+  if (bad) { pendingImport = null; closeSheet(); return toast(`Sauvegarde refusée : contenu inattendu (${bad}). Elle n’a pas été restaurée.`); }
   if (mode === 'app' && !confirm('Remplacer les données actuelles par cette sauvegarde ?')) { closeSheet(); return; }
+  // Depuis l'écran de verrouillage aussi : le coffre existant est perdu s'il n'a pas été sauvegardé
+  if (mode !== 'app' && await store.get('vault') && !confirm('Un coffre existe déjà sur cet appareil. Le remplacer par cette sauvegarde ? Les données actuelles seront perdues si elles n’ont pas été sauvegardées.')) { closeSheet(); return; }
   await adopt(o); await save(); navigator.storage?.persist?.(); pendingImport = null; await clearFails();
   closeSheet(); enterApp(); toast('Sauvegarde restaurée');
 }
@@ -2467,7 +2594,7 @@ function parseDate(t) {
   let y, mo, d;
   if (m[4]) { y = +m[4]; mo = +m[5]; d = +m[6]; }
   else { d = +m[1]; mo = +m[2]; y = +m[3]; if (y < 100) y += 2000; }
-  if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 2000 || y > 2100) return null;
+  if (mo < 1 || mo > 12 || d < 1 || y < 2000 || y > 2100 || d > new Date(y, mo, 0).getDate()) return null;
   return { k: `${y}-${pad(mo)}`, d };
 }
 function scanTx(txt) {
@@ -2477,27 +2604,37 @@ function scanTx(txt) {
     rows = (h.rows.length ? h.rows : h.text.split(/\r?\n/).map(l => [l])).slice(0, MAX_LINES);
   } else {
     const lines = txt.split(/\r?\n/).slice(0, MAX_LINES).map(l => l.trim()).filter(Boolean);
-    const d = [';', '\t', ',', '|'].map(c => [c, lines.reduce((n, l) => n + (l.split(c).length - 1), 0)]).sort((a, b) => b[1] - a[1])[0];
-    rows = d && d[1] >= lines.length ? lines.map(l => splitCsv(l, d[0])) : lines.map(l => [l]);
+    const sep = pickSep(lines);
+    rows = sep ? lines.map(l => splitCsv(l, sep)) : lines.map(l => [l]);
   }
-  const head = rows.length > 1 && !rows[0].some(c => parseDate(c)) ? rows.shift().map(norm) : [];
-  const iDeb = head.findIndex(h => /^debit/.test(h)), iCre = head.findIndex(h => /^credit/.test(h));
+  // En-tête : la première ligne (parmi les 15 premières) qui nomme les colonnes ; les lignes de préambule avant elle sont ignorées
+  const KW = /^(date|libelle|operation|montant|debit|credit|solde|valeur|description)/;
+  const hi = rows.slice(0, 15).findIndex(r => r.length > 1 && r.filter(c => KW.test(norm(c))).length >= 2);
+  const head = hi > -1 ? rows.splice(0, hi + 1).pop().map(norm) : rows.length > 1 && rows[0].length > 1 && !rows[0].some(c => parseDate(c)) ? rows.shift().map(norm) : [];
+  const iDeb = head.findIndex(h => /^debit/.test(h)), iCre = head.findIndex(h => /^credit/.test(h)), iMnt = head.findIndex(h => /^montant/.test(h));
+  const skip = new Set(head.map((h, i) => /solde|balance/.test(h) ? i : -1).filter(i => i > -1));
   const out = [];
-  for (const r of rows) {
+  for (let r of rows) {
+    // Ligne de texte libre : « 12/10/2026 CARTE X -45,90 »
+    if (r.length === 1) {
+      const m = r[0].match(/^\s*(\S+)\s+(.+?)\s+([-+\u2212]?\s?\d[\d\s\u00a0\u202f.]*(?:[.,]\d{1,2})?)\s*(?:€|eur|euros?)?\s*$/i);
+      if (m && parseDate(m[1])) r = [m[1], m[2], m[3].replace(/\u2212/, '-')];
+    }
     let di = -1, dt = null;
     for (let i = 0; i < r.length; i++) { const p = parseDate(r[i]); if (p) { dt = p; di = i; break; } }
     if (!dt) continue;
     let amt = null;
     if (iDeb > -1 || iCre > -1) {
-      const deb = iDeb > -1 ? parseAmount(r[iDeb]) : null, cre = iCre > -1 ? parseAmount(r[iCre]) : null;
+      const deb = iDeb > -1 ? parseAmount(r[iDeb] ?? '') : null, cre = iCre > -1 ? parseAmount(r[iCre] ?? '') : null;
       if (deb) amt = -Math.abs(deb); else if (cre) amt = Math.abs(cre);
     }
-    if (amt == null) for (let i = r.length - 1; i > di; i--) { const v = parseAmount(r[i]); if (v != null && v !== 0) { amt = v; break; } }
+    if (amt == null && iMnt > -1) { const v = parseAmount(r[iMnt] ?? ''); if (v) amt = v; }
+    if (amt == null) for (let i = r.length - 1; i > di; i--) { if (skip.has(i)) continue; const v = parseAmount(r[i]); if (v != null && v !== 0) { amt = v; break; } }
     if (amt == null || amt === 0) continue;
-    const label = r.filter((c, i) => i !== di && c && parseAmount(c) == null).join(' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+    const label = r.filter((c, i) => i !== di && !skip.has(i) && c && parseAmount(c) == null && !parseDate(c)).join(' ').replace(/\s+/g, ' ').trim().slice(0, 60);
     if (!label) continue;
     const nl = norm(label);
-    let c = S?.rules?.[nl] || null;
+    let c = S?.rules && Object.hasOwn(S.rules, nl) ? S.rules[nl] : null;
     if (!c && amt < 0 && S?.accounts?.some(x => x.name.length > 3 && nl.includes(norm(x.name)))) c = 'vir';
     out.push({ id: uid(), d: dt.d, k: dt.k, n: label, a: amt, c });
   }
@@ -2508,7 +2645,7 @@ function sheetTxImport(id) {
   txAcc = id;
   const a = S.accounts.find(x => x.id === id), n = txOf(saisieMonth, a).length;
   openSheet(`<h2>Opérations — ${esc(a.name)}</h2>
-    <p class="small" style="margin:0 0 14px">Relevé ${deM(monthLabel(saisieMonth))}. ${n ? `${plural(n, 'opération déjà enregistrée', 'opérations déjà enregistrées')}. Un nouvel import remplace les opérations du mois.` : ''} Tout est analysé sur cet iPhone.</p>
+    <p class="small" style="margin:0 0 14px">Relevé ${deM(monthLabel(saisieMonth))}. ${n ? `${plural(n, 'opération déjà enregistrée', 'opérations déjà enregistrées')}. Un nouvel import complète les opérations du mois ; une opération déjà présente est remplacée, pas dupliquée.` : ''} Tout est analysé sur cet iPhone.</p>
     <button class="btn wide" data-act="picktx">Choisir un fichier</button>
     ${n ? '<button class="btn ghost wide" style="margin-top:10px" data-act="classify">Reprendre le classement</button>' : ''}
     <h3>Ou coller le relevé</h3>
@@ -2556,6 +2693,7 @@ function sheetRefund(id, preset) {
   const it = found ? { ...found[1], k: found[0] } : { id: null, n: '', a: null, k: cur, of: preset || null };
   const list = refundableCharges();
   const months = Array.from({ length: 6 }, (_, i) => addMonths(cur, -i));
+  if (!months.includes(it.k)) months.push(it.k);   // remboursement plus ancien : son mois reste proposé
   openSheet(`<h2>${it.id ? 'Modifier le remboursement' : 'Enregistrer un remboursement'}</h2>
     <p class="small" style="margin:0 0 14px">Un remboursement réduit tes charges personnelles du mois où tu le reçois. Tu peux le relier à la charge d’origine pour garder la trace.</p>
     <form id="f-refund" class="stack-form" data-id="${it.id || ''}">
@@ -2563,7 +2701,7 @@ function sheetRefund(id, preset) {
         ${list.map(({ k, c, back }) => `<option value="${k}|${c.id}" ${it.of?.id === c.id ? 'selected' : ''}>${esc(c.n)} · ${monthLabel(k, { month: 'short', year: '2-digit' })} · ${esc(eur(c.a))}${back ? ` (déjà ${esc(eur(back))} remboursés)` : ''}</option>`).join('')}
         ${it.of && !list.some(x => x.c.id === it.of.id) ? `<option value="${it.of.k}|${it.of.id}" selected>${esc(it.of.n)} · ${monthLabel(it.of.k, { month: 'short', year: '2-digit' })}</option>` : ''}</select></label>
       <label>Montant remboursé (€)<input id="r-a" inputmode="decimal" value="${it.a ? esc(numStr(-it.a)) : ''}" required></label>
-      <label>Reçu en<select id="r-k">${months.map(k => `<option value="${k}" ${k === it.k ? 'selected' : ''}>${cap(monthLabel(k))}</option>`).join('')}</select></label>
+      <label>Reçu en<select id="r-k">${months.map(k => `<option value="${esc(k)}" ${k === it.k ? 'selected' : ''}>${cap(monthLabel(k))}</option>`).join('')}</select></label>
       <label>Libellé (facultatif)<input id="r-n" value="${esc(it.n)}" maxlength="40" placeholder="Remboursement ${it.of ? esc(it.of.n) : ''}"></label>
       <button class="btn primary wide" type="submit">Enregistrer</button>
       ${it.id ? `<button class="btn danger wide" type="button" data-act="delrefund" data-id="${it.id}" data-k="${it.k}">Supprimer</button>` : ''}
@@ -2736,6 +2874,7 @@ const KEYS = ['valorisation', 'valeur', 'total', 'epargne', 'encours', 'montant'
 const norm = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
 const NOISE = /(\bnombre\b|\bquantit|\bqte\b|\bqty\b|\bnb\b|\bparts?\b|\bcours\b|\bprix\b|valeur liquidative|\bvl\b|\bpru\b|\bdevise\b|\btaux\b|%|latente|\+\/-|\bisin\b|\bcode\b|\bfrais\b|\bdate\b)/;
 function parseAmount(raw) {
+  if (/^\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|\d{4}-\d{2}-\d{2})\s*$/.test(String(raw))) return null; // une date, pas un montant
   let t = String(raw).replace(/\b(eur|euros?|usd|dollars?|chf)\b/gi, '').replace(/[\s\u00a0\u202f€$]/g, '');
   if (!/\d/.test(t)) return null;
   const neg = /^-/.test(t) || /^\(.+\)$/.test(t);
@@ -2751,6 +2890,18 @@ function parseAmount(raw) {
   if (!Number.isFinite(n)) return null;
   if (cut === -1 && /^(19|20)\d\d$/.test(ip)) return null; // millésime, pas un montant
   return neg ? -n : n;
+}
+// Séparateur de colonnes : le même nombre de séparateurs sur au moins 80 % des lignes.
+// La virgule n'est retenue qu'avec au moins deux séparateurs par ligne, sinon c'est la virgule décimale française.
+function pickSep(lines) {
+  if (!lines.length) return null;
+  for (const c of [';', '\t', '|', ',']) {
+    const counts = lines.map(l => splitCsv(l, c).length - 1), freq = {};
+    for (const n of counts) freq[n] = (freq[n] || 0) + 1;
+    const [m, k] = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
+    if (+m >= (c === ',' ? 2 : 1) && k >= 0.8 * lines.length) return c;
+  }
+  return null;
 }
 function splitCsv(line, d) {
   const out = []; let cur = '', q = false;
@@ -2816,8 +2967,8 @@ function scanStatement(txt) {
     if (h.rows.length) fromRows(h.rows.slice(0, MAX_LINES)); else fromLines(clean(h.text));
   } else {
     const lines = clean(txt);
-    const d = [';', '\t', ',', '|'].map(c => [c, lines.reduce((n, l) => n + (l.split(c).length - 1), 0)]).sort((a, b) => b[1] - a[1])[0];
-    if (d && d[1] >= lines.length) fromRows(lines.map(l => splitCsv(l, d[0]))); else fromLines(lines);
+    const sep = pickSep(lines);
+    if (sep) fromRows(lines.map(l => splitCsv(l, sep))); else fromLines(lines);
   }
   return out.sort((x, y) => y.score - x.score || Math.abs(y.amount) - Math.abs(x.amount)).slice(0, 60);
 }
@@ -2886,9 +3037,9 @@ const ACT = {
   go: t => go(t.dataset.view),
   gosub: t => goSub(t.dataset.v),
   back: () => { subview = null; render(); window.scrollTo(0, 0); },
-  gofoyer: () => { compteTab = 'foyer'; go('comptes'); },
+  gofoyer: async () => { compteTab = 'foyer'; if (mode === 'app' && S.household.on) await seedMonth(potMonth); go('comptes'); },
   usageview: () => sheetUsage(),
-  primeadd: async () => { const P = primeCfg(), used = new Set(P.list.map(e => e.m)); let m = +monthKey().slice(5); for (let i = 0; i < 12 && used.has(m); i++) m = m % 12 + 1; P.list.push({ m, a: null }); await save(); render(); primesRefresh(); },
+  primeadd: async () => { const P = primeCfg(), used = new Set(P.list.map(e => e.m)); let m = +monthKey().slice(5); for (let i = 0; i < 12 && used.has(m); i++) m = m % 12 + 1; P.list.push({ m, a: null }); P.list.sort((a, b) => a.m - b.m); await save(); render(); primesRefresh(); },
   primedel: async t => { primeCfg().list.splice(+t.dataset.i, 1); await save(); render(); primesRefresh(); },
   usageexport: () => usageExport(),
   usageclear: async () => {
@@ -2965,13 +3116,19 @@ const ACT = {
     for (const t of txDraft) if (t.c) S.rules[norm(t.n)] = t.c;
     const byMonth = {};
     for (const t of txDraft) (byMonth[t.k] ||= []).push({ id: t.id, d: t.d, n: t.n, a: t.a, c: t.c });
+    // Fusion par mois : une opération déjà connue (même id, ou même jour, libellé et montant) est remplacée,
+    // les autres opérations du mois sont conservées. Aucun mois futur n'est créé.
+    const same = (x, y) => x.id === y.id || (x.d === y.d && x.a === y.a && norm(x.n) === norm(y.n));
+    let saved = 0, skipped = 0;
     for (const [k, list] of Object.entries(byMonth)) {
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(k) || k > monthKey()) { skipped += list.length; continue; }
       const e = (S.entries[k] ||= {})[txAcc] ||= {};
-      e.tx = list;
+      e.tx = [...(e.tx || []).filter(x => !list.some(y => same(x, y))), ...list];
+      saved += list.length;
       if (e.value == null) e.value = valueAt(S.accounts.find(x => x.id === txAcc), addMonths(k, -1));
     }
     await save(); closeSheet(); render();
-    toast(`${plural(txDraft.length, 'opération enregistrée', 'opérations enregistrées')}`);
+    toast(`${plural(saved, 'opération enregistrée', 'opérations enregistrées')}${skipped ? ` · ${skipped} datée(s) dans le futur ignorée(s)` : ''}`);
   },
   srcinfo: t => {
     const i = potItems(potMonth).find(x => x.id === t.dataset.id);
@@ -3024,13 +3181,18 @@ const ACT = {
     render();
   },
   addmember: async () => {
+    applyMembersForm();
     S.household.members.push({ id: uid(), name: 'Membre ' + (members().length + 1), income: null });
     S.household.on = true; await save(); sheetSetPage('foyer'); render();
   },
   delmember: async t => {
+    applyMembersForm();
     const m = memberOf(t.dataset.id);
     const used = S.accounts.filter(a => a.owner === m.id).length;
-    if (!confirm(`Retirer ${m.name} du foyer ?${used ? ` Ses ${used} compte(s) seront rattachés à toi.` : ''}`)) return;
+    const paid = Object.values(S.pot).reduce((n, p) => n + (p.items || []).filter(i => i.by === m.id).length, 0);
+    const trs = Object.values(S.pot).reduce((n, p) => n + (p.transfers || []).filter(x => x.from === m.id || x.to === m.id).length, 0);
+    const lost = [paid ? `${paid} dépense(s) commune(s) qu’il ou elle a payée(s)` : '', trs ? `${trs} virement(s) entre vous` : ''].filter(Boolean).join(' et ');
+    if (!confirm(`Retirer ${m.name} du foyer ?${used ? ` Ses ${used} compte(s) seront rattachés à toi.` : ''}${lost ? ` Attention : ${lost} seront supprimés de tous les mois, ce qui modifie les soldes passés.` : ''}`)) return;
     S.accounts.forEach(a => { if (a.owner === m.id) a.owner = 'moi'; });
     for (const k of Object.keys(S.pot)) {
       const p = S.pot[k];
@@ -3196,19 +3358,19 @@ const ACT = {
   closeacc: async t => {
     const a = S.accounts.find(x => x.id === t.dataset.id);
     if (a.closed) delete a.closed; else { if (!confirm(`Clôturer « ${a.name} » ? Son historique reste dans les graphiques.`)) return; a.closed = lastUpdate(a) || monthKey(); }
-    await save(); sheetSettings(); render();
+    await save(); closeSheet(); render(); toast(a.closed ? 'Compte clôturé' : 'Compte rouvert');
   },
   delacc: async t => {
     const a = S.accounts.find(x => x.id === t.dataset.id);
     if (!confirm(`Supprimer « ${a.name} » et tout son historique ?`)) return;
     S.accounts = S.accounts.filter(x => x.id !== a.id);
     for (const k of Object.keys(S.entries)) { delete S.entries[k][a.id]; if (!Object.keys(S.entries[k]).length) delete S.entries[k]; }
-    await save(); sheetSettings(); render();
+    await save(); closeSheet(); render(); toast('Compte supprimé');
   },
 };
 
 // Tant que les montants sont masqués, aucune fiche affichant ou modifiant des montants ne s'ouvre
-const MASK_BLOCK = new Set(['quickrefund', 'newrefund', 'editrefund', 'refundfor', 'delrefund', 'newperso', 'editperso', 'delperso', 'quickperso', 'newcharge', 'editcharge', 'moves', 'tx', 'newtransfer', 'settlenow', 'split', 'household', 'copycharges', 'importstmt', 'classify', 'delcharge', 'deltransfer', 'srcinfo']);
+const MASK_BLOCK = new Set(['quickact', 'quickcharge', 'quickrefund', 'newrefund', 'editrefund', 'refundfor', 'delrefund', 'newperso', 'editperso', 'delperso', 'quickperso', 'newcharge', 'editcharge', 'moves', 'tx', 'newtransfer', 'settlenow', 'split', 'household', 'copycharges', 'importstmt', 'classify', 'delcharge', 'deltransfer', 'srcinfo']);
 // Appui long sur une charge : ouvre sa modification au lieu de la pointer
 let press = null, pressDone = false;
 const pressEnd = () => { if (press) { clearTimeout(press.timer); press.el.classList.remove('press'); press = null; } };
@@ -3342,7 +3504,7 @@ document.addEventListener('change', async e => {
     const w = t.dataset.pera, v = num(t.value);
     if (w === 'year') {
       // Changer d'année décale les colonnes : on garde les montants rattachés à leur année
-      A.year = +t.value;
+      A.year = +t.value;   // les reports hors des trois années précédentes sont ignorés par le calcul, sans être effacés
     } else if (w === 'cur') A.cur = Number.isFinite(v) && v > 0 ? v : null;
     else { if (Number.isFinite(v) && v > 0) A.u[w] = v; else delete A.u[w]; }
     await save(); render(); if (w === 'year') sheetSetPage('budget'); else if ($('#per-tot')) $('#per-tot').textContent = perTotTxt(A);
@@ -3356,14 +3518,17 @@ document.addEventListener('change', async e => {
     await save(); render();
   }
   else if (t.dataset.loan) {
-    const v = num(t.value);
-    S.goals.loan[t.dataset.loan] = v == null || Number.isNaN(v) ? (t.dataset.loan === 'taux' ? null : 0) : v;
+    // Champ vidé ou invalide : retour à la valeur par défaut, pour que l'affichage corresponde au calcul
+    const v = num(t.value), w = t.dataset.loan, def = emptyData().goals.loan;
+    const bad = v == null || !Number.isFinite(v) || v < 0 || (w === 'endettement' && v === 0);
+    S.goals.loan[w] = bad ? (w === 'taux' ? null : def[w]) : v;
     await save(); render();
   }
   else if (t.dataset.goal) {
     const [g, k] = t.dataset.goal.split('.');
-    const v = t.type === 'month' ? (t.value || null) : num(t.value);
-    S.goals[g][k] = Number.isNaN(v) ? null : v; await save(); render();
+    let v = t.type === 'month' ? (t.value || null) : num(t.value);
+    if (typeof v === 'number' && (!Number.isFinite(v) || (k === 'withdraw' && v <= 0))) v = null;
+    S.goals[g][k] = v; await save(); render();
   }
   else if (t.id === 's-mode') $('#s-manual').hidden = t.value !== 'manuel';
   else if (t.id === 'ai-prov') { const P = AI[t.value]; $('#ai-model').placeholder = P.model; $('#ai-model').value = ''; }
@@ -3373,7 +3538,8 @@ document.addEventListener('change', async e => {
     else if (w === 'a' && e) { const v = num(t.value); e.a = Number.isFinite(v) && v > 0 ? v : null; }
     else if (w === 'pct') { const v = num(t.value); P.pct = Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 100; }
     else if (w === 'to') P.to = t.value;
-    P.list.sort((a, b) => a.m - b.m);
+    // La liste reste triée par mois ; seul un changement de mois peut déplacer une ligne, et la section est alors redessinée
+    if (w === 'm') P.list.sort((a, b) => a.m - b.m);
     await save(); render(); if (w === 'm') primesRefresh();
   }
   else if (t.dataset.prime) {
@@ -3437,7 +3603,7 @@ document.addEventListener('submit', async e => {
   const busy = label => { btn.disabled = true; btn.textContent = label; };
   if (f.id === 'f-setup') {
     const p1 = $('#p1').value, p2 = $('#p2').value;
-    if (p1.length < 8) return renderLock('setup', 'Le mot de passe doit faire au moins 8 caractères.');
+    if (p1.length < 12) return renderLock('setup', 'Le mot de passe doit faire au moins 12 caractères. Une phrase de quatre ou cinq mots est plus simple à retenir et plus sûre.');
     if (p1 !== p2) return renderLock('setup', 'Les deux mots de passe ne correspondent pas.');
     busy('Création…');
     const raw = rand(32);
@@ -3466,22 +3632,35 @@ document.addEventListener('submit', async e => {
   else if (f.id === 'f-chpw') {
     const cur = $('#c0').value, p1 = $('#c1').value, p2 = $('#c2').value, er = $('#cerr');
     const fail = m => { er.hidden = false; er.textContent = m; btn.disabled = false; btn.textContent = 'Changer le mot de passe'; };
-    if (p1.length < 8) return fail('Le nouveau mot de passe doit faire au moins 8 caractères.');
+    if (p1.length < 12) return fail('Le nouveau mot de passe doit faire au moins 12 caractères.');
     if (p1 !== p2) return fail('Les deux nouveaux mots de passe ne correspondent pas.');
+    const fl = await getFails(); if (fl.until > Date.now()) return fail(`Trop d’essais. Réessaie dans ${Math.ceil((fl.until - Date.now()) / 1000)} secondes.`);
     busy('Vérification…');
-    try { await openPwSlot(slots.pw, cur); } catch { return fail('Mot de passe actuel incorrect.'); }
-    slots = { ...slots, pw: await makePwSlot(dekRaw, p1) };
-    S.settings.lastExport = null; await save(); render(); sheetSetPage('secu'); toast('Mot de passe modifié');
+    try { const raw = await openPwSlot(slots.pw, cur); if (!sameBytes(raw, dekRaw)) throw new Error('mismatch'); }
+    catch { await noteFail(); return fail('Mot de passe actuel incorrect.'); }
+    await clearFails();
+    // Nouvelle clé maître : un ancien mot de passe (ou une ancienne sauvegarde) ne permet pas de lire les données à venir.
+    // L'emplacement Face ID chiffrait l'ancienne clé : il est retiré et pourra être réactivé.
+    const raw = rand(32), k = await importDek(raw), hadPk = !!slots.pk;
+    dekRaw?.fill(0); dekRaw = raw; dek = k;
+    slots = { pw: await makePwSlot(raw, p1) };
+    S.settings.lastExport = null; await save();
+    if (U) { uDirty++; await uFlush(); }
+    render(); sheetSetPage('secu');
+    toast(hadPk ? 'Mot de passe modifié. Réactive Face ID et exporte une nouvelle sauvegarde.' : 'Mot de passe modifié. Exporte une nouvelle sauvegarde.');
   }
   else if (f.id === 'f-unmask') {
+    const er = $('#umerr'), fl = await getFails();
+    if (fl.until > Date.now()) { er.hidden = false; er.textContent = `Trop d’essais. Réessaie dans ${Math.ceil((fl.until - Date.now()) / 1000)} secondes.`; return; }
     busy('Vérification…');
     try {
       const raw = await openPwSlot(slots.pw, $('#um').value);
       if (!sameBytes(raw, dekRaw)) throw new Error('mismatch');
-      setMasked(false);
+      await clearFails(); setMasked(false);
     } catch {
+      await noteFail();
       btn.disabled = false; btn.textContent = 'Afficher';
-      const er = $('#umerr'); er.hidden = false; er.textContent = 'Mot de passe incorrect.';
+      er.hidden = false; er.textContent = 'Mot de passe incorrect.';
     }
   }
   else if (f.id === 'f-ai') {
@@ -3501,14 +3680,12 @@ document.addEventListener('submit', async e => {
   }
   else if (f.id === 'f-members') {
     S.household.on = $('#h-on').checked;
-    for (const el of $$('[data-mname]')) { const m = memberOf(el.dataset.mname); const v = el.value.trim(); if (v) m.name = v; }
-    for (const el of $$('[data-mincome]')) { const m = memberOf(el.dataset.mincome); const v = num(el.value); m.income = Number.isNaN(v) ? null : v; }
+    applyMembersForm();
+    // Mode de répartition et parts choisies : dans le même formulaire
+    if ($('#s-mode')) S.household.split.mode = $('#s-mode').value;
+    for (const el of $$('[data-share]')) { const v = num(el.value); S.household.split.shares[el.dataset.share] = Number.isFinite(v) && v >= 0 ? v : null; }
+    if (!multi()) scope = 'moi';
     await save(); render(); sheetSetPage('foyer'); toast('Foyer enregistré');
-  }
-  else if (f.id === 'f-split') {
-    S.household.split.mode = $('#s-mode').value;
-    for (const el of $$('[data-share]')) { const v = num(el.value); S.household.split.shares[el.dataset.share] = Number.isNaN(v) ? null : v; }
-    await save(); render(); sheetSetPage('foyer'); toast('Répartition enregistrée');
   }
   else if (f.id === 'f-charge') {
     const n = $('#c-n').value.trim(), a = num($('#c-a').value);
@@ -3545,7 +3722,11 @@ document.addEventListener('submit', async e => {
     const a = num($('#r-a').value), k = $('#r-k').value, ofv = $('#r-of').value;
     if (!Number.isFinite(a) || a <= 0) return toast('Indique le montant remboursé');
     let of = null;
-    if (ofv) { const [ok, oid] = ofv.split('|'); const c = persoOf(ok).find(i => i.id === oid); of = { k: ok, id: oid, n: c?.n || '' }; }
+    if (ofv) {
+      const [ok, oid] = ofv.split('|'), c = persoOf(ok).find(i => i.id === oid);
+      const prev = f.dataset.id ? Object.values(S.pot).flatMap(p => p.perso || []).find(i => i.id === f.dataset.id)?.of : null;
+      of = { k: ok, id: oid, n: c?.n || (prev?.id === oid ? prev.n : '') };
+    }
     const n = $('#r-n').value.trim() || (of ? 'Remboursement ' + of.n : 'Remboursement');
     const id = f.dataset.id;
     if (id) for (const p of Object.values(S.pot)) if (p.perso) p.perso = p.perso.filter(i => i.id !== id);   // gère le changement de mois
@@ -3576,7 +3757,7 @@ document.addEventListener('submit', async e => {
       if (!isCash(a) && e.moves == null && e.deposit == null) e.deposit = 0;
     }
     await save(); closeSheet(); quick = null; render();
-    toast(`${esc(a.name)} mis à jour`);
+    toast(`${a.name} mis à jour`);
   }
   else if (f.id === 'f-move') {
     const a = S.accounts.find(x => x.id === f.dataset.id), m = saisieMonth;
@@ -3604,7 +3785,7 @@ document.addEventListener('submit', async e => {
       if (sel.value === '') continue;
       const c = cands[+sel.value], a = S.accounts.find(x => x.id === sel.dataset.map);
       const e = (S.entries[m] ||= {})[a.id] ||= {};
-      e.value = c.amount; if (e.moves == null && e.deposit == null) e.deposit = 0;
+      e.value = c.amount; delete e.auto; if (e.moves == null && e.deposit == null) e.deposit = 0;
       a.imp = norm(c.label); n++;
       const box = $(`input[data-lines="${a.id}"]`);
       if (box?.checked) {
@@ -3627,7 +3808,7 @@ document.addEventListener('submit', async e => {
     const id = f.dataset.id;
     if (id) Object.assign(S.accounts.find(a => a.id === id), data);
     else S.accounts.push({ id: uid(), owner: 'moi', ...data });
-    await save(); sheetSettings(); render(); toast(id ? 'Compte modifié' : 'Compte ajouté');
+    await save(); closeSheet(); render(); toast(id ? 'Compte modifié' : 'Compte ajouté');
   }
 });
 
@@ -3646,11 +3827,15 @@ async function exportBackup(from) {
 }
 
 function lockNow() { uStop(hiddenAt && Date.now() - hiddenAt > LOCK_MS ? 'auto' : 'manuel'); masked = false; lockHasPk = !!slots?.pk; wipeKeys(); closeSheet(); renderLock('unlock'); }
+// En arrière-plan, l'écran est voilé : la vignette du sélecteur d'apps d'iOS ne montre aucun montant
+const veil = on => document.documentElement.classList.toggle('veil', on && mode === 'app');
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { hiddenAt = Date.now(); uLog('pause'); uFlush(); }
-  else if (mode === 'app' && hiddenAt && Date.now() - hiddenAt > LOCK_MS) lockNow();
-  else { uLog('resume'); hiddenAt = 0; }
+  if (document.hidden) { hiddenAt = Date.now(); veil(true); uLog('pause'); uFlush(); }
+  else if (mode === 'app' && hiddenAt && Date.now() - hiddenAt > LOCK_MS) { veil(false); lockNow(); }
+  else { veil(false); uLog('resume'); hiddenAt = 0; }
 });
+window.addEventListener('pagehide', () => veil(true));
+window.addEventListener('pageshow', () => { if (!document.hidden) veil(false); });
 
 /* ---------- Suivi d'utilisation ----------
    Journal local des gestes (boutons touchés, formulaires validés, écrans affichés et temps passé),
@@ -3669,7 +3854,7 @@ function uBase() {
   return { home: 'accueil', objectifs: 'objectifs', resume: 'resume' }[view] || view;
 }
 // Détail sûr d'un geste : uniquement des identifiants courts du code, ou le type d'un compte (jamais son nom)
-const U_KEYS = ['view', 'p', 't', 'kind', 'w', 'd', 's', 'v', 'step'];
+const U_KEYS = ['view', 'p', 't', 'kind', 'w', 'd', 'v', 'step'];   // jamais « s » : certains points d'attention y portent un montant
 function uDetail(el) {
   const d = el.dataset, out = [];
   for (const k of U_KEYS) if (d[k] != null && /^[a-z0-9_-]{1,20}$/i.test(d[k])) out.push(d[k]);
@@ -3881,7 +4066,22 @@ async function boot() {
   renderLock(vault ? 'unlock' : 'setup');
 }
 if (location.search.includes('u=')) history.replaceState({}, '', location.pathname);
-if ('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+// Le service worker ne doit jamais changer : sw.js reste identique d'une version à l'autre, et une mise à jour approuvée
+// passe par une désinstallation complète. Si l'hébergeur remplace sw.js, le navigateur l'installe de lui-même et le
+// nouveau code s'exécutera au prochain lancement : on alerte tout de suite, tant que le code approuvé tourne encore.
+const swHadController = !!navigator.serviceWorker?.controller;
+function swAlarm() {
+  if (!swHadController || code.status === 'sw') return;
+  code.status = 'sw'; paintCode();
+  if (mode === 'app') lockNow();
+}
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+    if (reg.installing || reg.waiting) swAlarm();
+    reg.addEventListener('updatefound', swAlarm);
+  }).catch(() => {});
+  navigator.serviceWorker.addEventListener('controllerchange', swAlarm);
+}
 boot();
 </script>
 </body>
