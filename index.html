@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-Ebm+FmSki9Ry0DWa5Ge6OPWOiOQm7dNHyVqHco2JXcM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-UQbP0lNe15vmSmBztAmTyXNLxcPSMCFGIRnKNyUeA/E='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -217,6 +217,10 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .kv li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}
 .kv li:last-child{border-bottom:0}
 .kv .num{white-space:nowrap}
+.ctrl li.csub span{font-size:13px;padding-left:12px}
+.ctrl li.ctot{border-top:2px solid var(--ink);border-bottom:0;font-weight:650;margin-top:4px;padding-top:8px}
+.ctrl li.ctot span:first-child{color:inherit}
+.ctrl li.ctot.warn .num{color:var(--red)}
 #c-custom input[readonly]{background:transparent;color:var(--muted)}
 .kv li span:first-child{color:var(--muted)}
 .lines{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
@@ -1094,7 +1098,30 @@ const incomeOf = (k, id) => (S.pot[k]?.inc?.[id] ?? memberOf(id).income) || 0;
 // Primes exceptionnelles (les tiennes) : saisies à part du revenu du mois. Elles comptent dans tes revenus,
 // ton reste à vivre et ton taux d'épargne, mais pas dans le prorata des charges communes ni dans la capacité d'emprunt.
 const primeOf = k => S.pot[k]?.prime || 0;
-const revOf = (k, id) => incomeOf(k, id) + (id === 'moi' ? primeOf(k) : 0);
+// Autres rentrées du mois (cadeaux, dons, remboursements reçus) : comptent comme la prime, hors répartition des charges
+const autresOf = k => S.pot[k]?.autres || 0;
+const revOf = (k, id) => incomeOf(k, id) + (id === 'moi' ? primeOf(k) + autresOf(k) : 0);
+// Virement plaisir : montant fixe des réglages, remplaçable pour un mois donné
+const plaisirOf = k => S.pot[k]?.plaisir ?? S.settings.plaisir ?? null;
+/* Contrôle du mois : tout ce qui est entré sur ton compte courant moins tout ce qui en est sorti et que l'app connaît.
+   L'écart restant est de l'argent resté sur le compte, ou parti ailleurs sans être enregistré. */
+function controlOf(k) {
+  const hh = S.household.on && members().length > 1, st = hh ? potStats(k) : null;
+  const trs = st ? st.p.transfers || [] : [];
+  const salaire = incomeOf(k, 'moi'), prime = primeOf(k), autres = autresOf(k);
+  const recu = trs.filter(t => t.to === 'moi').reduce((t, x) => t + x.a, 0);
+  const envoye = trs.filter(t => t.from === 'moi').reduce((t, x) => t + x.a, 0);
+  const myItems = st ? st.items.filter(i => i.by === 'moi') : [];
+  const paye = myItems.reduce((t, i) => t + i.a, 0);
+  const commun = myItems.filter(i => /compte (commun|joint)/i.test(i.n)).reduce((t, i) => t + i.a, 0);
+  const perso = persoTotal(k);
+  const epargne = S.accounts.filter(a => !isCash(a) && (a.owner || 'moi') === 'moi').reduce((t, a) => t + dep(k, a), 0);
+  const plaisir = plaisirOf(k) || 0;
+  const ecart = salaire + prime + autres + recu - paye - envoye - perso - epargne - plaisir;
+  // Écart de répartition du mois : ce que tu as réellement payé pour le foyer, comparé à ta part due
+  const du = st ? st.due.moi || 0 : 0, solde = st ? paye + envoye - recu - du : 0;
+  return { hh, salaire, prime, autres, recu, envoye, paye, commun, perso, epargne, plaisir, ecart, du, solde, plaisirSet: plaisirOf(k) != null };
+}
 const PRIME_TO = { apport: 'l’apport', rente: 'la retraite', moitie: 'moitié apport, moitié retraite' };
 const primeCfg = () => (S.goals.prime ||= { list: [], pct: 100, to: 'apport' });
 const primePlan = () => primeCfg().list.length ? primeCfg() : null;
@@ -1359,6 +1386,15 @@ function summary(F) {
       if (rv.rev) L.push(`- Reste à vivre après charges et épargne : ${SR(rv.reste)}${rv.reste < 0 ? ' (dépassement)' : ''}`);
     }
   }
+  {
+    const c = controlOf(F);
+    if (c.salaire || c.prime || c.autres) {
+      L.push('', 'Contrôle du mois (entrées moins sorties connues de mon compte courant) :');
+      L.push(`- Entrées : ${R(c.salaire + c.prime + c.autres + c.recu)} · charges communes payées et virements au conjoint : ${R(c.paye + c.envoye)} · charges perso : ${R(c.perso)} · épargne : ${SR(c.epargne)} · virement plaisir : ${c.plaisirSet ? R(c.plaisir) : 'non renseigné'}`);
+      L.push(`- Écart non expliqué : ${SR(c.ecart)}`);
+      if (c.hh && Math.abs(c.solde) >= 1) L.push(`- Charges communes payées au-delà de ma part due, non régularisées ce mois-ci : ${SR(c.solde)} (c’est la différence entre mon reste à vivre et ce contrôle)`);
+    }
+  }
   const comp = active().filter(a => mineF(a) && a.lines?.length && valueAt(a, F) > 0);
   if (comp.length) {
     L.push('', 'Composition des comptes (dernier relevé importé) :');
@@ -1605,7 +1641,10 @@ function vFoyer() {
     <section><div class="goal"><h2>Revenus ${deM(monthName(k))}</h2>
       <p class="small" style="margin:0 0 12px">À renseigner chaque mois quand les revenus varient. Laisse vide pour reprendre le revenu de référence du membre.</p>
       <div class="fields">${ms.map(m => `<label>${esc(m.name)}<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-inc="${m.id}" value="${esc(numStr(S.pot[k]?.inc?.[m.id]))}" placeholder="${esc(numStr(m.income) || '0')}"`}></label>`).join('')}
-        <label class="full">Ta prime exceptionnelle, nette (€)<input ${masked ? `readonly value="${primeOf(k) ? MASK : ''}"` : `inputmode="decimal" data-prime="1" value="${esc(numStr(S.pot[k]?.prime))}" placeholder="${primeDue ? `prévue, environ ${esc(numStr(primeDue.a))}` : 'aucune ce mois-ci'}"`}></label></div>
+        <label class="full">Ta prime exceptionnelle, nette (€)<input ${masked ? `readonly value="${primeOf(k) ? MASK : ''}"` : `inputmode="decimal" data-prime="1" value="${esc(numStr(S.pot[k]?.prime))}" placeholder="${primeDue ? `prévue, environ ${esc(numStr(primeDue.a))}` : 'aucune ce mois-ci'}"`}></label>
+        <label>Autres rentrées (€)<input ${masked ? `readonly value="${autresOf(k) ? MASK : ''}"` : `inputmode="decimal" data-potnum="autres" value="${esc(numStr(S.pot[k]?.autres))}" placeholder="cadeaux, dons…"`}></label>
+        <label>Virement plaisir (€)<input ${masked ? `readonly value="${plaisirOf(k) != null ? MASK : ''}"` : `inputmode="decimal" data-potnum="plaisir" value="${esc(numStr(S.pot[k]?.plaisir))}" placeholder="${S.settings.plaisir != null ? esc(numStr(S.settings.plaisir)) : 'montant du mois'}"`}></label></div>
+      <p class="small" style="margin:6px 0 0">Le virement plaisir reprend le montant fixé dans Réglages › Budget de référence ; renseigne-le ici seulement s’il change ce mois-ci.</p>
       ${primeDue && !primeOf(k) ? `<p class="hint">Mois de prime prévu : saisis le montant net perçu pour suivre l’objectif au plus juste.</p>` : ''}
       <p class="small" style="margin-top:10px">${primeOf(k) ? 'La prime compte dans tes revenus et ton reste à vivre, pas dans la répartition des charges. ' : ''}Total du foyer : ${eur(ms.reduce((t, m) => t + revOf(k, m.id), 0))}${primeOf(k) ? `, dont ${eur(primeOf(k))} de prime` : ''}${ms.some(m => !incomeSet(k, m.id)) ? ` · ${ms.filter(m => !incomeSet(k, m.id)).map(m => esc(m.name)).join(', ')} : revenu de référence` : ''}</p>
       ${miss.length && S.household.split.mode === 'revenus' ? `<p class="hint">La répartition se fait au prorata des revenus : saisis ceux de ${miss.map(m => esc(m.name)).join(', ')} pour ${monthName(k)}.</p>` : ''}</div></section>
@@ -2155,8 +2194,30 @@ function vBilan(F) {
       ${cur.rev ? `<li><span>Reste à vivre</span><span>${eur(reste)} ${cmp(reste, prev.rev ? prev.reste : null, true)}</span></li>` : ''}
       <li><span>Gains des marchés</span><span>${signed(cur.perf)} ${cmp(cur.perf, prev.perf, true)}</span></li>
     </ul>` : ''}
+    ${vControl(F)}
     <p class="small" style="margin:12px 0 0">Tes comptes${hh ? ' et ta part du foyer' : ''}. Choisis un autre mois ci-dessus pour revoir un bilan passé.</p>
   </section>`;
+}
+function vControl(F) {
+  const c = controlOf(F); if (!c.salaire && !c.prime && !c.autres) return '';
+  const row = (l, v, sub = false) => `<li${sub ? ' class="csub"' : ''}><span>${l}</span><span class="num">${sub ? eur(v) : signed(v)}</span></li>`;
+  const other = c.hh ? mName(members().find(m => m.id !== 'moi')?.id) : '';
+  const ok = Math.abs(c.ecart) < 20;
+  return `<h3>Contrôle ${deM(monthName(F))}</h3>
+    <ul class="kv ctrl">
+      ${row(c.prime ? 'Revenus (salaire + prime)' : 'Salaire', c.salaire + c.prime)}
+      ${c.autres ? row('Autres rentrées', c.autres) : ''}
+      ${c.hh ? row(`Virements reçus de ${esc(other)}`, c.recu) : ''}
+      ${c.hh ? row('Charges communes payées par toi', -c.paye) : ''}
+      ${c.commun ? row('dont « compte commun »', c.commun, true) : ''}
+      ${c.hh ? row(`Virements envoyés à ${esc(other)}`, -c.envoye) : ''}
+      ${row('Charges perso', -c.perso)}
+      ${row(c.epargne >= 0 ? 'Épargne versée' : 'Épargne reprise', -c.epargne)}
+      ${row('Virement plaisir', -c.plaisir)}
+      <li class="ctot ${ok ? '' : 'warn'}"><span>Écart à expliquer</span><span class="num">${signed(c.ecart)}</span></li>
+    </ul>
+    <p class="small" style="margin:6px 0 0">${!c.plaisirSet ? 'Renseigne ton virement plaisir dans Réglages › Budget de référence pour un contrôle complet. ' : ''}${ok ? 'Tout est enregistré : rien n’est parti ailleurs.' : c.ecart > 0 ? 'Argent resté sur ton compte courant, ou sorti sans être enregistré dans l’app (frais, dépense oubliée…).' : 'Il est sorti plus que ce qui est entré : une rentrée n’est pas enregistrée, ou tu as puisé dans le solde de ton compte courant.'}</p>
+    ${c.hh && Math.abs(c.solde) >= 1 ? `<p class="small" style="margin:6px 0 0">Pour info, ton reste à vivre est calculé sur ta part due des charges (${eur(c.du)}), pas sur ce que tu as payé (${eur(c.paye + c.envoye - c.recu)}, virements compris) : ${c.solde > 0 ? `${esc(other)} te doit ${eur(c.solde)}` : `tu dois ${eur(-c.solde)} à ${esc(other)}`} pour ce mois, ce qui explique l’écart entre ton reste à vivre et ton virement plaisir s’il n’est pas régularisé.</p>` : ''}`;
 }
 function vResume() {
   const ms = months();
@@ -2270,6 +2331,8 @@ function sheetSetPage(k) {
     <p class="small" style="margin:0 0 14px">Sert à calculer ton épargne de précaution, ton taux d’épargne et le plafond PER restant.</p>
     <div class="stack-form">
       <label>Dépenses mensuelles (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="depenses" value="${esc(numStr(st.depenses))}"`}></label>
+      <label>Virement plaisir mensuel (€)<input ${masked ? `readonly value="${st.plaisir != null ? MASK : ''}"` : `inputmode="decimal" data-set="plaisir" value="${esc(numStr(st.plaisir))}"`}></label>
+      <p class="small" style="margin:0">Le montant que tu vires chaque mois vers ton compte d’activités. Sert au contrôle du mois, dans le Résumé.</p>
       <label>Revenus nets mensuels (€)<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-set="revenus" value="${esc(numStr(st.revenus))}"`}></label>
       <label>Seuil d’alerte du taux d’épargne (%)<input inputmode="decimal" data-set="seuilEpargne" value="${esc(numStr(st.seuilEpargne))}" placeholder="20"></label>
       <p class="small" style="margin:0">En dessous, le taux d’épargne moyen et la courbe lissée des statistiques passent en rouge. Mets 0 pour désactiver.</p>
@@ -2441,7 +2504,7 @@ function validateData(d) {
       && arr(p.transfers, t => obj(t) && id(t.id) && id(t.from) && id(t.to) && fin(t.a) && bool(t.reg) && str(t.n, 200) && (t.fa == null || id(t.fa)) && (t.ta == null || id(t.ta)))
       && arr(p.perso, i => obj(i) && id(i.id) && str(i.n, 200) && fin(i.a) && bool(i.r) && bool(i.rb) && bool(i.pt)
         && (i.of == null || (obj(i.of) && mk(i.of.k) && id(i.of.id) && str(i.of.n, 200))))
-      && map(p.inc, id, fin) && map(p.carry, id, fin) && fin(p.prime) && (p.from == null || mk(p.from)) && (p.persoFrom == null || mk(p.persoFrom))
+      && map(p.inc, id, fin) && map(p.carry, id, fin) && fin(p.prime) && fin(p.autres) && fin(p.plaisir) && (p.from == null || mk(p.from)) && (p.persoFrom == null || mk(p.persoFrom))
       && ['seeded', 'persoSeeded', 'carryDecided'].every(k => bool(p[k])))],
     ['membres', () => d.household == null || (obj(d.household) && bool(d.household.on)
       && arr(d.household.members, m => obj(m) && id(m.id) && str(m.name, 80) && fin(m.income))
@@ -2455,7 +2518,7 @@ function validateData(d) {
       && (d.goals.prime == null || (obj(d.goals.prime) && arr(d.goals.prime.list, e => obj(e) && Number.isInteger(e.m) && e.m >= 1 && e.m <= 12 && fin(e.a))
         && fin(d.goals.prime.pct) && (d.goals.prime.to == null || Object.hasOwn(PRIME_TO, d.goals.prime.to)))))],
     ['réglages', () => d.settings == null || (obj(d.settings)
-      && ['depenses', 'revenus', 'seuilEpargne', 'lastExport', 'perPlafond'].every(k => fin(d.settings[k])) && bool(d.settings.masked) && bool(d.settings.perPercol)
+      && ['depenses', 'revenus', 'seuilEpargne', 'lastExport', 'perPlafond', 'plaisir'].every(k => fin(d.settings[k])) && bool(d.settings.masked) && bool(d.settings.perPercol)
       && (d.settings.perAvis == null || (obj(d.settings.perAvis) && Number.isInteger(d.settings.perAvis.year) && fin(d.settings.perAvis.cur) && map(d.settings.perAvis.u, k => /^\d{4}$/.test(k), fin)))
       && (d.settings.ai == null || (obj(d.settings.ai) && Object.hasOwn(AI, d.settings.ai.provider) && str(d.settings.ai.key, 400) && str(d.settings.ai.model, 80)))
       && (d.settings.raise == null || (obj(d.settings.raise) && bool(d.settings.raise.on) && fin(d.settings.raise.pct)))
@@ -3541,6 +3604,12 @@ document.addEventListener('change', async e => {
     // La liste reste triée par mois ; seul un changement de mois peut déplacer une ligne, et la section est alors redessinée
     if (w === 'm') P.list.sort((a, b) => a.m - b.m);
     await save(); render(); if (w === 'm') primesRefresh();
+  }
+  else if (t.dataset.potnum) {
+    // Autres rentrées et virement plaisir du mois : vide = rien (autres) ou montant fixe des réglages (plaisir)
+    const v = num(t.value), p = (S.pot[potMonth] ||= { items: [], transfers: [] }), w = t.dataset.potnum;
+    if (v == null || !Number.isFinite(v) || v < 0 || (w === 'autres' && v === 0)) delete p[w]; else p[w] = v;
+    await save(); render();
   }
   else if (t.dataset.prime) {
     const v = num(t.value), p = (S.pot[potMonth] ||= { items: [], transfers: [] });
