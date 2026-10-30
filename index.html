@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-/F4dd39McOKUzHlrpgpiTgoWUU51c8OfRbiHfRN8SgE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-foPBUeWo3NJxsoDISHpImp3/uoUYqRlHYSydv3E7pUs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -216,6 +216,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .kv{list-style:none;margin:12px 0 0;padding:0;font-size:14px}
 .kv li{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}
 .kv li:last-child{border-bottom:0}
+[hidden]{display:none!important}
 .kv .num{white-space:nowrap}
 .ctrl li.csub span{font-size:13px;padding-left:12px}
 .ctrl li.ctot{border-top:2px solid var(--ink);border-bottom:0;font-weight:650;margin-top:4px;padding-top:8px}
@@ -817,6 +818,36 @@ const moveSum = e => e?.moves?.length ? e.moves.reduce((t, m) => t + m.a, 0) : (
 // Versements de l'employeur (intéressement, participation, abondement) : de l'épargne, mais qui ne sort pas de ton salaire
 const empIn = e => (e?.moves || []).filter(m => m.emp && m.a > 0).reduce((t, m) => t + m.a, 0);
 const empOf = (k, f = () => true) => S.accounts.filter(a => !isCash(a) && f(a)).reduce((t, a) => t + empIn(entry(k, a)), 0);
+// Projets (voyage, travaux…) : dépenses exceptionnelles et reprises d'épargne qui les financent.
+// Comptées dans le contrôle et la répartition du foyer, mais hors reste à vivre courant, moyennes et alertes.
+const projOut = e => (e?.moves || []).filter(m => m.proj && m.a < 0).reduce((t, m) => t - m.a, 0);
+const projOutOf = (k, f = () => true) => S.accounts.filter(a => !isCash(a) && f(a)).reduce((t, a) => t + projOut(entry(k, a)), 0);
+function projNames() {
+  const n = new Set();
+  for (const p of Object.values(S.pot || {})) for (const i of [...(p.items || []), ...(p.perso || [])]) if (i.proj) n.add(i.proj);
+  for (const m of Object.values(S.entries || {})) for (const e of Object.values(m)) for (const x of e.moves || []) if (x.proj) n.add(x.proj);
+  return [...n].sort((a, b) => a.localeCompare(b, 'fr'));
+}
+// Projet saisi dans une fiche : null si la case est décochée, false (et message) si le nom manque
+function readProj(pre) {
+  if (!$(`#${pre}-ex`)?.checked) return null;
+  const n = $(`#${pre}-proj`).value.trim().slice(0, 40);
+  if (!n) { toast('Indique le nom du projet'); return false; }
+  return n;
+}
+const projList = () => `<datalist id="projs">${projNames().map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>`;
+const projFields = (pre, it) => `<label class="check"><input type="checkbox" id="${pre}-ex" data-projtoggle="${pre}" ${it.proj ? 'checked' : ''}>Dépense exceptionnelle (projet)</label>
+      <label id="${pre}-projbox" ${it.proj ? '' : 'hidden'}>Projet<input id="${pre}-proj" list="projs" maxlength="40" value="${esc(it.proj || '')}" placeholder="ex. Voyage Japon">${projList()}</label>`;
+// Projets du mois pour toi : ta part des dépenses communes exceptionnelles, tes charges perso exceptionnelles, l'épargne reprise
+function projetsOf(k) {
+  const hh = S.household.on && members().length > 1, by = {};
+  const add = (n, v, f = 0) => { const o = (by[n] ||= { a: 0, epargne: 0 }); o.a += v; o.epargne += f; };
+  if (hh) for (const i of potItems(k).filter(x => x.proj)) add(i.proj, i.a * ((i.sp ? itemShares(k, i) : shares(k)).moi || 0));
+  for (const i of persoOf(k).filter(x => x.proj)) add(i.proj, i.a);
+  for (const a of S.accounts.filter(x => !isCash(x) && (x.owner || 'moi') === 'moi')) for (const m of entry(k, a)?.moves || []) if (m.proj && m.a < 0) add(m.proj, 0, -m.a);
+  const list = Object.entries(by).map(([n, o]) => ({ n, ...o }));
+  return { list, total: list.reduce((t, x) => t + x.a, 0), epargne: list.reduce((t, x) => t + x.epargne, 0) };
+}
 const movesIn = e => (e?.moves || []).filter(m => m.a > 0).reduce((t, m) => t + m.a, 0);
 const movesOut = e => (e?.moves || []).filter(m => m.a < 0).reduce((t, m) => t - m.a, 0);
 const dep = (m, a) => moveSum(entry(m, a));
@@ -1077,9 +1108,11 @@ async function seedPerso(k) {
 // Reste à vivre d'un membre : revenu − part des charges communes − charges perso (toi seulement) − épargne versée
 function resteOf(k, id) {
   const rev = scopeIncome(k, id), st = S.household.on && members().length > 1 ? potStats(k) : null;
-  const share = st ? st.due[id] || 0 : 0, perso = id === 'moi' ? persoTotal(k) : 0;
+  // Reste à vivre courant : hors projets (dépenses exceptionnelles et épargne reprise pour les financer)
+  const share = st ? (st.due[id] || 0) - (st.projDue[id] || 0) : 0;
+  const perso = id === 'moi' ? persoTotal(k) - persoOf(k).filter(i => i.proj).reduce((t, i) => t + i.a, 0) : 0;
   const own = a => (a.owner || 'moi') === id;
-  const sav = Math.max(0, S.accounts.filter(a => !isCash(a) && own(a)).reduce((t, a) => t + dep(k, a), 0) - empOf(k, own));
+  const sav = Math.max(0, S.accounts.filter(a => !isCash(a) && own(a)).reduce((t, a) => t + dep(k, a), 0) - empOf(k, own) + projOutOf(k, own));
   return { rev, share, perso, sav, reste: rev - share - perso - sav };
 }
 // Dépenses communes du mois : saisies à la main, opérations de compte courant classées « charge », enveloppes
@@ -1119,13 +1152,14 @@ function controlOf(k) {
   const paye = myItems.reduce((t, i) => t + i.a, 0);
   const commun = myItems.filter(i => /compte (commun|joint)/i.test(i.n)).reduce((t, i) => t + i.a, 0);
   const perso = persoTotal(k);
-  const mine = a => (a.owner || 'moi') === 'moi', employeur = empOf(k, mine);
+  const mine = a => (a.owner || 'moi') === 'moi', employeur = empOf(k, mine), projEp = projOutOf(k, mine);
   const epargne = S.accounts.filter(a => !isCash(a) && mine(a)).reduce((t, a) => t + dep(k, a), 0) - employeur;
+  const projPaye = myItems.filter(i => i.proj).reduce((t, i) => t + i.a, 0), projPerso = persoOf(k).filter(i => i.proj).reduce((t, i) => t + i.a, 0);
   const plaisir = plaisirOf(k) || 0;
   const ecart = salaire + prime + autres + recu - paye - envoye - perso - epargne - plaisir;
   // Écart de répartition du mois : ce que tu as réellement payé pour le foyer, comparé à ta part due
   const du = st ? st.due.moi || 0 : 0, solde = st ? paye + envoye - recu - du : 0;
-  return { hh, salaire, prime, autres, recu, envoye, paye, commun, perso, epargne, employeur, plaisir, ecart, du, solde, plaisirSet: plaisirOf(k) != null };
+  return { hh, salaire, prime, autres, recu, envoye, paye, commun, perso, epargne, employeur, projEp, projPaye, projPerso, plaisir, ecart, du, solde, plaisirSet: plaisirOf(k) != null };
 }
 const PRIME_TO = { apport: 'l’apport', rente: 'la retraite', moitie: 'moitié apport, moitié retraite' };
 const primeCfg = () => (S.goals.prime ||= { list: [], pct: 100, to: 'apport' });
@@ -1177,7 +1211,10 @@ function potStats(k) {
   // Part effective du mois : tient compte des dépenses réparties autrement que par défaut
   const mixed = items.some(i => i.sp);
   const eff = mixed && total > 0 ? Object.fromEntries(members().map(m => [m.id, due[m.id] / total])) : sh;
-  return { p, items, total, paid, due, net, out, inn, sh: eff, shDefault: sh, mixed };
+  // Part de chacun dans les dépenses exceptionnelles (projets) : incluse dans « due », isolée ici
+  const projTotal = items.filter(i => i.proj).reduce((t, i) => t + i.a, 0), projDue = {};
+  for (const m of members()) projDue[m.id] = items.filter(i => i.proj).reduce((t, i) => t + i.a * ((i.sp ? itemShares(k, i) : sh)[m.id] || 0), 0);
+  return { p, items, total, paid, due, net, out, inn, sh: eff, shDefault: sh, mixed, projTotal, projDue };
 }
 // Qui doit combien à qui, une fois les charges et les virements pris en compte
 // Écart laissé par le mois précédent, faute de virement de régularisation
@@ -1239,14 +1276,14 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
   // Reprises d'épargne en cours de mois
   for (const a of acc) {
     const e = entry(F, a); if (!e?.moves?.length) continue;
-    const out_ = movesOut(e); if (!out_) continue;
+    const out_ = movesOut(e) - projOut(e); if (out_ < 1) continue;   // une reprise pour un projet n'est pas un signal d'alerte
     const in_ = movesIn(e), last = e.moves.filter(m => m.a < 0).sort((x, y) => y.d - x.d)[0];
     const nm = forSummary ? TYPES[a.type].label : a.name;
     if (in_ > 0) out.push({ l: 'warn', k: `reprise:${a.id}`, s: `${Math.round(in_)}/${Math.round(out_)}`, t: `${nm} : ${E(in_)} versés puis ${E(out_)} repris le ${dayLabel(F, last.d)}${!forSummary && last.n ? ` (${last.n})` : ''}. Épargne nette du mois : ${E(in_ - out_)}.` });
     else out.push({ l: 'warn', k: `reprise:${a.id}`, s: `0/${Math.round(out_)}`, t: `${nm} : retrait de ${E(out_)} le ${dayLabel(F, last.d)}${!forSummary && last.n ? ` (${last.n})` : ''}, sans versement ce mois-ci.` });
   }
   const withdrawMonths = [];
-  for (let k = addMonths(F, -5); k <= F; k = addMonths(k, 1)) if (acc.some(a => movesOut(entry(k, a)) > 0)) withdrawMonths.push(k);
+  for (let k = addMonths(F, -5); k <= F; k = addMonths(k, 1)) if (acc.some(a => movesOut(entry(k, a)) - projOut(entry(k, a)) > 0)) withdrawMonths.push(k);
   if (withdrawMonths.length >= 3) out.push({ l: 'warn', k: 'reprises6', s: withdrawMonths.length, t: `Reprises d’épargne sur ${withdrawMonths.length} des 6 derniers mois : le montant que tu mets de côté chaque mois est probablement trop ambitieux, ou l’épargne de précaution ne joue pas son rôle d’amortisseur.` });
   const miss = mine ? incomeMissing(F) : null;
   if (miss && miss.length && potStats(F).total > 0)
@@ -1258,6 +1295,7 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
   const ms = months();
   if (ms.length >= 3) {
     const b = breakdown(F, f), prev = avgDep(addMonths(F, -1), 6, f);
+    b.dep += projOutOf(F, f);   // épargne courante, hors reprises pour projets
     if (b.dep < 0) out.push({ l: 'warn', k: 'retraitnet', s: Math.round(-b.dep / 50), t: `Retrait net de ${E(-b.dep)} en ${monthName(F)} : vérifie qu’il était prévu.` });
     else if (prev.n >= 2 && prev.avg > 0 && b.dep < 0.7 * prev.avg) out.push({ l: 'warn', k: 'epargnefaible', s: Math.round(b.dep / 50), t: `Épargne ${deM(monthName(F))} : ${E(b.dep)}, sous ta moyenne récente (${E(prev.avg)} par mois).` });
     else if (prev.n >= 2 && prev.avg > 0 && b.dep > 1.3 * prev.avg) out.push({ l: 'good', k: 'epargneforte', s: Math.round(b.dep / 50), t: `Bon mois : ${E(b.dep)} épargnés, au-dessus de ta moyenne récente (${E(prev.avg)} par mois).` });
@@ -1387,10 +1425,12 @@ function summary(F) {
     const rv = resteOf(F, 'moi');
     if (rv.perso > 0 || persoRefunds(F) || (rv.rev && (rv.share || rv.perso))) {
       L.push('', 'Mon budget du mois :');
-      if (rv.share) L.push(`- Ma part des charges communes : ${R(rv.share)}`);
+      if (rv.share) L.push(`- Ma part des charges communes courantes : ${R(rv.share)}`);
       if (rv.perso > 0 || persoRefunds(F)) L.push(`- Mes charges personnelles : ${R(rv.perso)}${persoRefunds(F) ? ` (${R(persoGross(F))} de charges, ${R(persoRefunds(F))} remboursés)` : ''}`);
-      if (rv.rev) L.push(`- Reste à vivre après charges et épargne : ${SR(rv.reste)}${rv.reste < 0 ? ' (dépassement)' : ''}`);
+      if (rv.rev) L.push(`- Reste à vivre après charges et épargne (hors projets) : ${SR(rv.reste)}${rv.reste < 0 ? ' (dépassement)' : ''}`);
     }
+    const pj = projetsOf(F);
+    if (pj.list.length) L.push(`- Projets exceptionnels (hors reste à vivre) : ${pj.list.map((x, i) => `projet ${i + 1} ${R(x.a)} (ma part)${x.epargne ? `, ${R(x.epargne)} repris sur l’épargne pour le financer` : ''}`).join(', ')}`);
   }
   {
     const c = controlOf(F);
@@ -1665,7 +1705,7 @@ function vFoyer() {
       <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>
     <section id="sec-communes"><h2>Dépenses du mois</h2>
       ${st.p.from && st.p.items.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Dépenses fixes reprises ${deM(monthLabel(st.p.from))} : vérifie les montants qui ont changé.</p>` : ''}
-      ${items.length ? `<ul class="list">${items.map(i => { const b = `<span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : i.r === false ? ' · ponctuelle' : ' · fixe'}${i.sp ? ' · ' + spLabel(i.sp) : ''}</span></span><span class="num">${eur(i.a)}</span>`; return i.src ? `<li><button data-act="srcinfo" data-id="${i.id}">${b}</button></li>` : ptRow(i, 'c', b); }).join('')}</ul>${ptHint(items.filter(i => !i.src))}`
+      ${items.length ? `<ul class="list">${items.map(i => { const b = `<span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : i.proj ? ` · projet ${esc(i.proj)}` : i.r === false ? ' · ponctuelle' : ' · fixe'}${i.sp ? ' · ' + spLabel(i.sp) : ''}</span></span><span class="num">${eur(i.a)}</span>`; return i.src ? `<li><button data-act="srcinfo" data-id="${i.id}">${b}</button></li>` : ptRow(i, 'c', b); }).join('')}</ul>${ptHint(items.filter(i => !i.src))}`
         : '<p class="muted">Aucune dépense commune enregistrée pour ce mois.</p>'}
       <div class="actions"><button class="btn primary wide" data-act="newcharge">Ajouter une dépense</button>
         ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre à nouveau les dépenses ${deM(monthName(addMonths(k, -1)))}</button>` : ''}</div></section>
@@ -1674,7 +1714,7 @@ function vFoyer() {
       ${st.p.persoFrom && perso.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Charges fixes reprises ${deM(monthLabel(st.p.persoFrom))} : vérifie les montants qui ont changé.</p>` : ''}
       ${perso.length || refunds.length ? `<ul class="list">${perso.map(i => {
         const back = refundsOf(i.id).reduce((t, r) => t + r.a, 0);
-        return ptRow(i, 'p', `<span>${esc(i.n)}<br><span class="small">${i.r === false ? 'ponctuelle' : 'fixe'}${back ? ` · ${esc(eur(back))} remboursés` : ''}</span></span><span class="num">${eur(i.a)}</span>`);
+        return ptRow(i, 'p', `<span>${esc(i.n)}<br><span class="small">${i.proj ? `projet ${esc(i.proj)}` : i.r === false ? 'ponctuelle' : 'fixe'}${back ? ` · ${esc(eur(back))} remboursés` : ''}</span></span><span class="num">${eur(i.a)}</span>`);
       }).join('')}${refunds.map(i => `<li><button data-act="editrefund" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">remboursement${i.of ? ` · ${esc(i.of.n)}${i.of.k !== k ? `, ${monthName(i.of.k)}` : ''}` : ''}</span></span><span class="num up">${signed(i.a)}</span></button></li>`).join('')}</ul>${ptHint(perso)}` : ''}
       <div class="actions"><button class="btn wide" data-act="newperso">Ajouter une charge personnelle</button>
         <button class="btn ghost wide" data-act="newrefund">Enregistrer un remboursement</button></div></section>
@@ -2057,7 +2097,7 @@ function vStats() {
     : (ga?.need != null || gr?.need != null ? (ga?.need || 0) + (gr?.need || 0) : null);
   // Primes : n'interviennent que si le périmètre affiché comprend tes comptes
   const meIn = !multi() || scope === 'moi' || scope === 'all' || scope === 'foyer', P = primePlan();
-  const rawSaved = k => k < first ? 0 : breakdown(k, acc).dep;
+  const rawSaved = k => k < first ? 0 : breakdown(k, acc).dep + projOutOf(k, acc);   // reprises pour projets : hors épargne courante
   const regSaved = k => meIn ? regDep(k, rawSaved(k), statGoal) : rawSaved(k);
   const depAll = ks.map(rawSaved), reg = ks.map(regSaved);
   const primeBars = depAll.map((v, i) => v - reg[i]), primeIn = primeBars.some(v => v > 0.5);
@@ -2136,9 +2176,9 @@ function vStats() {
   }
   {
     // Charges communes (total du foyer, ou part due par le membre affiché) et charges perso (toi seulement)
-    const com = hh ? ks.map(k => scope === 'all' ? potStats(k).total : potStats(k).due[scope] || 0) : ks.map(() => 0);
+    const com = hh ? ks.map(k => { const st = potStats(k); return scope === 'all' ? st.total - st.projTotal : (st.due[scope] || 0) - (st.projDue[scope] || 0); }) : ks.map(() => 0);
     const withPerso = scope === 'moi' || scope === 'all';
-    const per = withPerso ? ks.map(persoTotal) : null;
+    const per = withPerso ? ks.map(k => persoTotal(k) - persoOf(k).filter(i => i.proj).reduce((t, i) => t + i.a, 0)) : null;
     const avg = a => a.reduce((t, v) => t + v, 0) / n;
     if (com.some(v => v > 0) || per?.some(v => v > 0)) html += `<section><h2>Charges</h2>
       <p class="small" style="margin:-6px 0 10px">En moyenne par mois : ${hh ? `${eur(avg(com))} de charges communes${scope === 'all' ? '' : ' (part due)'}` : ''}${hh && per ? ' et ' : ''}${per ? `${eur(avg(per))} de charges personnelles` : ''}.</p>
@@ -2154,7 +2194,7 @@ function bilanData(k) {
   const mineF = a => (a.owner || 'moi') === 'moi';
   const hh = S.household.on && members().length > 1;
   const b = breakdown(k, mineF), r = resteOf(k, 'moi');
-  return { k, b, ...r, dep: b.dep, perf: b.perf, communes: hh ? potStats(k).total : 0,
+  return { k, b, ...r, dep: b.dep, perf: b.perf, communes: hh ? potStats(k).total - potStats(k).projTotal : 0,
     foyer: hh ? breakdown(k) : null, has: months().includes(k) };
 }
 function vBilan(F) {
@@ -2180,6 +2220,10 @@ function vBilan(F) {
   const base = Math.max(cur.rev, pos) || 1;
   const reste = cur.rev - out;
   const bar = cur.rev ? `<div class="bstack" role="img" aria-label="Répartition des revenus ${deM(monthName(F))}">${parts.filter(x => x.v > 0).map(x => `<i style="width:${x.v / base * 100}%;background:${x.c}"></i>`).join('')}${reste > 0 ? `<i class="rest" style="width:${Math.min(reste, base - pos) / base * 100}%"></i>` : ''}</div>` : '';
+  const pj = projetsOf(F);
+  const projHtml = pj.list.length ? `<h3>Projets ${deM(monthName(F))} : ${eur(pj.total)}</h3>
+    <ul class="kv">${pj.list.map(x => `<li><span>${esc(x.n)}</span><span class="num">${eur(x.a)}${x.epargne ? `<span class="small"> · ${eur(x.epargne)} repris sur l’épargne</span>` : ''}</span></li>`).join('')}</ul>
+    <p class="small" style="margin:6px 0 0">Ta part des dépenses de projet, hors reste à vivre.${cur.rev ? ` Projets payés et épargne reprise comptés, il te reste ${eur(cur.rev - out - pj.total + pj.epargne)} ce mois-ci.` : ''}</p>` : '';
   // Les lignes de charges ouvrent la liste correspondante dans Comptes > Foyer, au mois du bilan
   const link = w => w ? ` data-act="bilango" data-w="${w}" data-m="${F}" role="link" tabindex="0"` : '';
   const rows = [...parts, ...(cur.rev ? [{ k: reste >= 0 ? 'Reste à vivre' : 'Dépassement', v: Math.abs(reste), c: reste >= 0 ? 'rest' : 'var(--red)', bad: reste < 0 }] : [])];
@@ -2192,6 +2236,7 @@ function vBilan(F) {
     <ul class="blist">${rows.map(x => `<li${link(x.go)}><span class="bdot ${x.c === 'rest' ? 'rest' : ''}" ${x.c !== 'rest' ? `style="background:${x.c}"` : ''}></span>
       <span class="bl">${x.k}${x.sub ? `<span class="small"> ${x.sub}</span>` : ''}</span>
       <span class="bv num ${x.bad ? 'down' : ''}">${eur(x.v)}${cur.rev ? `<span class="small"> ${pct(x.v / cur.rev)}</span>` : ''}${x.go ? '<span class="bgo" aria-hidden="true">›</span>' : ''}</span></li>`).join('')}</ul>
+    ${projHtml}
     ${prev ? `<h3>Par rapport à ${monthName(pk)}</h3>
     <ul class="kv bcmp">
       <li><span>Mis de côté</span><span>${eur(cur.sav)} ${cmp(cur.sav, prev.sav, true)}</span></li>
@@ -2216,9 +2261,12 @@ function vControl(F) {
       ${c.hh ? row(`Virements reçus de ${esc(other)}`, c.recu) : ''}
       ${c.hh ? row('Charges communes payées par toi', -c.paye) : ''}
       ${c.commun ? row('dont « compte commun »', c.commun, true) : ''}
+      ${c.projPaye ? row('dont projets', c.projPaye, true) : ''}
       ${c.hh ? row(`Virements envoyés à ${esc(other)}`, -c.envoye) : ''}
       ${row('Charges perso', -c.perso)}
-      ${row(c.epargne >= 0 ? 'Épargne versée' : 'Épargne reprise', -c.epargne)}
+      ${c.projPerso ? row('dont projets', c.projPerso, true) : ''}
+      ${c.projEp ? row('Épargne reprise pour des projets', c.projEp) : ''}
+      ${row(c.epargne + c.projEp >= 0 ? 'Épargne versée' : 'Épargne reprise', -(c.epargne + c.projEp))}
       ${c.employeur ? `<li class="csub"><span>hors ${eur(c.employeur)} versés par l’employeur</span><span></span></li>` : ''}
       ${row('Virement plaisir', -c.plaisir)}
       <li class="ctot ${ok ? '' : 'warn'}"><span>Écart à expliquer</span><span class="num">${signed(c.ecart)}</span></li>
@@ -2503,13 +2551,13 @@ function validateData(d) {
       && str(a.name, 120) && (a.owner == null || id(a.owner)) && (a.closed == null || mk(a.closed)) && (a.open == null || mk(a.open)) && (a.linesAt == null || mk(a.linesAt))
       && str(a.imp, 200) && arr(a.lines, l => obj(l) && str(l.n, 200) && fin(l.v)) && ['apport', 'retraite', 'simple', 'potCharge'].every(k => bool(a[k])))],
     ['saisies', () => map(d.entries, mk, m => map(m, id, e => obj(e) && fin(e.value) && fin(e.deposit) && fin(e.dot) && bool(e.auto)
-      && arr(e.moves, x => obj(x) && day(x.d) && fin(x.a) && str(x.n, 200) && bool(x.emp))
+      && arr(e.moves, x => obj(x) && day(x.d) && fin(x.a) && str(x.n, 200) && bool(x.emp) && str(x.proj, 60))
       && arr(e.tx, x => obj(x) && id(x.id) && day(x.d) && fin(x.a) && str(x.n, 200) && (x.c == null || (typeof x.c === 'string' && /^[a-z]{1,12}$/.test(x.c))))))],
     ['foyer', () => map(d.pot, mk, p => obj(p)
-      && arr(p.items, i => obj(i) && id(i.id) && str(i.n, 200) && fin(i.a) && (i.by == null || id(i.by)) && bool(i.r) && bool(i.pt)
+      && arr(p.items, i => obj(i) && id(i.id) && str(i.n, 200) && str(i.proj, 60) && fin(i.a) && (i.by == null || id(i.by)) && bool(i.r) && bool(i.pt)
         && (i.sp == null || i.sp === 'moitie' || i.sp === 'revenus' || (obj(i.sp) && map(i.sp.c, id, fin))))
       && arr(p.transfers, t => obj(t) && id(t.id) && id(t.from) && id(t.to) && fin(t.a) && bool(t.reg) && str(t.n, 200) && (t.fa == null || id(t.fa)) && (t.ta == null || id(t.ta)))
-      && arr(p.perso, i => obj(i) && id(i.id) && str(i.n, 200) && fin(i.a) && bool(i.r) && bool(i.rb) && bool(i.pt)
+      && arr(p.perso, i => obj(i) && id(i.id) && str(i.n, 200) && str(i.proj, 60) && fin(i.a) && bool(i.r) && bool(i.rb) && bool(i.pt)
         && (i.of == null || (obj(i.of) && mk(i.of.k) && id(i.of.id) && str(i.of.n, 200))))
       && map(p.inc, id, fin) && map(p.carry, id, fin) && fin(p.prime) && fin(p.autres) && fin(p.plaisir) && (p.from == null || mk(p.from)) && (p.persoFrom == null || mk(p.persoFrom))
       && ['seeded', 'persoSeeded', 'carryDecided'].every(k => bool(p[k])))],
@@ -2784,7 +2832,8 @@ function sheetPerso(id) {
     <form id="f-perso" class="stack-form" data-id="${it.id || ''}">
       <label>Libellé<input id="p-n" value="${esc(it.n)}" placeholder="ex. téléphone, salle de sport" required></label>
       <label>Montant (€)<input id="p-a" inputmode="decimal" value="${esc(numStr(it.a))}" required></label>
-      <label class="check"><input type="checkbox" id="p-rec" ${it.id && it.r !== false ? 'checked' : ''}>Charge fixe, reprise chaque mois</label>
+      <label class="check"><input type="checkbox" id="p-rec" ${it.id && it.r !== false && !it.proj ? 'checked' : ''}>Charge fixe, reprise chaque mois</label>
+      ${projFields('p', it)}
       <button class="btn primary wide" type="submit">Enregistrer</button>
       ${it.id ? (() => { const back = refundsOf(it.id); return `${back.length ? `<p class="small" style="margin:0">Remboursé : ${back.map(r => `${esc(eur(r.a))} en ${monthName(r.k)}`).join(', ')}.</p>` : ''}
         <button class="btn wide" type="button" data-act="refundfor" data-id="${it.id}">Enregistrer un remboursement</button>`; })() : ''}
@@ -2831,8 +2880,9 @@ function sheetCharge(id) {
       <label>Montant (€)<input id="c-a" inputmode="decimal" value="${esc(numStr(it.a))}" required></label>
       <label>Payé par<select id="c-by">${members().map(m => `<option value="${m.id}" ${m.id === it.by ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
       ${members().length > 1 ? spFields(it) : ''}
-      <label class="check"><input type="checkbox" id="c-rec" ${it.id && it.r !== false ? 'checked' : ''}>Dépense fixe, reprise chaque mois</label>
+      <label class="check"><input type="checkbox" id="c-rec" ${it.id && it.r !== false && !it.proj ? 'checked' : ''}>Dépense fixe, reprise chaque mois</label>
       <p class="small" style="margin:0">Laisse décoché pour une dépense ponctuelle. Coche seulement pour une nouvelle dépense régulière : elle sera reprise automatiquement les mois suivants.</p>
+      ${projFields('c', it)}
       <button class="btn primary wide" type="submit">Enregistrer</button>
       ${it.id ? `<button class="btn danger wide" type="button" data-act="delcharge" data-id="${it.id}">Supprimer</button>` : ''}
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
@@ -2924,7 +2974,7 @@ function sheetMoves(id) {
   const [, mo] = m.split('-').map(Number), lastDay = new Date(m.split('-')[0], mo, 0).getDate();
   openSheet(`<h2>${esc(a.name)}</h2>
     <p class="small" style="margin:0 0 14px">Mouvements ${deM(monthLabel(m))}. Chaque mouvement met à jour le solde du compte, ce qui te donne le disponible en cours de mois. Les intérêts et plus-values ne sont pas des mouvements : ils seront absorbés quand tu saisiras le solde réel au mois suivant.</p>
-    ${list.length ? `<ul class="list">${list.map((mv, i) => `<li><button type="button" data-act="delmove" data-id="${a.id}" data-i="${i}"><span>${dayLabel(m, mv.d)}${mv.n || mv.emp ? `<br><span class="small">${[mv.emp ? 'employeur' : '', mv.n ? esc(mv.n) : ''].filter(Boolean).join(' · ')}</span>` : ''}</span><span class="num ${mv.a < 0 ? 'down' : 'up'}">${signed(mv.a)}</span></button></li>`).join('')}</ul>
+    ${list.length ? `<ul class="list">${list.map((mv, i) => `<li><button type="button" data-act="delmove" data-id="${a.id}" data-i="${i}"><span>${dayLabel(m, mv.d)}${mv.n || mv.emp || mv.proj ? `<br><span class="small">${[mv.emp ? 'employeur' : '', mv.proj ? 'projet ' + esc(mv.proj) : '', mv.n ? esc(mv.n) : ''].filter(Boolean).join(' · ')}</span>` : ''}</span><span class="num ${mv.a < 0 ? 'down' : 'up'}">${signed(mv.a)}</span></button></li>`).join('')}</ul>
       <p class="small" style="margin:10px 0 0">Versé ${eur(movesIn(e))}, repris ${eur(movesOut(e))}, net ${signed(moveSum(e))}. Touche une ligne pour la supprimer.</p>
       <p class="small" style="margin:6px 0 0">Solde du compte : ${eur(valueAt(a, m))}${e.auto ? ', calculé depuis ces mouvements' : ', saisi manuellement'}.</p>`
       : '<p class="small" style="margin:0">Aucun mouvement enregistré pour ce mois.</p>'}
@@ -2933,6 +2983,8 @@ function sheetMoves(id) {
       <div class="row2"><label>Jour<input id="m-day" inputmode="numeric" value="${Math.min(new Date().getDate(), lastDay)}" required></label>
         <label>Montant (€)<input id="m-amt" inputmode="decimal" placeholder="500" required></label></div>
       <label class="check"><input type="checkbox" id="m-out">Reprise : argent retiré du compte</label>
+      <label class="check"><input type="checkbox" id="m-ex" data-projtoggle="m">Pour financer un projet (reprise seulement)</label>
+      <label id="m-projbox" hidden>Projet<input id="m-proj" list="projs" maxlength="40" placeholder="ex. Voyage Japon">${projList()}</label>
       ${['salariale', 'retraite'].includes(TYPES[a.type].cat) ? `<label class="check"><input type="checkbox" id="m-emp">Viré par l’employeur (intéressement, participation, abondement)</label>
       <p class="small" style="margin:0">Compté comme épargne, mais pas comme sorti de ton salaire : il n’entre ni dans le contrôle du mois ni dans ton taux d’épargne.</p>` : ''}
       ${e.value != null && !e.auto ? `<label class="check"><input type="checkbox" id="m-incl">Déjà compris dans le solde saisi ce mois-ci</label>
@@ -3554,6 +3606,12 @@ document.addEventListener('pointercancel', () => endSwipe(true));
 document.addEventListener('change', async e => {
   const t = e.target;
   uLog('change', t.id || Object.keys(t.dataset)[0] || t.type);
+  if (t.dataset.projtoggle) {
+    const pre = t.dataset.projtoggle; $(`#${pre}-projbox`).hidden = !t.checked;
+    const rec = $(`#${pre}-rec`); if (t.checked && rec) rec.checked = false;   // une dépense de projet n'est pas reprise chaque mois
+    if (t.checked) $(`#${pre}-proj`).focus();
+    return;
+  }
   if (t.id === 'c-sp') {
     const on = t.value === 'perso'; $('#c-custom').hidden = !on; $('#c-sphint').hidden = !on;
     if (on) spFill($$('#c-custom [data-cs]').some(i => i.value.trim()) ? null : 'prefill'); return;
@@ -3781,9 +3839,10 @@ document.addEventListener('submit', async e => {
       if (Object.values(c).some(v => v < 0)) return toast('Les parts dépassent le montant de la dépense');
       sp = { c };
     } else if (spv) sp = spv;
-    const data = { n, a, by: $('#c-by').value, r, sp };
-    if (id) { const it = p.items.find(i => i.id === id); Object.assign(it, data); if (!sp) delete it.sp; }
-    else { if (!sp) delete data.sp; p.items.push({ id: uid(), ...data }); }
+    const proj = readProj('c'); if (proj === false) return;
+    const data = { n, a, by: $('#c-by').value, r: proj ? false : r, sp, proj };
+    if (id) { const it = p.items.find(i => i.id === id); Object.assign(it, data); if (!sp) delete it.sp; if (!proj) delete it.proj; }
+    else { if (!sp) delete data.sp; if (!proj) delete data.proj; p.items.push({ id: uid(), ...data }); }
     p.seeded = true; delete p.from;
     await save(); closeSheet(); render();
   }
@@ -3792,9 +3851,10 @@ document.addEventListener('submit', async e => {
     if (!n || !Number.isFinite(a) || a <= 0) return toast('Indique un libellé et un montant positif');
     const p = (S.pot[potMonth] ||= { items: [], transfers: [] });
     p.perso ||= [];
-    const id = f.dataset.id, r = $('#p-rec').checked;
-    if (id) Object.assign(p.perso.find(i => i.id === id), { n, a, r });
-    else p.perso.push({ id: uid(), n, a, r });
+    const proj = readProj('p'); if (proj === false) return;
+    const id = f.dataset.id, r = proj ? false : $('#p-rec').checked;
+    if (id) { const it = p.perso.find(i => i.id === id); Object.assign(it, { n, a, r }); if (proj) it.proj = proj; else delete it.proj; }
+    else p.perso.push({ id: uid(), n, a, r, ...(proj ? { proj } : {}) });
     p.persoSeeded = true; delete p.persoFrom;
     await save(); closeSheet(); render();
   }
@@ -3845,12 +3905,13 @@ document.addEventListener('submit', async e => {
     const [yy, mo] = m.split('-').map(Number), lastDay = new Date(yy, mo, 0).getDate();
     if (!Number.isFinite(d) || d < 1 || d > lastDay) return toast(`Le jour doit être compris entre 1 et ${lastDay}`);
     if (!Number.isFinite(amt) || amt === 0) return toast('Indique un montant');
-    const signedAmt = $('#m-out').checked ? -Math.abs(amt) : amt, emp = !!$('#m-emp')?.checked && signedAmt > 0, incl = !!$('#m-incl')?.checked;
+    const proj = readProj('m'); if (proj === false) return;
+    const signedAmt = $('#m-out').checked || proj ? -Math.abs(amt) : amt, emp = !!$('#m-emp')?.checked && signedAmt > 0, incl = !!$('#m-incl')?.checked;
     const fresh = !S.entries[m]?.[a.id];
     const e = (S.entries[m] ||= {})[a.id] ||= { value: valueAt(a, addMonths(m, -1)), auto: true };
     if (fresh) e.auto = true;
     if (!e.moves) { e.moves = e.deposit ? [{ d: 1, a: e.deposit }] : []; delete e.deposit; }
-    e.moves.push({ d, a: signedAmt, n: $('#m-note').value.trim() || undefined, ...(emp ? { emp: true } : {}) });
+    e.moves.push({ d, a: signedAmt, n: $('#m-note').value.trim() || undefined, ...(emp ? { emp: true } : {}), ...(proj ? { proj } : {}) });
     if (!incl) syncBalance(m, a, signedAmt);
     await save(); sheetMoves(a.id); render();
   }
