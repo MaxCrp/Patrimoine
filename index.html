@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-UQbP0lNe15vmSmBztAmTyXNLxcPSMCFGIRnKNyUeA/E='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-/F4dd39McOKUzHlrpgpiTgoWUU51c8OfRbiHfRN8SgE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -814,6 +814,9 @@ const months = () => Object.keys(S.entries).filter(k => Object.keys(S.entries[k]
 const entry = (m, a) => S.entries[m]?.[a.id];
 // Versement net du mois : somme des mouvements datés, ou le champ simple si aucun détail
 const moveSum = e => e?.moves?.length ? e.moves.reduce((t, m) => t + m.a, 0) : (e?.deposit || 0);
+// Versements de l'employeur (intéressement, participation, abondement) : de l'épargne, mais qui ne sort pas de ton salaire
+const empIn = e => (e?.moves || []).filter(m => m.emp && m.a > 0).reduce((t, m) => t + m.a, 0);
+const empOf = (k, f = () => true) => S.accounts.filter(a => !isCash(a) && f(a)).reduce((t, a) => t + empIn(entry(k, a)), 0);
 const movesIn = e => (e?.moves || []).filter(m => m.a > 0).reduce((t, m) => t + m.a, 0);
 const movesOut = e => (e?.moves || []).filter(m => m.a < 0).reduce((t, m) => t - m.a, 0);
 const dep = (m, a) => moveSum(entry(m, a));
@@ -1075,7 +1078,8 @@ async function seedPerso(k) {
 function resteOf(k, id) {
   const rev = scopeIncome(k, id), st = S.household.on && members().length > 1 ? potStats(k) : null;
   const share = st ? st.due[id] || 0 : 0, perso = id === 'moi' ? persoTotal(k) : 0;
-  const sav = Math.max(0, S.accounts.filter(a => !isCash(a) && (a.owner || 'moi') === id).reduce((t, a) => t + dep(k, a), 0));
+  const own = a => (a.owner || 'moi') === id;
+  const sav = Math.max(0, S.accounts.filter(a => !isCash(a) && own(a)).reduce((t, a) => t + dep(k, a), 0) - empOf(k, own));
   return { rev, share, perso, sav, reste: rev - share - perso - sav };
 }
 // Dépenses communes du mois : saisies à la main, opérations de compte courant classées « charge », enveloppes
@@ -1115,12 +1119,13 @@ function controlOf(k) {
   const paye = myItems.reduce((t, i) => t + i.a, 0);
   const commun = myItems.filter(i => /compte (commun|joint)/i.test(i.n)).reduce((t, i) => t + i.a, 0);
   const perso = persoTotal(k);
-  const epargne = S.accounts.filter(a => !isCash(a) && (a.owner || 'moi') === 'moi').reduce((t, a) => t + dep(k, a), 0);
+  const mine = a => (a.owner || 'moi') === 'moi', employeur = empOf(k, mine);
+  const epargne = S.accounts.filter(a => !isCash(a) && mine(a)).reduce((t, a) => t + dep(k, a), 0) - employeur;
   const plaisir = plaisirOf(k) || 0;
   const ecart = salaire + prime + autres + recu - paye - envoye - perso - epargne - plaisir;
   // Écart de répartition du mois : ce que tu as réellement payé pour le foyer, comparé à ta part due
   const du = st ? st.due.moi || 0 : 0, solde = st ? paye + envoye - recu - du : 0;
-  return { hh, salaire, prime, autres, recu, envoye, paye, commun, perso, epargne, plaisir, ecart, du, solde, plaisirSet: plaisirOf(k) != null };
+  return { hh, salaire, prime, autres, recu, envoye, paye, commun, perso, epargne, employeur, plaisir, ecart, du, solde, plaisirSet: plaisirOf(k) != null };
 }
 const PRIME_TO = { apport: 'l’apport', rente: 'la retraite', moitie: 'moitié apport, moitié retraite' };
 const primeCfg = () => (S.goals.prime ||= { list: [], pct: 100, to: 'apport' });
@@ -1312,9 +1317,10 @@ function summary(F) {
   const prev = avgDep(addMonths(F, -1), 6, mineF);
   const mine = S.accounts.filter(mineF);
   const gin = mine.reduce((t, a) => t + movesIn(entry(F, a)), 0), gout = mine.reduce((t, a) => t + movesOut(entry(F, a)), 0);
-  L.push(`Épargne du mois : ${R(b.dep)}${gout > 0 ? ` (${R(gin)} versés, ${R(gout)} repris en cours de mois)` : ''}${prev.n >= 2 ? ` — moyenne des ${prev.n} mois précédents : ${R(prev.avg)} par mois` : ''}.`);
+  const emp = empOf(F, mineF);
+  L.push(`Épargne du mois : ${R(b.dep)}${gout > 0 ? ` (${R(gin)} versés, ${R(gout)} repris en cours de mois)` : ''}${emp ? `, dont ${R(emp)} versés par l’employeur (intéressement, participation, abondement)` : ''}${prev.n >= 2 ? ` — moyenne des ${prev.n} mois précédents : ${R(prev.avg)} par mois` : ''}.`);
   const myRev = scopeIncome(F, 'moi');
-  if (myRev) L.push(`Taux d’épargne : ${pct(b.dep / myRev)} des revenus nets mensuels${primeOf(F) ? `, prime exceptionnelle de ${R(primeOf(F))} comprise${myRev - primeOf(F) > 0 ? ` (hors prime : ${pct(regDep(F, b.dep, 'all') / (myRev - primeOf(F)))})` : ''}` : ''}.`);
+  if (myRev) L.push(`Taux d’épargne : ${pct((b.dep - emp) / myRev)} des revenus nets mensuels${emp ? ' (hors versements de l’employeur)' : ''}${primeOf(F) ? `, prime exceptionnelle de ${R(primeOf(F))} comprise${myRev - primeOf(F) > 0 ? ` (hors prime : ${pct(regDep(F, b.dep, 'all') / (myRev - primeOf(F)))})` : ''}` : ''}.`);
   if (primePlan()) L.push(`Primes annuelles prévues : ${primePlan().list.map(e => `${MONTHS_FR[e.m - 1]} (environ ${R(e.a)})`).join(', ')}, épargnées à ${primePlan().pct ?? 100} %, affectées à ${PRIME_TO[primePlan().to]}.`);
   if (S.settings.depenses) L.push(`Épargne de précaution : ${(totalAt(F, a => mineF(a) && TYPES[a.type].cat === 'livrets') / S.settings.depenses).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} mois de dépenses sur les livrets.`);
   L.push('', 'Répartition :');
@@ -2164,7 +2170,7 @@ function vBilan(F) {
   const delta = cur.b.total - cur.b.prevTotal;
   // Où sont partis les revenus du mois
   const parts = [
-    { k: 'Épargne', v: cur.sav, c: 'var(--v1)' },
+    { k: 'Épargne', v: cur.sav, c: 'var(--v1)', sub: empOf(F, a => (a.owner || 'moi') === 'moi') ? `hors ${eur(empOf(F, a => (a.owner || 'moi') === 'moi'))} de l’employeur` : '' },
     ...(hh ? [{ k: 'Charges communes', v: cur.share, c: 'var(--v2)', sub: cur.communes ? `ta part de ${eur(cur.communes)}` : '', go: 'c' }] : []),
     { k: 'Charges perso', v: cur.perso, c: 'var(--v3)', sub: persoRefunds(F) ? `après ${eur(persoRefunds(F))} de remboursements` : '', go: S.household.on ? 'p' : null },
   ];
@@ -2213,6 +2219,7 @@ function vControl(F) {
       ${c.hh ? row(`Virements envoyés à ${esc(other)}`, -c.envoye) : ''}
       ${row('Charges perso', -c.perso)}
       ${row(c.epargne >= 0 ? 'Épargne versée' : 'Épargne reprise', -c.epargne)}
+      ${c.employeur ? `<li class="csub"><span>hors ${eur(c.employeur)} versés par l’employeur</span><span></span></li>` : ''}
       ${row('Virement plaisir', -c.plaisir)}
       <li class="ctot ${ok ? '' : 'warn'}"><span>Écart à expliquer</span><span class="num">${signed(c.ecart)}</span></li>
     </ul>
@@ -2496,7 +2503,7 @@ function validateData(d) {
       && str(a.name, 120) && (a.owner == null || id(a.owner)) && (a.closed == null || mk(a.closed)) && (a.open == null || mk(a.open)) && (a.linesAt == null || mk(a.linesAt))
       && str(a.imp, 200) && arr(a.lines, l => obj(l) && str(l.n, 200) && fin(l.v)) && ['apport', 'retraite', 'simple', 'potCharge'].every(k => bool(a[k])))],
     ['saisies', () => map(d.entries, mk, m => map(m, id, e => obj(e) && fin(e.value) && fin(e.deposit) && fin(e.dot) && bool(e.auto)
-      && arr(e.moves, x => obj(x) && day(x.d) && fin(x.a) && str(x.n, 200))
+      && arr(e.moves, x => obj(x) && day(x.d) && fin(x.a) && str(x.n, 200) && bool(x.emp))
       && arr(e.tx, x => obj(x) && id(x.id) && day(x.d) && fin(x.a) && str(x.n, 200) && (x.c == null || (typeof x.c === 'string' && /^[a-z]{1,12}$/.test(x.c))))))],
     ['foyer', () => map(d.pot, mk, p => obj(p)
       && arr(p.items, i => obj(i) && id(i.id) && str(i.n, 200) && fin(i.a) && (i.by == null || id(i.by)) && bool(i.r) && bool(i.pt)
@@ -2917,7 +2924,7 @@ function sheetMoves(id) {
   const [, mo] = m.split('-').map(Number), lastDay = new Date(m.split('-')[0], mo, 0).getDate();
   openSheet(`<h2>${esc(a.name)}</h2>
     <p class="small" style="margin:0 0 14px">Mouvements ${deM(monthLabel(m))}. Chaque mouvement met à jour le solde du compte, ce qui te donne le disponible en cours de mois. Les intérêts et plus-values ne sont pas des mouvements : ils seront absorbés quand tu saisiras le solde réel au mois suivant.</p>
-    ${list.length ? `<ul class="list">${list.map((mv, i) => `<li><button type="button" data-act="delmove" data-id="${a.id}" data-i="${i}"><span>${dayLabel(m, mv.d)}${mv.n ? `<br><span class="small">${esc(mv.n)}</span>` : ''}</span><span class="num ${mv.a < 0 ? 'down' : 'up'}">${signed(mv.a)}</span></button></li>`).join('')}</ul>
+    ${list.length ? `<ul class="list">${list.map((mv, i) => `<li><button type="button" data-act="delmove" data-id="${a.id}" data-i="${i}"><span>${dayLabel(m, mv.d)}${mv.n || mv.emp ? `<br><span class="small">${[mv.emp ? 'employeur' : '', mv.n ? esc(mv.n) : ''].filter(Boolean).join(' · ')}</span>` : ''}</span><span class="num ${mv.a < 0 ? 'down' : 'up'}">${signed(mv.a)}</span></button></li>`).join('')}</ul>
       <p class="small" style="margin:10px 0 0">Versé ${eur(movesIn(e))}, repris ${eur(movesOut(e))}, net ${signed(moveSum(e))}. Touche une ligne pour la supprimer.</p>
       <p class="small" style="margin:6px 0 0">Solde du compte : ${eur(valueAt(a, m))}${e.auto ? ', calculé depuis ces mouvements' : ', saisi manuellement'}.</p>`
       : '<p class="small" style="margin:0">Aucun mouvement enregistré pour ce mois.</p>'}
@@ -2926,6 +2933,10 @@ function sheetMoves(id) {
       <div class="row2"><label>Jour<input id="m-day" inputmode="numeric" value="${Math.min(new Date().getDate(), lastDay)}" required></label>
         <label>Montant (€)<input id="m-amt" inputmode="decimal" placeholder="500" required></label></div>
       <label class="check"><input type="checkbox" id="m-out">Reprise : argent retiré du compte</label>
+      ${['salariale', 'retraite'].includes(TYPES[a.type].cat) ? `<label class="check"><input type="checkbox" id="m-emp">Viré par l’employeur (intéressement, participation, abondement)</label>
+      <p class="small" style="margin:0">Compté comme épargne, mais pas comme sorti de ton salaire : il n’entre ni dans le contrôle du mois ni dans ton taux d’épargne.</p>` : ''}
+      ${e.value != null && !e.auto ? `<label class="check"><input type="checkbox" id="m-incl">Déjà compris dans le solde saisi ce mois-ci</label>
+      <p class="small" style="margin:0">Coche pour classer un versement après coup sans changer le solde : il ne sera plus compté comme performance.</p>` : ''}
       <label>Motif (facultatif)<input id="m-note" placeholder="ex. imprévu voiture" maxlength="40"></label>
       <button class="btn primary wide" type="submit">Ajouter</button>
       <button class="link" type="button" data-act="close">Fermer</button></form>`);
@@ -3834,13 +3845,13 @@ document.addEventListener('submit', async e => {
     const [yy, mo] = m.split('-').map(Number), lastDay = new Date(yy, mo, 0).getDate();
     if (!Number.isFinite(d) || d < 1 || d > lastDay) return toast(`Le jour doit être compris entre 1 et ${lastDay}`);
     if (!Number.isFinite(amt) || amt === 0) return toast('Indique un montant');
-    const signedAmt = $('#m-out').checked ? -Math.abs(amt) : amt;
+    const signedAmt = $('#m-out').checked ? -Math.abs(amt) : amt, emp = !!$('#m-emp')?.checked && signedAmt > 0, incl = !!$('#m-incl')?.checked;
     const fresh = !S.entries[m]?.[a.id];
     const e = (S.entries[m] ||= {})[a.id] ||= { value: valueAt(a, addMonths(m, -1)), auto: true };
     if (fresh) e.auto = true;
     if (!e.moves) { e.moves = e.deposit ? [{ d: 1, a: e.deposit }] : []; delete e.deposit; }
-    e.moves.push({ d, a: signedAmt, n: $('#m-note').value.trim() || undefined });
-    syncBalance(m, a, signedAmt);
+    e.moves.push({ d, a: signedAmt, n: $('#m-note').value.trim() || undefined, ...(emp ? { emp: true } : {}) });
+    if (!incl) syncBalance(m, a, signedAmt);
     await save(); sheetMoves(a.id); render();
   }
   else if (f.id === 'f-stmt') {
