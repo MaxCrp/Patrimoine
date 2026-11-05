@@ -1,7 +1,7 @@
 // Sert toujours le code déjà installé : aucune mise à jour silencieuse.
 // La page vérifie l'empreinte du code et demande confirmation avant d'installer une nouvelle version.
 // Aucune donnée personnelle ne passe ici : elles restent chiffrées dans IndexedDB.
-const CACHE = 'patrimoine-v4';
+const CACHE = 'patrimoine-v5';
 // Pas de ./index.html : Cloudflare le redirige vers ./, et Safari refuse une page servie
 // par le service worker si la réponse en cache porte une trace de redirection.
 const SHELL = ['./', './sw.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
