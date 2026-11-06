@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-AtpYg1yUwCp0cjpsssKQuaUxl9K+vdy1LmvFduMUgQY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-VT0SU0TMpuCS8kHfbhz7+zVww7WyblBWsWrK7c2hRtI='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -35,6 +35,18 @@
 :root[data-theme="bordeaux"]{ --paper:#F1ECE3; --surface:#FBF8F2; --ink:#261C18; --muted:#6B5E55; --line:#DDD3C4; --pine:#74283A; --on-pine:#FFFFFF; --pine-soft:#EEDADC; --pos:#2B7440; --amber:#8E6113; --amber-soft:#F1E3C6; --red:#B03A2E; --red-soft:#F6D9D3; --c-livrets:#D9B9BE; --c-bourse:#74283A; --c-av:#A8566A; --c-retraite:#B08A3E; --c-salariale:#7A7F8C; --c-courant:#8C7A5E; --v1:#2B7440; --v2:#2A669F; --v3:#B97D4A; }
 @media (prefers-color-scheme: dark){ :root[data-theme="bordeaux"]:not([data-mode="light"]){ --paper:#16110F; --surface:#211A17; --ink:#EEE6DC; --muted:#A3968B; --line:#382C27; --pine:#E59AAA; --on-pine:#16110F; --pine-soft:#3A2229; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08A6E; --red-soft:#3E241D; --c-livrets:#5A3540; --c-bourse:#E59AAA; --c-av:#B86B7F; --c-retraite:#C9A45A; --c-salariale:#9A9FAC; --c-courant:#B09A7F; --v1:#448C56; --v2:#437EB9; --v3:#D85218; } }
 :root[data-theme="bordeaux"][data-mode="dark"]{ --paper:#16110F; --surface:#211A17; --ink:#EEE6DC; --muted:#A3968B; --line:#382C27; --pine:#E59AAA; --on-pine:#16110F; --pine-soft:#3A2229; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08A6E; --red-soft:#3E241D; --c-livrets:#5A3540; --c-bourse:#E59AAA; --c-av:#B86B7F; --c-retraite:#C9A45A; --c-salariale:#9A9FAC; --c-courant:#B09A7F; --v1:#448C56; --v2:#437EB9; --v3:#D85218; }
+:root[data-theme="atelier"]{ --paper:#F2EDE6; --surface:#FBF8F4; --ink:#22190F; --muted:#6A5D50; --line:#E0D6CA; --pine:#9C4325; --on-pine:#FFFFFF; --pine-soft:#F2DED3; --pos:#2F6E46; --amber:#845A0D; --amber-soft:#F1E3C6; --red:#A3352C; --red-soft:#F5D9D4; --c-livrets:#E4B9A0; --c-bourse:#9C4325; --c-av:#C2724F; --c-retraite:#B08A3E; --c-salariale:#7D8A80; --c-courant:#8A7D68; --v1:#C2613D; --v2:#3F7A8C; --v3:#6B6A1E; }
+@media (prefers-color-scheme: dark){ :root[data-theme="atelier"]:not([data-mode="light"]){ --paper:#17120E; --surface:#221B16; --ink:#F0E7DD; --muted:#A8998B; --line:#3A2F27; --pine:#EE9A77; --on-pine:#17120E; --pine-soft:#3B261C; --pos:#7CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08A7C; --red-soft:#3E241F; --c-livrets:#6B4130; --c-bourse:#EE9A77; --c-av:#C0704F; --c-retraite:#C9A45A; --c-salariale:#8FA39A; --c-courant:#B09A7F; --v1:#E07A55; --v2:#5FA3B8; --v3:#9A9A3A; } }
+:root[data-theme="atelier"][data-mode="dark"]{ --paper:#17120E; --surface:#221B16; --ink:#F0E7DD; --muted:#A8998B; --line:#3A2F27; --pine:#EE9A77; --on-pine:#17120E; --pine-soft:#3B261C; --pos:#7CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08A7C; --red-soft:#3E241F; --c-livrets:#6B4130; --c-bourse:#EE9A77; --c-av:#C0704F; --c-retraite:#C9A45A; --c-salariale:#8FA39A; --c-courant:#B09A7F; --v1:#E07A55; --v2:#5FA3B8; --v3:#9A9A3A; }
+:root[data-theme="encre"]{ --paper:#ECECF3; --surface:#F9F9FC; --ink:#16162A; --muted:#5C5C72; --line:#D6D6E4; --pine:#3F3A9E; --on-pine:#FFFFFF; --pine-soft:#DEDCF3; --pos:#21714A; --amber:#8C5D0C; --amber-soft:#F1E4C8; --red:#A63A45; --red-soft:#F5D8DC; --c-livrets:#B7B3E6; --c-bourse:#3F3A9E; --c-av:#6F69C7; --c-retraite:#B38B3F; --c-salariale:#6E8096; --c-courant:#8A7D80; --v1:#5B55C9; --v2:#C0703A; --v3:#2F8A84; }
+@media (prefers-color-scheme: dark){ :root[data-theme="encre"]:not([data-mode="light"]){ --paper:#0F0F1A; --surface:#191927; --ink:#E6E6F2; --muted:#9696AE; --line:#2C2C40; --pine:#A9A4FF; --on-pine:#0F0F1A; --pine-soft:#26244A; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08592; --red-soft:#3C2128; --c-livrets:#3E3A78; --c-bourse:#A9A4FF; --c-av:#7A74D6; --c-retraite:#C9A45A; --c-salariale:#8EA0B8; --c-courant:#B09A9F; --v1:#8C86F0; --v2:#D98A55; --v3:#4FB0A8; } }
+:root[data-theme="encre"][data-mode="dark"]{ --paper:#0F0F1A; --surface:#191927; --ink:#E6E6F2; --muted:#9696AE; --line:#2C2C40; --pine:#A9A4FF; --on-pine:#0F0F1A; --pine-soft:#26244A; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#F08592; --red-soft:#3C2128; --c-livrets:#3E3A78; --c-bourse:#A9A4FF; --c-av:#7A74D6; --c-retraite:#C9A45A; --c-salariale:#8EA0B8; --c-courant:#B09A9F; --v1:#8C86F0; --v2:#D98A55; --v3:#4FB0A8; }
+:root[data-theme="graphite"]{ --paper:#EDEDEC; --surface:#FAFAF9; --ink:#121212; --muted:#585858; --line:#D7D7D5; --pine:#1C1C1C; --on-pine:#FFFFFF; --pine-soft:#E0E0DE; --pos:#1D6B42; --amber:#875B0B; --amber-soft:#EFE3C9; --red:#A2332B; --red-soft:#F3D7D3; --c-livrets:#BDBDBA; --c-bourse:#1C1C1C; --c-av:#5E5E5C; --c-retraite:#A08648; --c-salariale:#8A8A87; --c-courant:#9C948A; --v1:#1C1C1C; --v2:#B0622F; --v3:#2E7D7A; }
+@media (prefers-color-scheme: dark){ :root[data-theme="graphite"]:not([data-mode="light"]){ --paper:#0C0C0C; --surface:#171717; --ink:#EDEDED; --muted:#9E9E9E; --line:#2B2B2B; --pine:#F2F2F2; --on-pine:#0C0C0C; --pine-soft:#2A2A2A; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#EF8174; --red-soft:#3B2220; --c-livrets:#4A4A4A; --c-bourse:#F2F2F2; --c-av:#9A9A9A; --c-retraite:#C9A45A; --c-salariale:#7A7A7A; --c-courant:#A8998A; --v1:#F2F2F2; --v2:#D98A55; --v3:#4FB0A8; } }
+:root[data-theme="graphite"][data-mode="dark"]{ --paper:#0C0C0C; --surface:#171717; --ink:#EDEDED; --muted:#9E9E9E; --line:#2B2B2B; --pine:#F2F2F2; --on-pine:#0C0C0C; --pine-soft:#2A2A2A; --pos:#6CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#EF8174; --red-soft:#3B2220; --c-livrets:#4A4A4A; --c-bourse:#F2F2F2; --c-av:#9A9A9A; --c-retraite:#C9A45A; --c-salariale:#7A7A7A; --c-courant:#A8998A; --v1:#F2F2F2; --v2:#D98A55; --v3:#4FB0A8; }
+:root[data-theme="olivier"]{ --paper:#EEEDE4; --surface:#FAF9F3; --ink:#1D1E12; --muted:#5F6150; --line:#DAD8C8; --pine:#56601C; --on-pine:#FFFFFF; --pine-soft:#E3E6CC; --pos:#2C6E44; --amber:#8A5C0A; --amber-soft:#F1E3C4; --red:#A3392E; --red-soft:#F4D8D2; --c-livrets:#C9CF9C; --c-bourse:#56601C; --c-av:#8A9440; --c-retraite:#B08A3E; --c-salariale:#7B8A86; --c-courant:#8E8068; --v1:#6E7A22; --v2:#B5683A; --v3:#3D7A8C; }
+@media (prefers-color-scheme: dark){ :root[data-theme="olivier"]:not([data-mode="light"]){ --paper:#11120B; --surface:#1B1D13; --ink:#EAEBDD; --muted:#9FA18C; --line:#30331F; --pine:#C3CF72; --on-pine:#11120B; --pine-soft:#2C3119; --pos:#7CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#EF8A7C; --red-soft:#3C231F; --c-livrets:#4A5222; --c-bourse:#C3CF72; --c-av:#97A346; --c-retraite:#C9A45A; --c-salariale:#8FA39E; --c-courant:#B09A7F; --v1:#A9B650; --v2:#D98A55; --v3:#5FA3B8; } }
+:root[data-theme="olivier"][data-mode="dark"]{ --paper:#11120B; --surface:#1B1D13; --ink:#EAEBDD; --muted:#9FA18C; --line:#30331F; --pine:#C3CF72; --on-pine:#11120B; --pine-soft:#2C3119; --pos:#7CC79A; --amber:#E2AB58; --amber-soft:#33291A; --red:#EF8A7C; --red-soft:#3C231F; --c-livrets:#4A5222; --c-bourse:#C3CF72; --c-av:#97A346; --c-retraite:#C9A45A; --c-salariale:#8FA39E; --c-courant:#B09A7F; --v1:#A9B650; --v2:#D98A55; --v3:#5FA3B8; }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.45 var(--txt);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
@@ -368,6 +380,59 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .list li.done .ptck{background:var(--pine);border-color:var(--pine)}
 .list li.done .ptck svg{opacity:1}
 .h2-sub{font-weight:500;font-size:15px;color:var(--muted)}
+.month-nav{justify-content:center;gap:2px;width:fit-content;margin:10px auto 0;padding:2px 4px;border:1px solid var(--line);border-radius:22px;background:var(--surface)}
+.month-nav strong{font-size:16px;padding:0 6px;min-width:9.5em;text-align:center}
+.month-nav button{width:38px;height:38px;border:0;border-radius:50%;background:none}
+.badge.n{width:auto;min-width:18px;height:18px;padding:0 5px;top:1px;left:calc(50% + 6px);border-radius:9px;color:var(--surface);font:700 11px/18px var(--num);text-align:center;font-style:normal}
+.paybars{display:grid;gap:14px;margin:4px 0 16px}
+.payb-h{display:flex;justify-content:space-between;gap:10px;font-size:15px;margin-bottom:6px}
+.payb-h span:first-child{font-weight:600}
+.payb-bar{position:relative;height:14px;border-radius:7px;background:var(--line)}
+.payb-bar i{display:block;height:100%;border-radius:7px;background:var(--pine)}
+.payb-bar b{position:absolute;top:-4px;width:3px;height:22px;margin-left:-1.5px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)}
+.payb-n{margin:6px 0 0;font-size:14px;font-weight:700;color:var(--muted)}
+.payb-n.up{color:var(--pos)} .payb-n.down{color:var(--red)}
+.rv-leg{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 12px;font-size:13px;color:var(--muted)}
+.rv-leg span{display:flex;align-items:center;gap:6px}
+.rv-leg i{width:12px;height:12px;border-radius:3px}
+.rv{margin-bottom:12px}
+.rv-h{display:flex;justify-content:space-between;align-items:baseline}
+.rv-h h3{margin:0;font-size:18px}
+.rv-bar{display:flex;gap:2px;height:28px;margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid var(--muted);background:var(--surface)}
+.rv-bar i:first-child{border-radius:7px 0 0 7px}
+.rv-c{background:var(--pine)} .rv-p{background:var(--c-retraite)} .rv-s{background:var(--c-livrets)} .rv-x{background:var(--surface);border:1px solid var(--muted);box-sizing:border-box}
+.rv-v{display:flex;flex-wrap:wrap;gap:4px 16px;margin:10px 0 0;font-size:14px;color:var(--muted)}
+.rv-v span{white-space:nowrap}
+.rv-r{font-weight:700;color:var(--ink)} .rv-r.down{color:var(--red)}
+.ring{display:flex;align-items:center;gap:18px;margin-top:14px;padding:16px 18px;border-radius:22px;background:var(--surface)}
+.ring svg{flex:none;width:84px;height:84px}
+.ring-bg{fill:none;stroke:var(--line);stroke-width:10}
+.ring-fg{fill:none;stroke:var(--pine);stroke-width:10;stroke-linecap:round} .ring-fg.full{stroke:var(--pos)}
+.ring text{font:800 20px var(--num);fill:var(--ink)}
+.ring-t{margin:0;font-weight:700;font-size:18px}
+.ring .small{margin:4px 0 0}
+.steps li.ok .stepno{background:var(--pos);color:var(--surface)}
+.stepno svg{width:17px;height:17px;stroke-width:2.6}
+.steps li.cur button{box-shadow:inset 0 0 0 2px var(--pine)}
+.sc-line.ac1,.key.ac1{stroke:#2a78d6;border-top-color:#2a78d6} .sc-dot.ac1{fill:#2a78d6}
+.sc-line.ac2,.key.ac2{stroke:#eb6834;border-top-color:#eb6834} .sc-dot.ac2{fill:#eb6834}
+.sc-line.ac3,.key.ac3{stroke:#1baf7a;border-top-color:#1baf7a} .sc-dot.ac3{fill:#1baf7a}
+.sc-line.ac4,.key.ac4{stroke:#eda100;border-top-color:#eda100} .sc-dot.ac4{fill:#eda100}
+.sc-line.ac5,.key.ac5{stroke:#e87ba4;border-top-color:#e87ba4} .sc-dot.ac5{fill:#e87ba4}
+.sc-line.ac6,.key.ac6{stroke:#008300;border-top-color:#008300} .sc-dot.ac6{fill:#008300}
+.sc-line.ac7,.key.ac7{stroke:#6250d6;border-top-color:#6250d6} .sc-dot.ac7{fill:#6250d6}
+@media (prefers-color-scheme: dark){ :root:not([data-mode="light"]) .sc-line.ac1,:root:not([data-mode="light"]) .key.ac1{stroke:#3987e5;border-top-color:#3987e5} :root:not([data-mode="light"]) .sc-dot.ac1{fill:#3987e5}
+  :root:not([data-mode="light"]) .sc-line.ac2,:root:not([data-mode="light"]) .key.ac2{stroke:#d95926;border-top-color:#d95926} :root:not([data-mode="light"]) .sc-dot.ac2{fill:#d95926}
+  :root:not([data-mode="light"]) .sc-line.ac3,:root:not([data-mode="light"]) .key.ac3{stroke:#199e70;border-top-color:#199e70} :root:not([data-mode="light"]) .sc-dot.ac3{fill:#199e70}
+  :root:not([data-mode="light"]) .sc-line.ac4,:root:not([data-mode="light"]) .key.ac4{stroke:#c98500;border-top-color:#c98500} :root:not([data-mode="light"]) .sc-dot.ac4{fill:#c98500}
+  :root:not([data-mode="light"]) .sc-line.ac5,:root:not([data-mode="light"]) .key.ac5{stroke:#d55181;border-top-color:#d55181} :root:not([data-mode="light"]) .sc-dot.ac5{fill:#d55181}
+  :root:not([data-mode="light"]) .sc-line.ac7,:root:not([data-mode="light"]) .key.ac7{stroke:#9085e9;border-top-color:#9085e9} :root:not([data-mode="light"]) .sc-dot.ac7{fill:#9085e9} }
+:root[data-mode="dark"] .sc-line.ac1,:root[data-mode="dark"] .key.ac1{stroke:#3987e5;border-top-color:#3987e5} :root[data-mode="dark"] .sc-dot.ac1{fill:#3987e5}
+:root[data-mode="dark"] .sc-line.ac2,:root[data-mode="dark"] .key.ac2{stroke:#d95926;border-top-color:#d95926} :root[data-mode="dark"] .sc-dot.ac2{fill:#d95926}
+:root[data-mode="dark"] .sc-line.ac3,:root[data-mode="dark"] .key.ac3{stroke:#199e70;border-top-color:#199e70} :root[data-mode="dark"] .sc-dot.ac3{fill:#199e70}
+:root[data-mode="dark"] .sc-line.ac4,:root[data-mode="dark"] .key.ac4{stroke:#c98500;border-top-color:#c98500} :root[data-mode="dark"] .sc-dot.ac4{fill:#c98500}
+:root[data-mode="dark"] .sc-line.ac5,:root[data-mode="dark"] .key.ac5{stroke:#d55181;border-top-color:#d55181} :root[data-mode="dark"] .sc-dot.ac5{fill:#d55181}
+:root[data-mode="dark"] .sc-line.ac7,:root[data-mode="dark"] .key.ac7{stroke:#9085e9;border-top-color:#9085e9} :root[data-mode="dark"] .sc-dot.ac7{fill:#9085e9}
 .balance .bal-t{margin:0;font-size:19px;font-weight:700}
 .balance .small{margin:4px 0 12px}
 .foyrows li button > span:first-child{flex:1}
@@ -682,7 +747,7 @@ function sheetUnmask(err) {
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
 }
 
-const THEMES = {"foret": {"label": "Forêt", "desc": "Vert sapin, l’épargne qui pousse", "sw": ["#E9EEE8", "#1E5540", "#2F8A5C", "#3F6FC4"], "swd": ["#0E1512", "#7DC4A0", "#3AA06C", "#5C8BDE"]}, "marine": {"label": "Banque privée", "desc": "Bleu marine et or, le registre du gestionnaire", "sw": ["#ECEFF4", "#1F3A6B", "#3F62A2", "#906106"], "swd": ["#0D1220", "#94B3EA", "#5679BB", "#9C721C"]}, "ardoise": {"label": "Salle des marchés", "desc": "Graphite et bleu canard, l’écran du trader", "sw": ["#E9ECED", "#0E6A70", "#2695AC", "#B97340"], "swd": ["#0F1214", "#5FC3C6", "#139CB6", "#BB7B4E"]}, "bordeaux": {"label": "Registre", "desc": "Papier de grand livre et encre bordeaux", "sw": ["#F1ECE3", "#74283A", "#2B7440", "#2A669F"], "swd": ["#16110F", "#E59AAA", "#448C56", "#437EB9"]}};
+const THEMES = {"foret": {"label": "Forêt", "desc": "Vert sapin, l’épargne qui pousse", "sw": ["#E9EEE8", "#1E5540", "#2F8A5C", "#3F6FC4"], "swd": ["#0E1512", "#7DC4A0", "#3AA06C", "#5C8BDE"]}, "marine": {"label": "Banque privée", "desc": "Bleu marine et or, le registre du gestionnaire", "sw": ["#ECEFF4", "#1F3A6B", "#3F62A2", "#906106"], "swd": ["#0D1220", "#94B3EA", "#5679BB", "#9C721C"]}, "ardoise": {"label": "Salle des marchés", "desc": "Graphite et bleu canard, l’écran du trader", "sw": ["#E9ECED", "#0E6A70", "#2695AC", "#B97340"], "swd": ["#0F1214", "#5FC3C6", "#139CB6", "#BB7B4E"]}, "bordeaux": {"label": "Registre", "desc": "Papier de grand livre et encre bordeaux", "sw": ["#F1ECE3", "#74283A", "#2B7440", "#2A669F"], "swd": ["#16110F", "#E59AAA", "#448C56", "#437EB9"]}, "atelier": {"label": "Atelier", "desc": "Terre cuite et sable, chaleureux et doux", "sw": ["#F2EDE6", "#9C4325", "#C2613D", "#3F7A8C"], "swd": ["#17120E", "#EE9A77", "#E07A55", "#5FA3B8"]}, "encre": {"label": "Encre", "desc": "Indigo profond et papier froid, sobre et net", "sw": ["#ECECF3", "#3F3A9E", "#5B55C9", "#C0703A"], "swd": ["#0F0F1A", "#A9A4FF", "#8C86F0", "#D98A55"]}, "graphite": {"label": "Graphite", "desc": "Noir et blanc, contraste maximal, zéro distraction", "sw": ["#EDEDEC", "#1C1C1C", "#1C1C1C", "#B0622F"], "swd": ["#0C0C0C", "#F2F2F2", "#F2F2F2", "#D98A55"]}, "olivier": {"label": "Olivier", "desc": "Vert olive et laiton, l’esprit méditerranéen", "sw": ["#EEEDE4", "#56601C", "#6E7A22", "#B5683A"], "swd": ["#11120B", "#C3CF72", "#A9B650", "#D98A55"]}};
 // Préférences d'apparence : non sensibles, stockées hors du coffre pour colorer aussi l'écran de verrouillage
 let ui = { theme: 'foret', mode: 'auto' };
 function applyTheme() {
@@ -1555,6 +1620,7 @@ function render() {
   const cur = monthKey();
   const filled = a => isSimple(a) ? entry(cur, a)?.dot != null : entry(cur, a)?.value != null;
   const todo = active().some(a => !filled(a));
+  const ptLeft = S.household.on ? [...(S.pot[cur]?.items || []).filter(i => !i.src), ...(S.pot[cur]?.perso || []).filter(i => !i.rb)].filter(i => !i.pt).length : 0;
   const titles = { home: 'Patrimoine', comptes: 'Mes comptes', foyer: 'Foyer', saisie: 'Ce mois', objectifs: 'Objectifs', resume: 'Résumé' };
   const fTitles = { communes: 'Dépenses communes', perso: 'Charges perso', virements: 'Virements', revenus: 'Revenus du mois', reste: 'Reste à vivre' };
   const subs = { soldes: 'Soldes des comptes', operations: 'Opérations du mois' };
@@ -1577,7 +1643,7 @@ function render() {
     ${mode === 'demo' ? '<p class="banner">Données fictives : rien n’est enregistré. Touche le cadenas pour créer ton coffre.</p>' : !persistent ? '<p class="banner">Aperçu : rien n’est conservé dans cet environnement.</p>' : ''}
     <main class="view">${body}</main>
     <nav class="tabs six" aria-label="Navigation">${tabs.map(([v, l, i], n) => {
-      const btn = `<button class="tab ${view === v ? 'on' : ''}" data-act="go" data-view="${v}" ${view === v ? 'aria-current="page"' : ''}>${i}<span>${l}</span>${v === 'saisie' && todo ? '<i class="badge" aria-label="mise à jour à faire"></i>' : ''}</button>`;
+      const btn = `<button class="tab ${view === v ? 'on' : ''}" data-act="go" data-view="${v}" ${view === v ? 'aria-current="page"' : ''}>${i}<span>${l}</span>${v === 'saisie' && todo ? '<i class="badge" aria-label="mise à jour à faire"></i>' : ''}${v === 'foyer' && ptLeft ? `<i class="badge n" aria-label="${plural(ptLeft, 'charge', 'charges')} à pointer">${ptLeft > 99 ? '99+' : ptLeft}</i>` : ''}</button>`;
       return btn;
     }).join('')}<button class="tab plus" data-act="quick" aria-label="Raccourci : solde, mouvement ou dépense commune">${ICON.plus}</button></nav>`;
   uScreenCheck();
@@ -1657,7 +1723,7 @@ function homeTodo(cur, acc, missN) {
   rows.push({ t: 'backup', ok: saved, off: !!missN && !saved, title: 'Sauvegarder', icon: ICON.download,
     d: saved ? `faite le ${new Date(le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : missN ? 'dès que les soldes sont à jour' : 'les comptes sont à jour : mets-les à l’abri' });
   const okN = rows.filter(r => r.ok).length;
-  if (okN === rows.length) return `<section class="update done"><p class="update-title">${cap(monthName(cur))} est à jour.</p><button class="btn ghost" data-act="go" data-view="resume">Voir le résumé</button></section>`;
+  if (okN === rows.length) return '';
   return `<section class="todo"><div class="todo-head"><h2>À faire en ${monthName(cur)}</h2><span class="small">${okN} sur ${rows.length} ${okN > 1 ? 'faites' : 'faite'}</span></div>
     <ul>${rows.map(r => `<li class="${r.ok ? 'ok' : ''}${r.off ? ' off' : ''}"><button data-act="todo" data-t="${r.t}" ${r.off ? 'disabled' : ''}>
       <span class="todo-b${r.ok ? ' ok' : r.warn ? ' warn' : ''}" aria-hidden="true">${r.ok ? ICON.check : r.icon || r.badge}</span>
@@ -1794,7 +1860,16 @@ function vFoyer() {
       }).join('')}</ul>
         <p class="small">Touche un virement pour le supprimer.</p>` : '<p class="muted">Aucun virement ce mois-ci.</p>'}
       <div class="actions"><button class="btn wide" data-act="newtransfer">Ajouter un virement</button></div></section>`;
-  const resteS = `${effort ? `<section><h2>Reste à vivre</h2><ul class="kv effort">${effort}</ul>
+  const resteBars = ms.filter(m => revOf(k, m.id) > 0).map(m => {
+    const r = resteOf(k, m.id), tot = Math.max(r.rev, r.share + r.perso + r.sav) || 1, w = v => (Math.max(0, v) / tot * 100).toFixed(1);
+    const parts = [['rv-c', r.share, 'communes'], ['rv-p', r.perso, 'perso'], ['rv-s', r.sav, 'épargne']].filter(x => x[1] > 0.5);
+    return `<div class="goal rv"><div class="rv-h"><h3>${esc(m.name)}</h3><span class="small">revenus ${eur(r.rev)}</span></div>
+      <div class="rv-bar" role="img" aria-label="${esc(m.name)} : ${parts.map(x => `${esc(eur(x[1]))} ${x[2]}`).join(', ')}, reste ${esc(eur(r.reste))}">${parts.map(x => `<i class="${x[0]}" style="width:${w(x[1])}%"></i>`).join('')}</div>
+      <p class="rv-v">${parts.map(x => `<span>${cap(x[2])} ${eur(x[1])} · ${pct(x[1] / r.rev, 0)}</span>`).join('')}<span class="rv-r ${r.reste < 0 ? 'down' : ''}">Reste ${eur(r.reste)}</span></p></div>`;
+  }).join('');
+  const resteS = `${effort ? `<section><h2>Reste à vivre</h2>
+      <div class="rv-leg"><span><i class="rv-c"></i>Part des charges communes</span><span><i class="rv-p"></i>Charges perso</span><span><i class="rv-s"></i>Épargne versée</span><span><i class="rv-x"></i>Reste</span></div>
+      ${resteBars}
       <p class="small">Revenus du mois, moins la part de charges communes due, tes charges personnelles et l’épargne versée.</p></section>` : ''}`;
   if (foyerSub === 'communes') return nav + comS + listC;
   if (foyerSub === 'perso') return nav + persoS;
@@ -1802,9 +1877,17 @@ function vFoyer() {
   if (foyerSub === 'revenus') return nav + revS;
   if (foyerSub === 'reste' && effort) return nav + resteS;
   // Vue principale : qui doit quoi, puis tout ce qui reste à pointer, puis le détail replié
+  const balMax = Math.max(st.total, ...ms.map(m => st.paid[m.id] || 0)) || 1;
+  const bars = st.total ? `<div class="paybars">${ms.map(m => {
+    const paid = st.paid[m.id] || 0, due = st.due[m.id] || 0, net = st.net[m.id] || 0;
+    return `<div class="payb"><div class="payb-h"><span>${esc(m.name)}</span><span class="num">payé ${eur(paid)} · part ${eur(due)}</span></div>
+      <div class="payb-bar" role="img" aria-label="${esc(m.name)} a payé ${esc(eur(paid))} pour une part de ${esc(eur(due))}"><i style="width:${(paid / balMax * 100).toFixed(1)}%"></i><b style="left:${(due / balMax * 100).toFixed(1)}%"></b></div>
+      ${Math.abs(net) >= 0.5 ? `<p class="payb-n ${net > 0 ? 'up' : 'down'}">${net > 0 ? `${signed(net)} avancés` : `${eur(-net)} à verser`}</p>` : '<p class="payb-n">à l’équilibre</p>'}</div>`;
+  }).join('')}</div>` : '';
   const bal = `<section><div class="goal balance">${dues.length ? dues.map(d => `<p class="bal-t">${esc(mName(d.from))} doit ${eur(d.a)} à ${esc(mName(d.to))}</p>`).join('')
       : `<p class="bal-t">${st.total || carried ? 'Comptes équilibrés entre vous' : 'Aucune dépense commune ce mois-ci'}</p>`}
-    <p class="small">Charges communes ${eur(st.total)} · ${SPLIT[H.split.mode].toLowerCase()}</p>
+    <p class="small">Charges communes ${eur(st.total)} · ${SPLIT[H.split.mode].toLowerCase()}${st.total ? ' · le trait marque la part de chacun' : ''}</p>
+    ${bars}
     ${dues.map(d => `<button class="btn primary wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer le virement${dues.length > 1 ? ` de ${esc(mName(d.from))}` : ''}</button>`).join('')}</div></section>`;
   const comPt = items.filter(i => !i.src);
   const pts = [...comPt.map(i => ({ i, kind: 'c', d: `commune · payé par ${esc(mName(i.by))}` })), ...perso.map(i => ({ i, kind: 'p', d: `perso${i.proj ? ` · projet ${esc(i.proj)}` : ''}` }))];
@@ -1840,7 +1923,7 @@ function vMois() {
     { k: 'soldes', t: 'Soldes des comptes', d: `${doneN} sur ${accs.length} à jour`, ok: doneN === accs.length, act: 'sub', v: 'soldes' },
     ...(cashDet.length ? [{ k: 'operations', t: 'Opérations du mois', d: !txAll.length ? 'aucun relevé importé' : txTodo ? `${plural(txTodo, 'ligne', 'lignes')} à classer` : `${plural(txAll.length, 'ligne classée', 'lignes classées')}`, ok: txAll.length > 0 && !txTodo, act: 'sub', v: 'operations' }] : []),
     ...(S.household.on && members().length > 1 ? [{ k: 'foyer', t: 'Revenus et charges du foyer',
-      d: carryPending(m) ? `écart ${deM(monthName(addMonths(m, -1)))} à reporter ou effacer` : !st.total ? 'aucune dépense enregistrée' : `${eur(st.total)} de charges${incOk ? '' : ', revenus à saisir'}`,
+      d: (n => n ? `${plural(n, 'charge', 'charges')} à pointer · ` : '')([...(S.pot[m]?.items || []).filter(i => !i.src), ...(S.pot[m]?.perso || []).filter(i => !i.rb)].filter(i => !i.pt).length) + (carryPending(m) ? `écart ${deM(monthName(addMonths(m, -1)))} à reporter ou effacer` : !st.total ? 'aucune dépense enregistrée' : `${eur(st.total)} de charges${incOk ? '' : ', revenus à saisir'}`),
       ok: st.total > 0 && incOk && !carryPending(m), act: 'foyer' }] : []),
   ];
   // Dernière étape : la sauvegarde, accessible une fois les soldes à jour
@@ -1852,13 +1935,21 @@ function vMois() {
   const allOk = steps.every(x => x.ok);
   return `
     <div class="month-nav"><button data-act="month" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(m))}</strong><button data-act="month" data-d="1" aria-label="Mois suivant" ${m >= cur ? 'disabled' : ''}>›</button></div>
-    <p class="explain">${allOk ? 'Tout est à jour pour ce mois. Le résumé est prêt dans l’onglet Résumé.' : 'Trois minutes par mois : suis les étapes, elles passent au vert une fois terminées.'}</p>
-    <ol class="steps">${steps.map((x, i) => `<li class="${x.ok ? 'ok' : ''}${x.off ? ' off' : ''}">
+    ${progRing(steps.filter(x => x.ok).length, steps.length, allOk ? `${cap(monthName(m))} est à jour` : `${cap(monthName(m))} en cours`,
+      allOk ? 'Le résumé du mois est prêt.' : `Encore ${steps.filter(x => !x.ok).map(x => x.t.toLowerCase()).join(', ')}.`)}
+    <ol class="steps">${steps.map((x, i) => `<li class="${x.ok ? 'ok' : ''}${x.off ? ' off' : ''}${!x.ok && !x.off && i === steps.findIndex(y => !y.ok && !y.off) ? ' cur' : ''}">
       <button data-act="${x.act === 'sub' ? 'gosub' : x.act === 'backup' ? 'backupnow' : 'gofoyer'}" ${x.v ? `data-v="${x.v}"` : ''} ${x.off ? 'disabled' : ''}>
-        <span class="stepno">${x.ok ? '✓' : i + 1}</span>
+        <span class="stepno">${x.ok ? ICON.check : i + 1}</span>
         <span class="stepmain"><span class="stept">${x.t}</span><span class="stepd">${x.d}</span></span>
         <span class="chev">›</span></button></li>`).join('')}</ol>
     ${allOk ? `<div class="actions"><button class="btn primary wide" data-act="go" data-view="resume">Voir le résumé du mois</button></div>` : ''}`;
+}
+function progRing(done, total, title, sub) {
+  const r = 34, c = 2 * Math.PI * r, f = total ? done / total : 0;
+  return `<section class="ring"><svg viewBox="0 0 84 84" role="img" aria-label="${done} étape${done > 1 ? 's' : ''} sur ${total} terminée${done > 1 ? 's' : ''}">
+    <circle cx="42" cy="42" r="${r}" class="ring-bg"/>${f ? `<circle cx="42" cy="42" r="${r}" class="ring-fg${f >= 1 ? ' full' : ''}" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 42 42)"/>` : ''}
+    <text x="42" y="49" text-anchor="middle">${done}/${total}</text></svg>
+    <div><p class="ring-t">${title}</p><p class="small">${sub}</p></div></section>`;
 }
 function vSoldes() {
   const m = saisieMonth, cur = monthKey();
@@ -2175,6 +2266,21 @@ document.addEventListener('pointermove', e => { const el = e.target.closest?.('.
 document.addEventListener('pointerdown', e => { const el = e.target.closest?.('.schart'); if (el) chartHover(el, e.clientX); });
 document.addEventListener('pointerout', e => { const el = e.target.closest?.('.schart'); if (el && !el.contains(e.relatedTarget)) chartLeave(el); });
 
+// Évolution par compte : une courbe par compte (les 6 plus gros), le reste regroupé. Activable, choix mémorisé.
+function accEvo(ks, lbl, full, first, f) {
+  const on = !!ui.perAcc;
+  const btn = `<button class="btn ${on ? 'ghost' : ''} wide" data-act="peracc" aria-pressed="${on}">${on ? 'Masquer les courbes par compte' : 'Afficher l’évolution par compte'}</button>`;
+  if (!on) return `<section><h2>Évolution par compte</h2>${btn}</section>`;
+  const F = ks[ks.length - 1], accs = active().filter(a => f(a) && !isCash(a)).sort((a, b) => valueAt(b, F) - valueAt(a, F));
+  const top = accs.slice(0, 6), rest = accs.slice(6);
+  const ser = a => ks.map(k => k < first || (a.open && k < a.open) ? null : valueAt(a, k));
+  const lines = top.map((a, i) => ({ vals: ser(a), name: a.name, cls: 'ac' + (i + 1) }));
+  if (rest.length) lines.push({ vals: ks.map(k => k < first ? null : rest.reduce((t, a) => t + valueAt(a, k), 0)), name: `${plural(rest.length, 'autre compte', 'autres comptes')}`, cls: 'ac7' });
+  return `<section><h2>Évolution par compte</h2>
+    <p class="small" style="margin:-6px 0 10px">${accs.length > 6 ? 'Les 6 plus gros comptes, les autres regroupés. ' : ''}Touche le graphique pour lire la valeur de chaque compte.</p>
+    ${lines.length ? svgChart({ id: 'acc', labels: lbl, full, aria: `Valeur de ${plural(lines.length, 'compte', 'comptes')} sur ${plural(ks.length, 'mois', 'mois')}`, lines, fromMin: false }) : '<p class="muted">Aucun compte à afficher.</p>'}
+    <div style="margin-top:12px">${btn}</div></section>`;
+}
 function statTile(label, value, sub, cls = '', alert = false) {
   return `<div class="tile${alert ? ' alert' : ''}"><p class="tl">${label}</p><p class="tv num">${value}</p>${sub ? `<p class="ts ${cls}">${sub}</p>` : ''}</div>`;
 }
@@ -2245,6 +2351,7 @@ function vStats() {
         rev ? `${low ? `sous le seuil de ${pctTxt(seuil)} · ` : ''}${rateReg != null ? `${pctTxt(rateReg)} hors primes · ` : ''}sur ${eur(rev)} de revenus mensuels${esc(scopeName)}${primesRev ? ', primes comprises' : ''}` : `sur ${plural(n, 'mois', 'mois')}`,
         rev ? (low ? 'down' : '') : perfTot >= 0 ? 'up' : 'down', low)}
     </div>
+    ${accEvo(ks, lbl, full, first, f)}
     <section><h2>Argent mis de côté</h2>
       <div class="chips tight" role="group" aria-label="Objectif">${goals.map(([v, l]) => `<button class="${statGoal === v ? 'on' : ''}" data-act="statgoal" data-v="${v}">${l}</button>`).join('')}</div>
       <p class="small" style="margin:8px 0 10px">${mid == null && need != null ? 'Tu peux fixer ton propre objectif mensuel, au-delà du minimum requis, dans l’onglet Objectifs. ' : ''}${split ? 'Primes affichées à part : l’objectif et la moyenne lissée portent sur l’épargne hors primes. ' : ''}${needTxt || (statGoal === 'all' ? 'Renseigne un objectif d’apport ou de rente pour afficher la ligne d’objectif.' : `Renseigne l’objectif ${statGoal === 'apport' ? 'd’apport (montant et échéance)' : 'de rente'} dans l’onglet Objectifs pour afficher la ligne.`)}</p>
@@ -3296,6 +3403,7 @@ const ACT = {
   scope: t => { scope = t.dataset.s; render(); },
   statn: t => { statN = +t.dataset.v; render(); },
   statw: t => { statW = +t.dataset.v; render(); },
+  peracc: async () => { ui.perAcc = !ui.perAcc; try { await store.set('ui', ui); } catch {} render(); },
   statgoal: t => { statGoal = t.dataset.v; render(); },
   carry: async t => {
     const k = potMonth, p = (S.pot[k] ||= { items: [], transfers: [] });
