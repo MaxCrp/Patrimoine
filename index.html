@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-Ad+0646+dKn+0TAt26xry5Y331VY74VRtugOoqy9Kag='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-lkvokEBr429fdw9yBNZqOrsqzroHqVEyC/jIXUc/3vw='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -1251,18 +1251,18 @@ function controlOf(k) {
   const paye = myItems.reduce((t, i) => t + i.a, 0);
   const commun = myItems.filter(i => /compte (commun|joint)/i.test(i.n)).reduce((t, i) => t + i.a, 0);
   const persoAll = persoOf(k), persoPt = persoAll.filter(i => i.rb || isPt(i)), persoUp = persoAll.filter(i => !i.rb && !isPt(i));
-  // Remboursements : de l'argent en plus ce mois-ci, dont l'origine est connue. La charge remboursée a été comptée
-  // (pointée) au moment où elle a été payée : le remboursement est montré à part, hors écart à expliquer.
+  // Remboursements : de l'argent réellement entré sur le compte ce mois-ci. Ils comptent dans l'écart comme toute entrée,
+  // sur une ligne à eux (en précisant ceux d'une charge d'un mois précédent).
   const rbs = persoAll.filter(i => i.rb), isPrev = i => i.of?.k && i.of.k < k;
   const persoCh = persoPt.filter(i => !i.rb).reduce((t, i) => t + i.a, 0);
   const rbCur = -rbs.filter(i => !isPrev(i)).reduce((t, i) => t + i.a, 0), rbPrev = -rbs.filter(isPrev).reduce((t, i) => t + i.a, 0);
   const rbPrevFrom = [...new Set(rbs.filter(isPrev).map(i => i.of.k))].sort();
-  const perso = persoCh;
+  const perso = persoCh - rbCur - rbPrev;
   const mine = a => (a.owner || 'moi') === 'moi', employeur = empOf(k, mine), projEp = projOutOf(k, mine);
   const epargne = S.accounts.filter(a => !isCash(a) && mine(a)).reduce((t, a) => t + dep(k, a), 0) - employeur;
   const projPaye = myItems.filter(i => i.proj).reduce((t, i) => t + i.a, 0), projPerso = persoPt.filter(i => i.proj).reduce((t, i) => t + i.a, 0);
   const plaisir = plaisirOf(k) || 0;
-  const brut = salaire + prime + autres + recu - paye - envoye - perso - epargne - plaisir;   // hors remboursements d'un mois précédent
+  const brut = salaire + prime + autres + recu - paye - envoye - perso - epargne - plaisir;
   // Régularisation en attente, sur les charges pointées : ce que tu as payé (virements de régularisation compris),
   // comparé à ta part de ces charges. Positif : l'autre te doit ; négatif : tu lui dois. Le report d'un mois précédent
   // n'y entre pas : une fois réglé, il s'annule avec le virement reçu ou envoyé.
@@ -1561,7 +1561,7 @@ function summary(F) {
       if (c.hh && Math.abs(c.attente) >= 1) L.push(`- Régularisation en attente avec mon conjoint (charges communes payées au-delà de ma part due, ou en deçà) : ${SR(c.attente)}`);
       L.push(`- Écart non expliqué, régularisation en attente comprise (charges pointées seulement) : ${SR(c.ecart)}`);
       if (c.nUp) L.push(`- Charges pas encore pointées, à venir : ${R(c.venirCom + c.venirPerso)} · écart prévu une fois tout pointé : ${SR(c.ecartFin)}`);
-      if (c.rbCur + c.rbPrev) L.push(`- Remboursements reçus ce mois-ci, comptés à part (hors écart) : ${R(c.rbCur + c.rbPrev)}`);
+      if (c.rbCur + c.rbPrev) L.push(`- Remboursements reçus ce mois-ci (comptés dans les entrées) : ${R(c.rbCur + c.rbPrev)}`);
     }
   }
   const comp = active().filter(a => mineF(a) && a.lines?.length && valueAt(a, F) > 0);
@@ -2485,6 +2485,8 @@ function vControl(F) {
       ${c.projPaye ? row('dont projets', c.projPaye, true) : ''}
       ${c.hh ? row(`Virements envoyés à ${esc(other)}`, -c.envoye) : ''}
       ${row(c.nUp ? 'Charges perso pointées' : 'Charges perso', -c.persoCh)}
+      ${c.rbCur + c.rbPrev ? row('Remboursements reçus', c.rbCur + c.rbPrev) : ''}
+      ${c.rbPrev ? row(`dont pour une charge ${deM(prevNames)}`, c.rbPrev, true) : ''}
       ${c.projPerso ? row('dont projets', c.projPerso, true) : ''}
       ${c.projEp ? row('Épargne reprise pour des projets', c.projEp) : ''}
       ${row(c.epargne + c.projEp >= 0 ? 'Épargne versée' : 'Épargne reprise', -(c.epargne + c.projEp))}
@@ -2492,7 +2494,6 @@ function vControl(F) {
       ${row('Virement plaisir', -c.plaisir)}
       ${c.hh && Math.abs(c.attente) >= 0.5 ? row(c.attente > 0 ? `À recevoir de ${esc(other)} (régularisation en attente)` : `À verser à ${esc(other)} (régularisation en attente)`, c.attente) : ''}
       <li class="ctot ${ok || c.nUp ? '' : 'warn'}"><span>Écart à expliquer</span><span class="num">${signed2(c.ecart)}</span></li>
-      ${c.rbCur + c.rbPrev ? `<li class="cnext"><span>Remboursements reçus, comptés à part<br><span class="small">argent en plus ce mois-ci, resté sur ton compte : la charge remboursée a été comptée quand tu l’as payée${c.rbPrev && c.rbCur ? ` · dont ${eur2(c.rbPrev)} pour une charge ${deM(prevNames)}` : c.rbPrev ? ` (en ${prevNames})` : ''}</span></span><span class="num">${signed2(c.rbCur + c.rbPrev)}</span></li>` : ''}
       ${c.nUp ? `<li class="cnext"><span>Charges non pointées, à venir<br><span class="small">${plural(c.nUp, 'charge', 'charges')} · ${[c.venirCom ? `ta part des communes ${eur(c.venirCom)}` : '', c.venirPerso ? `perso ${eur(c.venirPerso)}` : ''].filter(Boolean).join(' · ')}</span></span><span class="num">${signed2(-(c.venirCom + c.venirPerso))}</span></li>
       <li class="cnext tot ${Math.abs(c.ecartFin) < 1 ? '' : 'warn'}"><span>Écart prévu une fois tout pointé</span><span class="num">${signed2(c.ecartFin)}</span></li>` : ''}
     </ul>
@@ -2525,7 +2526,7 @@ function controlDetail(k, c, ok) {
   const trL = trs.filter(t => t.from === 'moi' || t.to === 'moi').map(t => L(t.to === 'moi' ? `Reçu de ${esc(other)}` : `Envoyé à ${esc(other)}`, t.to === 'moi' ? t.a : -t.a, [t.reg === false ? 'hors régularisation' : 'régularisation', t.n ? esc(t.n) : ''].filter(Boolean).join(' · ')));
   // Charges perso et remboursements
   const per = persoOf(k).slice().sort((a, b) => b.a - a.a);
-  const perL = per.map(i => L(esc(i.n), -i.a, i.rb ? (i.of?.k && i.of.k < k ? `remboursement d’une charge ${deM(monthName(i.of.k))} · compté à part, hors écart` : 'remboursement · compté à part, hors écart') : [i.proj ? `projet ${esc(i.proj)}` : i.r === false ? 'ponctuelle' : 'fixe', i.pt ? 'pointée' : 'non pointée, pas encore comptée'].join(' · ')));
+  const perL = per.map(i => L(esc(i.n), -i.a, i.rb ? (i.of?.k && i.of.k < k ? `remboursement d’une charge ${deM(monthName(i.of.k))}` : 'remboursement') : [i.proj ? `projet ${esc(i.proj)}` : i.r === false ? 'ponctuelle' : 'fixe', i.pt ? 'pointée' : 'non pointée, pas encore comptée'].join(' · ')));
   dupe(per.filter(i => !i.rb), i => Math.round(i.a * 100)).forEach(([a, b]) => warn.push(`Deux charges perso de ${eur(a.a)} : « ${esc(a.n)} » et « ${esc(b.n)} ». Si c’est la même dépense, elle est comptée deux fois.`));
   // Épargne, compte par compte
   const accs = S.accounts.filter(a => !isCash(a) && mine(a) && Math.abs(dep(k, a)) >= 0.5);
