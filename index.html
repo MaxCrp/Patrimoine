@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-hduLlsKuvwTPEZ/AWJraUAdLumAaynaHR2m2Lah/akQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-AtpYg1yUwCp0cjpsssKQuaUxl9K+vdy1LmvFduMUgQY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -359,8 +359,45 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .menu .small{font-weight:400;color:var(--muted)}
 .list .closed{opacity:.5}
 .list [data-act=point]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.list [data-act=point]{justify-content:flex-start;gap:12px}
+.list [data-act=point] > span:nth-child(2){flex:1}
 .list [data-act=point] > span{transition:opacity .15s}
-.list li.done [data-act=point] > span{opacity:.4}
+.list li.done [data-act=point] > span:not(.ptck){opacity:.45}
+.ptck{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--muted);display:grid;place-items:center;color:var(--on-pine);transition:background .15s,border-color .15s}
+.ptck svg{width:15px;height:15px;stroke-width:3;opacity:0}
+.list li.done .ptck{background:var(--pine);border-color:var(--pine)}
+.list li.done .ptck svg{opacity:1}
+.h2-sub{font-weight:500;font-size:15px;color:var(--muted)}
+.balance .bal-t{margin:0;font-size:19px;font-weight:700}
+.balance .small{margin:4px 0 12px}
+.foyrows li button > span:first-child{flex:1}
+.foyrows .chev{color:var(--muted);font-size:22px}
+.foyrows .warn{color:var(--amber);font-weight:600}
+.todo{margin-top:18px;padding:14px 0 4px;border-radius:20px;background:var(--surface)}
+.todo-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 16px 6px}
+.todo-head h2{margin:0;font-size:18px}
+.todo ul{list-style:none;margin:0;padding:0}
+.todo li button{width:100%;display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 16px;border:0;border-top:1px solid var(--line);background:none;text-align:left;color:inherit}
+.todo li.ok button{color:var(--muted)}
+.todo li.off button{opacity:.55;cursor:default}
+.todo-b{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--pine-soft);color:var(--pine);font:700 13px var(--num)}
+.todo-b svg{width:18px;height:18px;stroke-width:2.2}
+.todo-b.warn{background:var(--amber-soft);color:var(--amber)}
+.todo-b.ok{background:var(--pos);color:var(--surface)}
+.todo-b.ok svg{stroke-width:2.6}
+.todo-m{flex:1;display:flex;flex-direction:column}
+.todo-t{font-weight:600;color:var(--ink)}
+.todo .chev,.rowlink .chev,.qrow .chev{color:var(--muted);font-size:22px}
+.rowlink,.qrow{width:100%;display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);text-align:left;color:inherit}
+.rowlink > span:nth-child(2),.qrow > span:nth-child(2){flex:1;font-weight:600}
+.rowlink .small,.qrow .small{font-weight:400}
+.rowlink svg,.qrow svg{flex:none;width:24px;height:24px;color:var(--pine)}
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qcard{min-height:104px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:10px;padding:14px;border:0;border-radius:18px;background:var(--surface);color:var(--ink);text-align:left;font-weight:600;font-size:16px;line-height:1.25}
+.qcard svg{width:26px;height:26px;color:var(--pine)}
+.qcard.primary{background:var(--pine);color:var(--on-pine)}
+.qcard.primary svg{color:var(--on-pine)}
+.qrow{margin-top:10px;background:transparent}
 .list [data-act=point].press{background:var(--line)}
 @keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
 .toast{position:fixed;left:50%;bottom:calc(92px + var(--safe-b));transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:15px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center}
@@ -757,7 +794,7 @@ function sheetCode() {
 /* ---------- État ---------- */
 let store, S = null, dek = null, dekRaw = null, slots = null, mode = 'boot', view = 'home', lockHasPk = false, pkPending = null;
 let statN = 12, statW = 3, statGoal = 'all';
-let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', subview = null, setPage = null, potMonth = monthKey(), scope = 'moi', rounding = true, hiddenAt = 0, pendingImport = null;
+let saisieMonth = monthKey(), resumeMonth = null, compteTab = 'detail', subview = null, foyerSub = null, setPage = null, potMonth = monthKey(), scope = 'moi', rounding = true, hiddenAt = 0, pendingImport = null;
 
 const emptyData = () => ({
   v: 1, accounts: [], entries: {}, pot: {}, rules: {}, dismissed: {},
@@ -1128,7 +1165,7 @@ function potItems(k) {
 // Pointage : marque une charge comme vérifiée pour le mois (repart à zéro chaque mois, ne change aucun total)
 // Toucher une charge la pointe (grisée) ou la dépointe ; un appui long ouvre sa modification
 const ptHint = list => list.length ? `<p class="small" style="margin-top:8px">${list.some(i => i.pt) ? `${list.filter(i => i.pt).length} sur ${list.length} pointées. ` : ''}Touche une charge pour la pointer, appuie longuement pour la modifier.</p>` : '';
-const ptRow = (i, kind, inner) => `<li class="${i.pt ? 'done' : ''}"><button data-act="point" data-kind="${kind}" data-id="${i.id}" data-edit="${kind === 'p' ? 'editperso' : 'editcharge'}" aria-pressed="${i.pt ? 'true' : 'false'}" aria-description="Appui long pour modifier">${inner}</button></li>`;
+const ptRow = (i, kind, inner) => `<li class="${i.pt ? 'done' : ''}"><button data-act="point" data-kind="${kind}" data-id="${i.id}" data-edit="${kind === 'p' ? 'editperso' : 'editcharge'}" aria-pressed="${i.pt ? 'true' : 'false'}" aria-description="Appui long pour modifier"><span class="ptck" aria-hidden="true">${ICON.check}</span>${inner}</button></li>`;
 // Revenu du mois : valeur saisie pour ce mois, sinon le revenu de référence du membre
 const incomeSet = (k, id) => S.pot[k]?.inc?.[id] != null;
 const incomeOf = (k, id) => (S.pot[k]?.inc?.[id] ?? memberOf(id).income) || 0;
@@ -1467,6 +1504,13 @@ const ICON = {
   target: svg('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>'),
   doc: svg('<path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 16h6"/>'),
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
+  users: svg('<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.9-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9" r="2.6"/><path d="M16 14.3c2.5-.2 4.3 1.5 4.7 4.7"/>'),
+  user: svg('<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/>'),
+  refund: svg('<path d="M9 7H5V3"/><path d="M5.5 7A8 8 0 1 1 4 12"/><path d="M12 8v8M9.5 10.5c0-1 1.1-1.7 2.5-1.7s2.5.7 2.5 1.7-1.1 1.5-2.5 1.5-2.5.6-2.5 1.6 1.1 1.7 2.5 1.7 2.5-.7 2.5-1.7"/>'),
+  transfer: svg('<path d="M4 8h14M14 4l4 4-4 4"/><path d="M20 16H6M10 12l-4 4 4 4"/>'),
+  homeadd: svg('<path d="M4 20V10l8-6 8 6v10"/><path d="M9 14h6M12 11v6"/>'),
+  check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  download: svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),
   back: svg('<path d="M15 5l-7 7 7 7"/>'),
   eye: svg('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>'),
   eyeOff: svg('<path d="M4 4l16 16"/><path d="M9.9 5.9A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.3 4"/><path d="M6.3 8.1A16.8 16.8 0 0 0 2.5 12S6 18.5 12 18.5c1.2 0 2.3-.3 3.3-.7"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
@@ -1511,16 +1555,21 @@ function render() {
   const cur = monthKey();
   const filled = a => isSimple(a) ? entry(cur, a)?.dot != null : entry(cur, a)?.value != null;
   const todo = active().some(a => !filled(a));
-  const titles = { home: 'Patrimoine', comptes: 'Mes comptes', saisie: 'Ce mois', objectifs: 'Objectifs', resume: 'Résumé' };
+  const titles = { home: 'Patrimoine', comptes: 'Mes comptes', foyer: 'Foyer', saisie: 'Ce mois', objectifs: 'Objectifs', resume: 'Résumé' };
+  const fTitles = { communes: 'Dépenses communes', perso: 'Charges perso', virements: 'Virements', revenus: 'Revenus du mois', reste: 'Reste à vivre' };
   const subs = { soldes: 'Soldes des comptes', operations: 'Opérations du mois' };
-  const sub = view === 'saisie' ? subview : null;
+  const sub = view === 'saisie' ? subview : null, fsub = view === 'foyer' ? foyerSub : null;
+  // Objectifs n'a plus d'onglet quand le foyer est actif : on y arrive depuis l'accueil, avec un retour
+  const backBtn = sub || fsub || (view === 'objectifs' && S.household.on);
   const hidden = masked && (view === 'saisie' || view === 'resume');
   const body = hidden ? vHidden(view)
     : sub === 'soldes' ? vSoldes() : sub === 'operations' ? vOperations()
-    : { home: vHome, comptes: vComptes, saisie: vMois, objectifs: vObjectifs, resume: vResume }[view]();
-  const tabs = [['home', 'Accueil', ICON.home], ['comptes', 'Comptes', ICON.wallet], ['saisie', 'Ce mois', ICON.edit], ['objectifs', 'Objectifs', ICON.target], ['resume', 'Résumé', ICON.doc]];
+    : { home: vHome, comptes: vComptes, foyer: vFoyer, saisie: vMois, objectifs: vObjectifs, resume: vResume }[view]();
+  const tabs = S.household.on
+    ? [['home', 'Accueil', ICON.home], ['foyer', 'Foyer', ICON.users], ['saisie', 'Ce mois', ICON.edit], ['comptes', 'Comptes', ICON.wallet], ['resume', 'Résumé', ICON.doc]]
+    : [['home', 'Accueil', ICON.home], ['comptes', 'Comptes', ICON.wallet], ['saisie', 'Ce mois', ICON.edit], ['objectifs', 'Objectifs', ICON.target], ['resume', 'Résumé', ICON.doc]];
   app.innerHTML = `
-    <header class="top">${sub ? `<button class="icon-btn back" data-act="back" aria-label="Retour">${ICON.back}</button>` : ''}<h1>${sub ? subs[sub] : titles[view]}</h1>
+    <header class="top">${backBtn ? `<button class="icon-btn back" data-act="back" aria-label="Retour">${ICON.back}</button>` : ''}<h1>${sub ? subs[sub] : fsub ? fTitles[fsub] : titles[view]}</h1>
       <div class="top-actions">${mode === 'demo' ? '<span class="pill">Démo</span>' : ''}
         <button class="icon-btn ${masked ? 'on' : ''}" data-act="mask" aria-label="${masked ? 'Afficher les montants' : 'Masquer les montants'}" aria-pressed="${masked}">${masked ? ICON.eyeOff : ICON.eye}</button>
         <button class="icon-btn" data-act="lock" aria-label="${mode === 'demo' ? 'Quitter la démo' : 'Verrouiller'}">${ICON.lock}</button>
@@ -1533,7 +1582,12 @@ function render() {
     }).join('')}<button class="tab plus" data-act="quick" aria-label="Raccourci : solde, mouvement ou dépense commune">${ICON.plus}</button></nav>`;
   uScreenCheck();
 }
-function go(v) { view = v; subview = null; render(); window.scrollTo(0, 0); }
+function go(v) { view = v; subview = null; foyerSub = null; render(); window.scrollTo(0, 0); }
+// Foyer : on reprend d'abord les charges fixes du mois précédent, puis on ouvre la vue (ou une de ses sections)
+async function goFoyer(sec = null) {
+  if (mode === 'app' && S.household.on) await seedMonth(potMonth);
+  view = 'foyer'; subview = null; foyerSub = sec; render(); window.scrollTo(0, 0);
+}
 function goSub(v) { subview = v; render(); window.scrollTo(0, 0); }
 
 function emptyAccounts() {
@@ -1571,12 +1625,10 @@ function vHome() {
       <p class="hero-total num">${eur(b.total)}</p>
       <p class="hero-delta ${delta >= 0 ? 'up' : 'down'}">${ms[0] === F ? 'Premier mois de suivi' : `${signed(delta)} sur le mois, dont ${signed(b.dep)} versés`}</p>
     </section>
-    ${missing.length ? `
-    <section class="update"><div><p class="update-title">${cap(monthName(cur))} à mettre à jour</p><p class="muted">${doneN} ${doneN > 1 ? 'comptes' : 'compte'} sur ${acc.length}</p><div class="progress"><i style="width:${Math.round(doneN / acc.length * 100)}%"></i></div></div>
-      <button class="btn primary" data-act="go" data-view="saisie">Mettre à jour</button></section>` : `
-    <section class="update done"><p class="update-title">${cap(monthName(cur))} est à jour.</p><button class="btn ghost" data-act="go" data-view="resume">Voir le résumé</button></section>`}
+    ${homeTodo(cur, acc, missing.length)}
     <section><h2>Évolution</h2>${chart(tl)}
       ${tl.length > 1 ? `<div class="legend"><span><i class="key"></i>Valeur</span><span><i class="key inv"></i>Argent versé</span><span>Gains cumulés <b>${signed(last.t - last.inv)}</b></span></div>` : ''}</section>
+    ${S.household.on ? `<section><button class="rowlink" data-act="go" data-view="objectifs">${ICON.target}<span>Objectifs<br><span class="small">Apport immobilier, rente future, épargne mensuelle</span></span><span class="chev" aria-hidden="true">›</span></button></section>` : ''}
     <section><h2>Répartition</h2>
       <div class="stack" role="img" aria-label="Répartition par type de placement">${cats.map(x => `<i style="width:${x.v / b.total * 100}%;background:${x.color}"></i>`).join('')}</div>
       <ul class="rep">${cats.map(x => `<li><span class="dot" style="background:${x.color}"></span><span>${x.label}</span><span class="p">${pct(x.v / b.total)}</span><span class="num">${eur(x.v)}</span></li>`).join('')}</ul></section>
@@ -1589,6 +1641,27 @@ function vHome() {
       ${hiddenN ? `<button class="link" data-act="unhide">Réafficher ${plural(hiddenN, 'point masqué', 'points masqués')}</button>` : ''}</section>
     <section class="statsec"><h2>Statistiques</h2>
       ${masked ? '<p class="muted">Masquées tant que les montants le sont.</p><button class="btn" data-act="unmask">Afficher les montants</button>' : vStats()}</section>`;
+}
+
+// Accueil : les tâches du mois, chacune à un geste. Quand tout est fait, on propose le résumé.
+function homeTodo(cur, acc, missN) {
+  const rows = [];
+  if (multi()) {
+    const p = S.pot[cur], pts = [...(p?.items || []).filter(i => !i.src), ...(p?.perso || []).filter(i => !i.rb)], left = pts.filter(i => !i.pt).length;
+    if (!p || pts.length) rows.push({ t: 'pointer', ok: !!p && !left, title: 'Pointer les charges', badge: left || '', warn: left > 0,
+      d: !p ? 'reprendre les charges du mois' : left ? `${plural(left, 'charge', 'charges')} à pointer` : 'tout est pointé' });
+  }
+  const doneN = acc.length - missN;
+  rows.push({ t: 'soldes', ok: !missN, title: 'Soldes des comptes', badge: `${doneN}/${acc.length}`, d: missN ? `${doneN} sur ${acc.length} à jour` : 'tous à jour' });
+  const le = S.settings.lastExport, saved = !!le && monthKey(new Date(le)) >= cur;
+  rows.push({ t: 'backup', ok: saved, off: !!missN && !saved, title: 'Sauvegarder', icon: ICON.download,
+    d: saved ? `faite le ${new Date(le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : missN ? 'dès que les soldes sont à jour' : 'les comptes sont à jour : mets-les à l’abri' });
+  const okN = rows.filter(r => r.ok).length;
+  if (okN === rows.length) return `<section class="update done"><p class="update-title">${cap(monthName(cur))} est à jour.</p><button class="btn ghost" data-act="go" data-view="resume">Voir le résumé</button></section>`;
+  return `<section class="todo"><div class="todo-head"><h2>À faire en ${monthName(cur)}</h2><span class="small">${okN} sur ${rows.length} ${okN > 1 ? 'faites' : 'faite'}</span></div>
+    <ul>${rows.map(r => `<li class="${r.ok ? 'ok' : ''}${r.off ? ' off' : ''}"><button data-act="todo" data-t="${r.t}" ${r.off ? 'disabled' : ''}>
+      <span class="todo-b${r.ok ? ' ok' : r.warn ? ' warn' : ''}" aria-hidden="true">${r.ok ? ICON.check : r.icon || r.badge}</span>
+      <span class="todo-m"><span class="todo-t">${r.title}</span><span class="small">${r.d}</span></span><span class="chev" aria-hidden="true">›</span></button></li>`).join('')}</ul></section>`;
 }
 
 function chart(tl) {
@@ -1610,10 +1683,7 @@ function chart(tl) {
 
 const maturityOf = a => { const T = TYPES[a.type]; return T.maturite && a.open ? { date: addMonths(a.open, T.maturite * 12), years: T.maturite } : null; };
 function vComptes() {
-  if (!S.accounts.length && !S.household.on) return emptyAccounts();
-  const tabs = [['detail', 'Placements'], ['foyer', 'Foyer']];
-  return `${S.household.on ? `<div class="seg" role="tablist">${tabs.map(([v, l]) => `<button class="${compteTab === v ? 'on' : ''}" data-act="comptetab" data-t="${v}">${l}</button>`).join('')}</div>` : ''}
-    ${compteTab === 'foyer' && S.household.on ? vFoyer() : vComptesDetail()}`;
+  return vComptesDetail();
 }
 function vComptesDetail() {
   const f = scopeF();
@@ -1677,14 +1747,13 @@ function vFoyer() {
   const gapTxt = gap ? settle(gap).map(d => `${esc(mName(d.from))} devait ${eur(d.a)} à ${esc(mName(d.to))}`).join(', ') : '';
   const carried = st.p.carry && Object.values(st.p.carry).some(v => Math.abs(v) >= 1);
   const trs = (st.p.transfers || []);
-  return `
-    <div class="month-nav"><button data-act="potmonth" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(k))}</strong><button data-act="potmonth" data-d="1" aria-label="Mois suivant" ${k >= cur ? 'disabled' : ''}>›</button></div>
-    ${gap ? `<section><div class="goal carry"><h2>Écart ${deM(monthName(prevK))}</h2>
+  const nav = `<div class="month-nav"><button data-act="potmonth" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(k))}</strong><button data-act="potmonth" data-d="1" aria-label="Mois suivant" ${k >= cur ? 'disabled' : ''}>›</button></div>`;
+  const gapS = `${gap ? `<section><div class="goal carry"><h2>Écart ${deM(monthName(prevK))}</h2>
       <p>${cap(monthName(prevK))} s’est terminé sans régularisation : ${gapTxt}.</p>
       <p class="small">Tu peux reporter cet écart sur ${monthName(k)}, il s’ajoutera aux soldes du mois, ou repartir de zéro si vous avez réglé autrement.</p>
       <div class="row2" style="margin-top:12px"><button class="btn primary" data-act="carry" data-v="1">Reporter</button><button class="btn" data-act="carry" data-v="0">Repartir à zéro</button></div>
-    </div></section>` : ''}
-    <section><div class="goal"><h2>Revenus ${deM(monthName(k))}</h2>
+    </div></section>` : ''}`;
+  const revS = `<section><div class="goal"><h2>Revenus ${deM(monthName(k))}</h2>
       <p class="small" style="margin:0 0 12px">À renseigner chaque mois quand les revenus varient. Laisse vide pour reprendre le revenu de référence du membre.</p>
       <div class="fields">${ms.map(m => `<label>${esc(m.name)}<input ${masked ? `readonly value="${MASK}"` : `inputmode="decimal" data-inc="${m.id}" value="${esc(numStr(S.pot[k]?.inc?.[m.id]))}" placeholder="${esc(numStr(m.income) || '0')}"`}></label>`).join('')}
         <label class="full">Ta prime exceptionnelle, nette (€)<input ${masked ? `readonly value="${primeOf(k) ? MASK : ''}"` : `inputmode="decimal" data-prime="1" value="${esc(numStr(S.pot[k]?.prime))}" placeholder="${primeDue ? `prévue, environ ${esc(numStr(primeDue.a))}` : 'aucune ce mois-ci'}"`}></label>
@@ -1693,8 +1762,8 @@ function vFoyer() {
       <p class="small" style="margin:6px 0 0">Le virement plaisir reprend le montant fixé dans Réglages › Budget de référence ; renseigne-le ici seulement s’il change ce mois-ci.</p>
       ${primeDue && !primeOf(k) ? `<p class="hint">Mois de prime prévu : saisis le montant net perçu pour suivre l’objectif au plus juste.</p>` : ''}
       <p class="small" style="margin-top:10px">${primeOf(k) ? 'La prime compte dans tes revenus et ton reste à vivre, pas dans la répartition des charges. ' : ''}Total du foyer : ${eur(ms.reduce((t, m) => t + revOf(k, m.id), 0))}${primeOf(k) ? `, dont ${eur(primeOf(k))} de prime` : ''}${ms.some(m => !incomeSet(k, m.id)) ? ` · ${ms.filter(m => !incomeSet(k, m.id)).map(m => esc(m.name)).join(', ')} : revenu de référence` : ''}</p>
-      ${miss.length && S.household.split.mode === 'revenus' ? `<p class="hint">La répartition se fait au prorata des revenus : saisis ceux de ${miss.map(m => esc(m.name)).join(', ')} pour ${monthName(k)}.</p>` : ''}</div></section>
-    <section><div class="goal"><h2>Charges communes</h2>
+      ${miss.length && S.household.split.mode === 'revenus' ? `<p class="hint">La répartition se fait au prorata des revenus : saisis ceux de ${miss.map(m => esc(m.name)).join(', ')} pour ${monthName(k)}.</p>` : ''}</div></section>`;
+  const comS = `<section><div class="goal"><h2>Charges communes</h2>
       <p class="big num">${eur(st.total)}</p>
       <p class="small">${plural(items.length, 'dépense enregistrée', 'dépenses enregistrées')} · répartition : ${SPLIT[H.split.mode]}</p>
       ${st.total || carried ? `<div class="tbl"><table><thead><tr><th></th><th>Part</th><th>Payé</th><th>Dû</th><th>Solde</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
@@ -1702,14 +1771,14 @@ function vFoyer() {
       ${dues.length ? `<div class="settle">${dues.map(d => `<p><strong>${esc(mName(d.from))} doit ${eur(d.a)} à ${esc(mName(d.to))}</strong></p>
         <button class="btn wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer un virement</button>`).join('')}</div>`
         : st.total || carried ? '<p class="small" style="margin-top:12px">Comptes équilibrés entre vous.</p>' : ''}
-      <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>
-    <section id="sec-communes"><h2>Dépenses du mois</h2>
+      <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>`;
+  const listC = `<section id="sec-communes"><h2>Dépenses du mois</h2>
       ${st.p.from && st.p.items.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Dépenses fixes reprises ${deM(monthLabel(st.p.from))} : vérifie les montants qui ont changé.</p>` : ''}
       ${items.length ? `<ul class="list">${items.map(i => { const b = `<span>${esc(i.n)}<br><span class="small">payé par ${esc(mName(i.by))}${i.src === 'tx' ? ' · relevé' : i.src === 'env' ? ' · enveloppe' : i.proj ? ` · projet ${esc(i.proj)}` : i.r === false ? ' · ponctuelle' : ' · fixe'}${i.sp ? ' · ' + spLabel(i.sp) : ''}</span></span><span class="num">${eur(i.a)}</span>`; return i.src ? `<li><button data-act="srcinfo" data-id="${i.id}">${b}</button></li>` : ptRow(i, 'c', b); }).join('')}</ul>${ptHint(items.filter(i => !i.src))}`
         : '<p class="muted">Aucune dépense commune enregistrée pour ce mois.</p>'}
       <div class="actions"><button class="btn primary wide" data-act="newcharge">Ajouter une dépense</button>
-        ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre à nouveau les dépenses ${deM(monthName(addMonths(k, -1)))}</button>` : ''}</div></section>
-    <section id="sec-perso"><h2>Mes charges personnelles</h2>
+        ${potOf(addMonths(k, -1)).items.length ? `<button class="btn ghost wide" data-act="copycharges">Reprendre à nouveau les dépenses ${deM(monthName(addMonths(k, -1)))}</button>` : ''}</div></section>`;
+  const persoS = `<section id="sec-perso"><h2>Mes charges personnelles</h2>
       <p class="muted" style="margin:-6px 0 12px;font-size:14px">${perso.length || refunds.length ? `${eur(persoTotal(k))} ce mois-ci${refunds.length ? `, après ${eur(persoRefunds(k))} de remboursements` : ''}. Elles ne concernent que toi et réduisent ton reste à vivre.` : 'Abonnements, téléphone, transport… : ce qui ne regarde que toi, pour un reste à vivre plus juste.'}</p>
       ${st.p.persoFrom && perso.length ? `<p class="muted" style="margin:-6px 0 12px;font-size:14px">Charges fixes reprises ${deM(monthLabel(st.p.persoFrom))} : vérifie les montants qui ont changé.</p>` : ''}
       ${perso.length || refunds.length ? `<ul class="list">${perso.map(i => {
@@ -1717,17 +1786,44 @@ function vFoyer() {
         return ptRow(i, 'p', `<span>${esc(i.n)}<br><span class="small">${i.proj ? `projet ${esc(i.proj)}` : i.r === false ? 'ponctuelle' : 'fixe'}${back ? ` · ${esc(eur(back))} remboursés` : ''}</span></span><span class="num">${eur(i.a)}</span>`);
       }).join('')}${refunds.map(i => `<li><button data-act="editrefund" data-id="${i.id}"><span>${esc(i.n)}<br><span class="small">remboursement${i.of ? ` · ${esc(i.of.n)}${i.of.k !== k ? `, ${monthName(i.of.k)}` : ''}` : ''}</span></span><span class="num up">${signed(i.a)}</span></button></li>`).join('')}</ul>${ptHint(perso)}` : ''}
       <div class="actions"><button class="btn wide" data-act="newperso">Ajouter une charge personnelle</button>
-        <button class="btn ghost wide" data-act="newrefund">Enregistrer un remboursement</button></div></section>
-    <section><h2>Virements entre vous</h2>
+        <button class="btn ghost wide" data-act="newrefund">Enregistrer un remboursement</button></div></section>`;
+  const trS = `<section><h2>Virements entre vous</h2>
       ${trs.length ? `<ul class="list">${trs.map(t => {
         const detail = [t.reg === false ? 'hors régularisation' : '', t.n ? esc(t.n) : ''].filter(Boolean).join(' · ');
         return `<li><button data-act="deltransfer" data-id="${t.id}"><span>${esc(mName(t.from))} → ${esc(mName(t.to))}${detail ? `<br><span class="small">${detail}</span>` : ''}</span><span class="num">${eur(t.a)}</span></button></li>`;
       }).join('')}</ul>
         <p class="small">Touche un virement pour le supprimer.</p>` : '<p class="muted">Aucun virement ce mois-ci.</p>'}
-      <div class="actions"><button class="btn wide" data-act="newtransfer">Ajouter un virement</button></div></section>
-    ${effort ? `<section><h2>Reste à vivre</h2><ul class="kv effort">${effort}</ul>
-      <p class="small">Revenus du mois, moins la part de charges communes due, tes charges personnelles et l’épargne versée.</p></section>` : ''}
-`;
+      <div class="actions"><button class="btn wide" data-act="newtransfer">Ajouter un virement</button></div></section>`;
+  const resteS = `${effort ? `<section><h2>Reste à vivre</h2><ul class="kv effort">${effort}</ul>
+      <p class="small">Revenus du mois, moins la part de charges communes due, tes charges personnelles et l’épargne versée.</p></section>` : ''}`;
+  if (foyerSub === 'communes') return nav + comS + listC;
+  if (foyerSub === 'perso') return nav + persoS;
+  if (foyerSub === 'virements') return nav + trS;
+  if (foyerSub === 'revenus') return nav + revS;
+  if (foyerSub === 'reste' && effort) return nav + resteS;
+  // Vue principale : qui doit quoi, puis tout ce qui reste à pointer, puis le détail replié
+  const bal = `<section><div class="goal balance">${dues.length ? dues.map(d => `<p class="bal-t">${esc(mName(d.from))} doit ${eur(d.a)} à ${esc(mName(d.to))}</p>`).join('')
+      : `<p class="bal-t">${st.total || carried ? 'Comptes équilibrés entre vous' : 'Aucune dépense commune ce mois-ci'}</p>`}
+    <p class="small">Charges communes ${eur(st.total)} · ${SPLIT[H.split.mode].toLowerCase()}</p>
+    ${dues.map(d => `<button class="btn primary wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer le virement${dues.length > 1 ? ` de ${esc(mName(d.from))}` : ''}</button>`).join('')}</div></section>`;
+  const comPt = items.filter(i => !i.src);
+  const pts = [...comPt.map(i => ({ i, kind: 'c', d: `commune · payé par ${esc(mName(i.by))}` })), ...perso.map(i => ({ i, kind: 'p', d: `perso${i.proj ? ` · projet ${esc(i.proj)}` : ''}` }))];
+  const left = pts.filter(x => !x.i.pt).length;
+  const ptS = pts.length ? `<section><h2>À pointer <span class="h2-sub">· ${left ? plural(left, 'restante', 'restantes') : 'tout est pointé'}</span></h2>
+    <ul class="list ptlist">${pts.map(x => ptRow(x.i, x.kind, `<span>${esc(x.i.n)}<br><span class="small">${x.d}</span></span><span class="num">${eur(x.i.a)}</span>`)).join('')}</ul>
+    <p class="small" style="margin-top:8px">Touche une charge pour la pointer, appuie longuement pour la modifier.</p></section>` : '';
+  const ptOf = l => l.length ? ` · ${l.filter(i => i.pt).length} sur ${l.length} ${l.filter(i => i.pt).length > 1 ? 'pointées' : 'pointée'}` : '';
+  const incTot = ms.reduce((t, m) => t + revOf(k, m.id), 0);
+  const incD = miss.length && S.household.split.mode === 'revenus' ? `<span class="warn">à saisir pour ${miss.map(m => esc(m.name)).join(', ')}</span>`
+    : ms.some(m => !incomeSet(k, m.id)) ? 'revenus de référence repris' : 'saisis pour ce mois';
+  const row = (v, t, d, a) => `<li><button data-act="foyersub" data-v="${v}"><span>${t}<br><span class="small">${d}</span></span>${a != null ? `<span class="num">${a}</span>` : ''}<span class="chev" aria-hidden="true">›</span></button></li>`;
+  const rowsS = `<section><ul class="list foyrows">
+    ${row('communes', 'Dépenses communes', `${items.length ? plural(items.length, 'dépense', 'dépenses') : 'aucune dépense'}${ptOf(comPt)}`, eur(st.total))}
+    ${row('perso', 'Mes charges perso', `${perso.length ? plural(perso.length, 'charge', 'charges') : 'aucune charge'}${ptOf(perso)}${refunds.length ? ` · ${plural(refunds.length, 'remboursement', 'remboursements')}` : ''}`, eur(persoTotal(k)))}
+    ${row('virements', 'Virements entre vous', trs.length ? plural(trs.length, 'virement', 'virements') : 'aucun ce mois-ci', trs.length ? eur(trs.reduce((t, x) => t + x.a, 0)) : null)}
+    ${row('revenus', 'Revenus, prime et virement plaisir', incD, eur(incTot))}
+    ${effort ? row('reste', 'Reste à vivre', 'après charges et épargne, pour chacun', null) : ''}</ul></section>`;
+  return nav + gapS + bal + ptS + rowsS;
 }
 function vMois() {
   if (!S.accounts.length) return emptyAccounts();
@@ -2520,7 +2616,7 @@ function offerPasskey() {
 }
 const sheetMsg = msg => openSheet(`<h2>Face ID</h2><p>${esc(msg)}</p><button class="btn wide" data-act="setpage" data-p="secu">Retour</button>`);
 function enterApp() {
-  view = 'home'; compteTab = 'detail';
+  view = 'home'; compteTab = 'detail'; foyerSub = null;
   saisieMonth = monthKey(); potMonth = monthKey(); resumeMonth = null;
   scope = multi() && (scope === 'all' || members().some(m => m.id === scope)) ? scope : 'moi';
   masked = !!S.settings.masked;
@@ -2913,13 +3009,14 @@ function sheetQuick(step) {
 
   // Premier écran : quatre actions directes
   if (!quick.step) {
-    return openSheet(`${head('Que veux-tu saisir ?')}
-      <div class="stack-form">
-        <button class="btn primary wide" data-act="quickstep">Mouvement de compte</button>
-        ${hh ? '<button class="btn wide" data-act="quickcharge">Ajouter une dépense commune</button>' : ''}
-        <button class="btn wide" data-act="quickperso">Ajouter une charge personnelle</button>
-        <button class="btn wide" data-act="quickrefund">Enregistrer un remboursement</button>
-        <button class="btn ghost wide" data-act="close">Annuler</button></div>`);
+    const card = (act, icon, label, cls = '') => `<button class="qcard${cls}" data-act="${act}">${icon}<span>${label}</span></button>`;
+    return openSheet(`${head('Ajouter')}
+      <div class="qgrid">
+        ${card('quickperso', ICON.user, 'Charge perso', ' primary')}
+        ${card('quickrefund', ICON.refund, 'Remboursement')}
+        ${hh ? card('quicktransfer', ICON.transfer, 'Virement entre vous') + card('quickcharge', ICON.homeadd, 'Dépense commune') : ''}</div>
+      <button class="qrow" data-act="quickstep">${ICON.wallet}<span>Solde ou mouvement de compte<br><span class="small">choix du compte, puis de l’action</span></span><span class="chev" aria-hidden="true">›</span></button>
+      <button class="btn ghost wide" style="margin-top:12px" data-act="close">Annuler</button>`);
   }
   if (!quick.accId) {
     const all = active();
@@ -3160,10 +3257,20 @@ function paintLines() {
 
 /* ---------- Actions ---------- */
 const ACT = {
-  go: t => go(t.dataset.view),
+  go: t => t.dataset.view === 'foyer' ? goFoyer() : go(t.dataset.view),
   gosub: t => goSub(t.dataset.v),
-  back: () => { subview = null; render(); window.scrollTo(0, 0); },
-  gofoyer: async () => { compteTab = 'foyer'; if (mode === 'app' && S.household.on) await seedMonth(potMonth); go('comptes'); },
+  back: () => {
+    if (view === 'foyer') foyerSub = null; else if (view === 'objectifs') view = 'home'; else subview = null;
+    render(); window.scrollTo(0, 0);
+  },
+  foyersub: t => { foyerSub = t.dataset.v; render(); window.scrollTo(0, 0); },
+  todo: async t => {
+    const w = t.dataset.t;
+    if (w === 'pointer') { potMonth = monthKey(); return goFoyer(); }
+    if (w === 'soldes') { saisieMonth = monthKey(); view = 'saisie'; return goSub('soldes'); }
+    if (w === 'backup') return exportBackup('mois');
+  },
+  gofoyer: () => goFoyer(),
   usageview: () => sheetUsage(),
   primeadd: async () => { const P = primeCfg(), used = new Set(P.list.map(e => e.m)); let m = +monthKey().slice(5); for (let i = 0; i < 12 && used.has(m); i++) m = m % 12 + 1; P.list.push({ m, a: null }); P.list.sort((a, b) => a.m - b.m); await save(); render(); primesRefresh(); },
   primedel: async t => { primeCfg().list.splice(+t.dataset.i, 1); await save(); render(); primesRefresh(); },
@@ -3175,11 +3282,8 @@ const ACT = {
     sheetSetPage('backup'); toast('Journal effacé');
   },
   bilango: async t => {
-    potMonth = t.dataset.m; compteTab = 'foyer';
-    if (mode === 'app') await seedMonth(potMonth);
-    go('comptes');
-    const el = $(t.dataset.w === 'p' ? '#sec-perso' : '#sec-communes');
-    if (el) window.scrollTo(0, el.getBoundingClientRect().top + scrollY - ($('.top')?.offsetHeight || 0) - 8);
+    potMonth = t.dataset.m;
+    await goFoyer(t.dataset.w === 'p' ? 'perso' : 'communes');
   },
   backupnow: () => exportBackup('mois'),
   mask: () => masked ? askUnmask() : setMasked(true),
@@ -3218,6 +3322,11 @@ const ACT = {
     quick = null; potMonth = monthKey();
     if (mode === 'app') await seedMonth(potMonth);
     sheetCharge(null);
+  },
+  quicktransfer: async () => {
+    quick = null; potMonth = monthKey();
+    if (mode === 'app') await seedMonth(potMonth);
+    sheetTransfer(null);
   },
   quicka: t => sheetQuick({ accId: t.dataset.id }),
   quickact: t => sheetQuick({ action: t.dataset.k }),
@@ -3990,7 +4099,8 @@ const usageOn = () => mode === 'app' && !!S?.settings.usage?.on && !!U;
 const uNew = () => ({ v: 1, since: Date.now(), n: 0, ev: [] });
 // Écran de base, sans aucune donnée : onglet et sous-onglet
 function uBase() {
-  if (view === 'comptes') return 'comptes/' + (compteTab === 'foyer' && S?.household.on ? 'foyer' : 'detail');
+  if (view === 'comptes') return 'comptes';
+  if (view === 'foyer') return foyerSub ? 'foyer/' + foyerSub : 'foyer';
   if (view === 'saisie') return subview ? 'mois/' + subview : 'mois';
   return { home: 'accueil', objectifs: 'objectifs', resume: 'resume' }[view] || view;
 }
@@ -4099,7 +4209,7 @@ function uSummary() {
 
 // Libellés lisibles pour la synthèse affichée dans l'app (l'export garde les noms du code)
 const U_LABELS = {
-  'go:home': 'Onglet Accueil', 'go:comptes': 'Onglet Comptes', 'go:saisie': 'Onglet Ce mois', 'go:objectifs': 'Onglet Objectifs', 'go:resume': 'Onglet Résumé',
+  'go:home': 'Onglet Accueil', 'go:comptes': 'Onglet Comptes', 'go:saisie': 'Onglet Ce mois', 'go:objectifs': 'Objectifs', 'go:resume': 'Onglet Résumé', 'go:foyer': 'Onglet Foyer', foyersub: 'Foyer › section', 'todo:pointer': 'Accueil › pointer', 'todo:soldes': 'Accueil › soldes', 'todo:backup': 'Accueil › sauvegarde', quicktransfer: '+ › Virement',
   quick: 'Bouton +', quickstep: '+ › Mouvement de compte', quicka: '+ › choix du compte', quickact: '+ › choix de l’action', quickback: '+ › Retour',
   quickcharge: '+ › Dépense commune', quickperso: '+ › Charge perso', quickrefund: '+ › Remboursement',
   'comptetab:foyer': 'Comptes › Foyer', 'comptetab:detail': 'Comptes › Détail', point: 'Pointer une charge', editcharge: 'Modifier une dépense commune',
@@ -4110,7 +4220,7 @@ const U_LABELS = {
   'valide:f-quick': 'Valider (raccourci +)', 'valide:f-charge': 'Valider une dépense commune', 'valide:f-perso': 'Valider une charge perso',
   'valide:f-refund': 'Valider un remboursement', 'valide:f-transfer': 'Valider un virement', 'valide:f-move': 'Valider un mouvement',
   'appui-long:editcharge': 'Appui long › dépense commune', 'appui-long:editperso': 'Appui long › charge perso',
-  accueil: 'Accueil', 'comptes/detail': 'Comptes', 'comptes/foyer': 'Comptes › Foyer', mois: 'Ce mois', 'mois/soldes': 'Ce mois › Soldes',
+  accueil: 'Accueil', comptes: 'Comptes', 'comptes/detail': 'Comptes', 'comptes/foyer': 'Comptes › Foyer', foyer: 'Foyer', 'foyer/communes': 'Foyer › Dépenses communes', 'foyer/perso': 'Foyer › Charges perso', 'foyer/virements': 'Foyer › Virements', 'foyer/revenus': 'Foyer › Revenus', 'foyer/reste': 'Foyer › Reste à vivre', mois: 'Ce mois', 'mois/soldes': 'Ce mois › Soldes',
   'mois/operations': 'Ce mois › Opérations', objectifs: 'Objectifs', resume: 'Résumé', reglages: 'Réglages', 'reglages/backup': 'Réglages › Données',
   'reglages/ai': 'Réglages › IA', 'reglages/foyer': 'Réglages › Foyer', 'reglages/secu': 'Réglages › Sécurité', 'reglages/apparence': 'Réglages › Apparence',
   'champ:p-n': 'Champ libellé (charge perso)', 'champ:p-a': 'Champ montant (charge perso)', 'champ:c-n': 'Champ libellé (dépense commune)',
