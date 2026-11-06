@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-gGE1pJZgL88baGrI2RUq2HXm3CFsZeIbEKSrVIXT7ZE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-6oh5fsCkiRf/y2X67z+iH+dH7Hh/mVg8pRDMGeCU9SE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -234,6 +234,12 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .ctrl li.ctot{border-top:2px solid var(--ink);border-bottom:0;font-weight:650;margin-top:4px;padding-top:8px}
 .ctrl li.ctot span:first-child{color:inherit}
 .ctrl li.ctot.warn .num{color:var(--red)}
+.ctrl-det{margin-top:12px}
+.ctrl-det summary{cursor:pointer;font-weight:600;color:var(--pine);padding:6px 0}
+.ctrl-det h4{margin:14px 0 4px;font-size:15px}
+.ctrl-d li span:first-child{font-size:14px}
+.ctrl-w{margin:0;padding:0 0 0 18px;display:grid;gap:8px;font-size:14px}
+.ctrl-w li::marker{color:var(--amber)}
 #c-custom input[readonly]{background:transparent;color:var(--muted)}
 .kv li span:first-child{color:var(--muted)}
 .lines{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
@@ -2459,8 +2465,71 @@ function vControl(F) {
       ${c.hh && Math.abs(c.attente) >= 0.5 ? row(c.attente > 0 ? `À recevoir de ${esc(other)} (régularisation en attente)` : `À verser à ${esc(other)} (régularisation en attente)`, c.attente) : ''}
       <li class="ctot ${ok ? '' : 'warn'}"><span>Écart à expliquer</span><span class="num">${signed(c.ecart)}</span></li>
     </ul>
+    ${controlDetail(F, c, ok)}
     <p class="small" style="margin:6px 0 0">${!c.plaisirSet ? 'Renseigne ton virement plaisir dans Réglages › Budget de référence pour un contrôle complet. ' : ''}${ok ? 'Tout est enregistré : rien n’est parti ailleurs.' : c.ecart > 0 ? 'Argent resté sur ton compte courant, ou sorti sans être enregistré dans l’app (frais, dépense oubliée…).' : 'Il est sorti plus que ce qui est entré : une rentrée n’est pas enregistrée, ou tu as puisé dans le solde de ton compte courant.'}</p>
     ${c.hh && Math.abs(c.attente) >= 0.5 ? `<p class="small" style="margin:6px 0 0">Ta part des charges ce mois-ci est de ${eur(c.du)} ; tu as payé ${eur(c.paye + (potStats(F).out.moi || 0) - (potStats(F).inn.moi || 0))}, virements de régularisation compris. La différence est comptée comme ${c.attente > 0 ? 'à recevoir' : 'à verser'} : elle disparaît de cette ligne dès que le virement est enregistré, sans changer l’écart.</p>` : ''}`;
+}
+/* Détail du contrôle : chaque ligne qui compose l'écart, et les situations qui le faussent le plus souvent.
+   Le contrôle ne lit pas le compte courant : il refait le mois à partir des saisies. Une sortie comptée qui n'est
+   pas passée par ce compte (ou une entrée oubliée) se retrouve donc dans l'écart. */
+function controlDetail(k, c, ok) {
+  const hh = c.hh, st = hh ? potStats(k) : null, mine = a => (a.owner || 'moi') === 'moi';
+  const other = hh ? mName(members().find(m => m.id !== 'moi')?.id) : '';
+  const L = (t, v, n = '') => `<li><span>${t}${n ? `<br><span class="small">${n}</span>` : ''}</span><span class="num">${signed(v)}</span></li>`;
+  const grp = (t, lines) => lines.length ? `<h4>${t}</h4><ul class="kv ctrl-d">${lines.join('')}</ul>` : '';
+  const warn = [];
+  // Revenus
+  const inc = [L('Salaire', c.salaire, incomeSet(k, 'moi') ? 'saisi pour ce mois' : 'revenu de référence (pas de salaire saisi pour ce mois)')];
+  if (!incomeSet(k, 'moi')) warn.push(`Ton salaire n’est pas saisi pour ${monthName(k)} : le contrôle reprend ton revenu de référence (${eur(c.salaire)}). Si ton salaire réel diffère, l’écart vaut exactement la différence. Saisis-le dans Foyer › Revenus.`);
+  if (c.prime) inc.push(L('Prime', c.prime)); if (c.autres) inc.push(L('Autres rentrées', c.autres));
+  // Charges communes payées par toi
+  const SRC = { tx: 'relevé du compte courant', env: 'enveloppe' };
+  const com = hh ? st.items.filter(i => i.by === 'moi').sort((a, b) => b.a - a.a) : [];
+  const comL = com.map(i => L(esc(i.n), -i.a, [SRC[i.src] || 'saisie', i.proj ? `projet ${esc(i.proj)}` : '', !i.src ? (i.pt ? 'pointée' : 'non pointée') : ''].filter(Boolean).join(' · ')));
+  // Doublons probables : même montant, une fois saisi et une fois venu du relevé ou d'une enveloppe, ou deux fois le même nom
+  const dupe = (list, key) => { const seen = new Map(), out = []; for (const i of list) { const kk = key(i); if (seen.has(kk)) out.push([seen.get(kk), i]); else seen.set(kk, i); } return out; };
+  dupe(com, i => Math.round(i.a * 100)).forEach(([a, b]) => warn.push(`Deux charges communes de ${eur(a.a)} : « ${esc(a.n)} » et « ${esc(b.n)} »${a.src !== b.src ? ' (l’une saisie, l’autre venue du relevé)' : ''}. Si c’est la même dépense, elle est comptée deux fois.`));
+  const unpt = com.filter(i => !i.src && !i.pt);
+  if (st?.p.from && unpt.length) warn.push(`${plural(unpt.length, 'charge commune reprise', 'charges communes reprises')} ${deM(monthLabel(st.p.from))} et non ${unpt.length > 1 ? 'pointées' : 'pointée'} (${unpt.map(i => `${esc(i.n)} ${eur(i.a)}`).join(', ')}) : si l’une n’a pas eu lieu ce mois-ci ou a changé de montant, l’écart en tient compte à tort.`);
+  // Virements entre vous
+  const trs = hh ? (st.p.transfers || []) : [];
+  const trL = trs.filter(t => t.from === 'moi' || t.to === 'moi').map(t => L(t.to === 'moi' ? `Reçu de ${esc(other)}` : `Envoyé à ${esc(other)}`, t.to === 'moi' ? t.a : -t.a, [t.reg === false ? 'hors régularisation' : 'régularisation', t.n ? esc(t.n) : ''].filter(Boolean).join(' · ')));
+  // Charges perso et remboursements
+  const per = persoOf(k).slice().sort((a, b) => b.a - a.a);
+  const perL = per.map(i => L(esc(i.n), -i.a, i.rb ? 'remboursement' : [i.proj ? `projet ${esc(i.proj)}` : i.r === false ? 'ponctuelle' : 'fixe', i.pt ? 'pointée' : 'non pointée'].join(' · ')));
+  dupe(per.filter(i => !i.rb), i => Math.round(i.a * 100)).forEach(([a, b]) => warn.push(`Deux charges perso de ${eur(a.a)} : « ${esc(a.n)} » et « ${esc(b.n)} ». Si c’est la même dépense, elle est comptée deux fois.`));
+  const pFrom = S.pot[k]?.persoFrom, punpt = per.filter(i => !i.rb && !i.pt && i.r !== false);
+  if (pFrom && punpt.length) warn.push(`${plural(punpt.length, 'charge perso reprise', 'charges perso reprises')} ${deM(monthLabel(pFrom))} et non ${punpt.length > 1 ? 'pointées' : 'pointée'} (${punpt.map(i => `${esc(i.n)} ${eur(i.a)}`).join(', ')}) : vérifie qu’elles ont bien été prélevées ce mois-ci, au même montant.`);
+  // Épargne, compte par compte
+  const accs = S.accounts.filter(a => !isCash(a) && mine(a) && Math.abs(dep(k, a)) >= 0.5);
+  const epL = accs.map(a => { const e = entry(k, a), emp = empIn(e), pj = projOut(e);
+    return L(esc(a.name), -(dep(k, a) - emp), [dep(k, a) >= 0 ? 'versé' : 'repris', emp ? `hors ${eur(emp)} de l’employeur` : '', pj ? `dont ${eur(pj)} pour un projet` : '', hh && !a.owner ? 'titulaire non précisé : compté comme le tien' : ''].filter(Boolean).join(' · ')); });
+  if (hh) { const noOwner = accs.filter(a => !a.owner); if (noOwner.length) warn.push(`${noOwner.map(a => esc(a.name)).join(', ')} : aucun titulaire n’est indiqué, ${noOwner.length > 1 ? 'ces comptes sont comptés' : 'ce compte est compté'} comme ${noOwner.length > 1 ? 'les tiens' : 'le tien'}. Si les versements viennent de ${esc(other)}, ils pèsent à tort sur ton écart.`); }
+  // Un livret ne baisse jamais tout seul (pas de cours de marché) : une baisse sans reprise saisie, c'est de l'argent
+  // parti ailleurs. S'il a été versé sur un autre placement, ce versement est compté à tort comme sorti du compte courant.
+  for (const b of S.accounts.filter(x => !isCash(x) && mine(x) && TYPES[x.type].cat === 'livrets')) {
+    const drop = -accBreak(b, k).perf;
+    if (drop >= 1) warn.push(`${esc(b.name)} a baissé de ${eur(drop)} sans reprise saisie ce mois-ci. Si cet argent a été versé sur un autre placement, ce versement est compté comme sorti de ton compte courant alors qu’il n’en vient pas : ajoute une reprise de ${eur(drop)} sur ${esc(b.name)} (Ce mois › Soldes › Détailler les mouvements).`);
+  }
+  // Virement plaisir
+  const plL = c.plaisir ? [L('Virement plaisir', -c.plaisir, S.pot[k]?.plaisir != null ? 'saisi pour ce mois' : 'montant de Réglages › Budget de référence')] : [];
+  // Rapprochement avec le relevé du compte courant, s'il a été importé
+  const cur = cashAccounts().filter(a => !isSimple(a) && mine(a) && txOf(k, a).length);
+  let rel = '';
+  if (cur.length && cur.some(a => txOf(k, a).some(t => t.a > 0))) {   // relevé complet : il contient au moins une entrée (le salaire)
+    const tx = cur.flatMap(a => txOf(k, a)), cred = tx.filter(t => t.a > 0).reduce((t, x) => t + x.a, 0), deb = tx.filter(t => t.a < 0).reduce((t, x) => t - x.a, 0);
+    const inApp = c.salaire + c.prime + c.autres + c.recu, outApp = c.paye + c.envoye + c.perso + c.epargne + c.plaisir;
+    const row = (t, r, a) => `<li><span>${t}</span><span class="num">${eur(r)} · ${eur(a)}</span></li>`;
+    rel = `<h4>Comparaison avec ton relevé (${cur.map(a => esc(a.name)).join(', ')})</h4>
+      <p class="small" style="margin:0 0 6px">Relevé · app. Une différence montre où se trouve l’écart.</p>
+      <ul class="kv ctrl-d">${row('Entrées', cred, inApp)}${row('Sorties', deb, outApp)}</ul>`;
+    if (Math.abs(cred - inApp) >= 1) warn.push(`Entrées du relevé : ${eur(cred)} ; entrées comptées par l’app : ${eur(inApp)} (différence ${signed(cred - inApp)}). Vérifie ton salaire du mois, tes autres rentrées et les virements reçus.`);
+    if (Math.abs(deb - outApp) >= 1) warn.push(`Sorties du relevé : ${eur(deb)} ; sorties comptées par l’app : ${eur(outApp)} (différence ${signed(outApp - deb)}). ${outApp > deb ? 'L’app compte des sorties qui ne sont pas passées par ce compte : charge en double, charge reprise qui n’a pas eu lieu, épargne versée depuis un autre compte…' : 'Des sorties du compte ne sont pas enregistrées dans l’app.'}`);
+  }
+  if (ok && !warn.length) return '';
+  return `<details class="ctrl-det"${ok ? '' : ' open'}><summary>Détail ligne par ligne${warn.length ? ` · ${plural(warn.length, 'point à vérifier', 'points à vérifier')}` : ''}</summary>
+    ${warn.length ? `<h4>À vérifier</h4><ul class="ctrl-w">${warn.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
+    ${grp('Revenus', inc)}${grp('Charges communes payées par toi', comL)}${grp('Virements entre vous', trL)}${grp('Charges perso', perL)}${grp('Épargne', epL)}${grp('Virement plaisir', plL)}${rel}</details>`;
 }
 function vResume() {
   const ms = months();
