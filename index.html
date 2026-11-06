@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-6oh5fsCkiRf/y2X67z+iH+dH7Hh/mVg8pRDMGeCU9SE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-hXHhq0Py2XSjxyYjE5UFHeoBHJUVP6kugPr48T6wnIA='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -234,6 +234,9 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .ctrl li.ctot{border-top:2px solid var(--ink);border-bottom:0;font-weight:650;margin-top:4px;padding-top:8px}
 .ctrl li.ctot span:first-child{color:inherit}
 .ctrl li.ctot.warn .num{color:var(--red)}
+.ctrl li.cnext{border-bottom:0;color:var(--muted)}
+.ctrl li.cnext.tot{font-weight:650;color:var(--ink)}
+.ctrl li.cnext.tot.warn .num{color:var(--red)}
 .ctrl-det{margin-top:12px}
 .ctrl-det summary{cursor:pointer;font-weight:600;color:var(--pine);padding:6px 0}
 .ctrl-det h4{margin:14px 0 4px;font-size:15px}
@@ -1234,21 +1237,33 @@ function controlOf(k) {
   const salaire = incomeOf(k, 'moi'), prime = primeOf(k), autres = autresOf(k);
   const recu = trs.filter(t => t.to === 'moi').reduce((t, x) => t + x.a, 0);
   const envoye = trs.filter(t => t.from === 'moi').reduce((t, x) => t + x.a, 0);
-  const myItems = st ? st.items.filter(i => i.by === 'moi') : [];
+  // Seules les charges pointées comptent : une charge non pointée n'est pas encore passée sur le compte.
+  // Celles venues d'un relevé ou d'une enveloppe sont déjà des mouvements réels : elles comptent toujours.
+  // Sans foyer, il n'y a pas d'écran de pointage : tout compte.
+  const isPt = i => !hh || !!i.src || !!i.pt;
+  const shMe = i => ((i.sp ? itemShares(k, i) : shares(k)).moi || 0);
+  const all = st ? st.items : [], ptItems = all.filter(isPt), upItems = all.filter(i => !isPt(i));
+  const myItems = ptItems.filter(i => i.by === 'moi');
   const paye = myItems.reduce((t, i) => t + i.a, 0);
   const commun = myItems.filter(i => /compte (commun|joint)/i.test(i.n)).reduce((t, i) => t + i.a, 0);
-  const perso = persoTotal(k);
+  const persoAll = persoOf(k), persoPt = persoAll.filter(i => i.rb || isPt(i)), persoUp = persoAll.filter(i => !i.rb && !isPt(i));
+  const perso = persoPt.reduce((t, i) => t + i.a, 0);
   const mine = a => (a.owner || 'moi') === 'moi', employeur = empOf(k, mine), projEp = projOutOf(k, mine);
   const epargne = S.accounts.filter(a => !isCash(a) && mine(a)).reduce((t, a) => t + dep(k, a), 0) - employeur;
-  const projPaye = myItems.filter(i => i.proj).reduce((t, i) => t + i.a, 0), projPerso = persoOf(k).filter(i => i.proj).reduce((t, i) => t + i.a, 0);
+  const projPaye = myItems.filter(i => i.proj).reduce((t, i) => t + i.a, 0), projPerso = persoPt.filter(i => i.proj).reduce((t, i) => t + i.a, 0);
   const plaisir = plaisirOf(k) || 0;
   const brut = salaire + prime + autres + recu - paye - envoye - perso - epargne - plaisir;
-  // Régularisation en attente pour ce mois : ce que tu as payé pour le foyer (virements de régularisation compris),
-  // comparé à ta part due. Positif : l'autre te doit ; négatif : tu lui dois. Le report d'un mois précédent n'y entre pas :
-  // une fois réglé, il s'annule avec le virement reçu ou envoyé.
-  const du = st ? st.due.moi || 0 : 0, attente = st ? (st.paid.moi || 0) + (st.out.moi || 0) - (st.inn.moi || 0) - du : 0;
+  // Régularisation en attente, sur les charges pointées : ce que tu as payé (virements de régularisation compris),
+  // comparé à ta part de ces charges. Positif : l'autre te doit ; négatif : tu lui dois. Le report d'un mois précédent
+  // n'y entre pas : une fois réglé, il s'annule avec le virement reçu ou envoyé.
+  const du = ptItems.reduce((t, i) => t + i.a * shMe(i), 0);
+  const attente = st ? paye + (st.out.moi || 0) - (st.inn.moi || 0) - du : 0;
   const ecart = brut + attente;
-  return { hh, salaire, prime, autres, recu, envoye, paye, commun, perso, epargne, employeur, projEp, projPaye, projPerso, plaisir, brut, attente, ecart, du, solde: attente, plaisirSet: plaisirOf(k) != null };
+  // À venir : ta part des charges communes non pointées et tes charges perso non pointées, avec l'écart prévu une fois tout pointé
+  const venirCom = upItems.reduce((t, i) => t + i.a * shMe(i), 0), venirPerso = persoUp.reduce((t, i) => t + i.a, 0);
+  const nUp = upItems.length + persoUp.length;
+  return { hh, salaire, prime, autres, recu, envoye, paye, commun, perso, epargne, employeur, projEp, projPaye, projPerso, plaisir, brut, attente, ecart, du, solde: attente,
+    venirCom, venirPerso, nUp, ecartFin: ecart - venirCom - venirPerso, plaisirSet: plaisirOf(k) != null };
 }
 const PRIME_TO = { apport: 'l’apport', rente: 'la retraite', moitie: 'moitié apport, moitié retraite' };
 const primeCfg = () => (S.goals.prime ||= { list: [], pct: 100, to: 'apport' });
@@ -1534,7 +1549,8 @@ function summary(F) {
       L.push('', 'Contrôle du mois (entrées moins sorties connues de mon compte courant) :');
       L.push(`- Entrées : ${R(c.salaire + c.prime + c.autres + c.recu)} · charges communes payées et virements au conjoint : ${R(c.paye + c.envoye)} · charges perso : ${R(c.perso)} · épargne : ${SR(c.epargne)} · virement plaisir : ${c.plaisirSet ? R(c.plaisir) : 'non renseigné'}`);
       if (c.hh && Math.abs(c.attente) >= 1) L.push(`- Régularisation en attente avec mon conjoint (charges communes payées au-delà de ma part due, ou en deçà) : ${SR(c.attente)}`);
-      L.push(`- Écart non expliqué, régularisation en attente comprise : ${SR(c.ecart)}`);
+      L.push(`- Écart non expliqué, régularisation en attente comprise (charges pointées seulement) : ${SR(c.ecart)}`);
+      if (c.nUp) L.push(`- Charges pas encore pointées, à venir : ${R(c.venirCom + c.venirPerso)} · écart prévu une fois tout pointé : ${SR(c.ecartFin)}`);
     }
   }
   const comp = active().filter(a => mineF(a) && a.lines?.length && valueAt(a, F) > 0);
@@ -2452,21 +2468,23 @@ function vControl(F) {
       ${row(c.prime ? 'Revenus (salaire + prime)' : 'Salaire', c.salaire + c.prime)}
       ${c.autres ? row('Autres rentrées', c.autres) : ''}
       ${c.hh ? row(`Virements reçus de ${esc(other)}`, c.recu) : ''}
-      ${c.hh ? row('Charges communes payées par toi', -c.paye) : ''}
+      ${c.hh ? row(c.nUp ? 'Charges communes payées par toi, pointées' : 'Charges communes payées par toi', -c.paye) : ''}
       ${c.commun ? row('dont « compte commun »', c.commun, true) : ''}
       ${c.projPaye ? row('dont projets', c.projPaye, true) : ''}
       ${c.hh ? row(`Virements envoyés à ${esc(other)}`, -c.envoye) : ''}
-      ${row('Charges perso', -c.perso)}
+      ${row(c.nUp ? 'Charges perso pointées' : 'Charges perso', -c.perso)}
       ${c.projPerso ? row('dont projets', c.projPerso, true) : ''}
       ${c.projEp ? row('Épargne reprise pour des projets', c.projEp) : ''}
       ${row(c.epargne + c.projEp >= 0 ? 'Épargne versée' : 'Épargne reprise', -(c.epargne + c.projEp))}
       ${c.employeur ? `<li class="csub"><span>hors ${eur(c.employeur)} versés par l’employeur</span><span></span></li>` : ''}
       ${row('Virement plaisir', -c.plaisir)}
       ${c.hh && Math.abs(c.attente) >= 0.5 ? row(c.attente > 0 ? `À recevoir de ${esc(other)} (régularisation en attente)` : `À verser à ${esc(other)} (régularisation en attente)`, c.attente) : ''}
-      <li class="ctot ${ok ? '' : 'warn'}"><span>Écart à expliquer</span><span class="num">${signed(c.ecart)}</span></li>
+      <li class="ctot ${ok || c.nUp ? '' : 'warn'}"><span>Écart à expliquer</span><span class="num">${signed(c.ecart)}</span></li>
+      ${c.nUp ? `<li class="cnext"><span>Charges non pointées, à venir<br><span class="small">${plural(c.nUp, 'charge', 'charges')} · ${[c.venirCom ? `ta part des communes ${eur(c.venirCom)}` : '', c.venirPerso ? `perso ${eur(c.venirPerso)}` : ''].filter(Boolean).join(' · ')}</span></span><span class="num">${signed(-(c.venirCom + c.venirPerso))}</span></li>
+      <li class="cnext tot ${Math.abs(c.ecartFin) < 20 ? '' : 'warn'}"><span>Écart prévu une fois tout pointé</span><span class="num">${signed(c.ecartFin)}</span></li>` : ''}
     </ul>
     ${controlDetail(F, c, ok)}
-    <p class="small" style="margin:6px 0 0">${!c.plaisirSet ? 'Renseigne ton virement plaisir dans Réglages › Budget de référence pour un contrôle complet. ' : ''}${ok ? 'Tout est enregistré : rien n’est parti ailleurs.' : c.ecart > 0 ? 'Argent resté sur ton compte courant, ou sorti sans être enregistré dans l’app (frais, dépense oubliée…).' : 'Il est sorti plus que ce qui est entré : une rentrée n’est pas enregistrée, ou tu as puisé dans le solde de ton compte courant.'}</p>
+    <p class="small" style="margin:6px 0 0">${!c.plaisirSet ? 'Renseigne ton virement plaisir dans Réglages › Budget de référence pour un contrôle complet. ' : ''}${c.nUp ? `Seules les charges pointées comptent. Tant que les autres ne sont pas pointées, l’écart montre l’argent qui doit encore partir : il rejoint l’écart prévu (${signed(c.ecartFin)}) à mesure que tu pointes. ${Math.abs(c.ecartFin) < 20 ? 'Une fois tout passé, le mois sera équilibré.' : c.ecartFin < 0 ? 'Une fois tout passé, il sera sorti plus que ce qui est entré.' : 'Une fois tout passé, il restera de l’argent sur ton compte courant.'}` : ok ? 'Tout est enregistré : rien n’est parti ailleurs.' : c.ecart > 0 ? 'Argent resté sur ton compte courant, ou sorti sans être enregistré dans l’app (frais, dépense oubliée…).' : 'Il est sorti plus que ce qui est entré : une rentrée n’est pas enregistrée, ou tu as puisé dans le solde de ton compte courant.'}</p>
     ${c.hh && Math.abs(c.attente) >= 0.5 ? `<p class="small" style="margin:6px 0 0">Ta part des charges ce mois-ci est de ${eur(c.du)} ; tu as payé ${eur(c.paye + (potStats(F).out.moi || 0) - (potStats(F).inn.moi || 0))}, virements de régularisation compris. La différence est comptée comme ${c.attente > 0 ? 'à recevoir' : 'à verser'} : elle disparaît de cette ligne dès que le virement est enregistré, sans changer l’écart.</p>` : ''}`;
 }
 /* Détail du contrôle : chaque ligne qui compose l'écart, et les situations qui le faussent le plus souvent.
@@ -2485,21 +2503,17 @@ function controlDetail(k, c, ok) {
   // Charges communes payées par toi
   const SRC = { tx: 'relevé du compte courant', env: 'enveloppe' };
   const com = hh ? st.items.filter(i => i.by === 'moi').sort((a, b) => b.a - a.a) : [];
-  const comL = com.map(i => L(esc(i.n), -i.a, [SRC[i.src] || 'saisie', i.proj ? `projet ${esc(i.proj)}` : '', !i.src ? (i.pt ? 'pointée' : 'non pointée') : ''].filter(Boolean).join(' · ')));
+  const comL = com.map(i => L(esc(i.n), -i.a, [SRC[i.src] || 'saisie', i.proj ? `projet ${esc(i.proj)}` : '', !i.src ? (i.pt ? 'pointée' : 'non pointée, pas encore comptée') : ''].filter(Boolean).join(' · ')));
   // Doublons probables : même montant, une fois saisi et une fois venu du relevé ou d'une enveloppe, ou deux fois le même nom
   const dupe = (list, key) => { const seen = new Map(), out = []; for (const i of list) { const kk = key(i); if (seen.has(kk)) out.push([seen.get(kk), i]); else seen.set(kk, i); } return out; };
   dupe(com, i => Math.round(i.a * 100)).forEach(([a, b]) => warn.push(`Deux charges communes de ${eur(a.a)} : « ${esc(a.n)} » et « ${esc(b.n)} »${a.src !== b.src ? ' (l’une saisie, l’autre venue du relevé)' : ''}. Si c’est la même dépense, elle est comptée deux fois.`));
-  const unpt = com.filter(i => !i.src && !i.pt);
-  if (st?.p.from && unpt.length) warn.push(`${plural(unpt.length, 'charge commune reprise', 'charges communes reprises')} ${deM(monthLabel(st.p.from))} et non ${unpt.length > 1 ? 'pointées' : 'pointée'} (${unpt.map(i => `${esc(i.n)} ${eur(i.a)}`).join(', ')}) : si l’une n’a pas eu lieu ce mois-ci ou a changé de montant, l’écart en tient compte à tort.`);
   // Virements entre vous
   const trs = hh ? (st.p.transfers || []) : [];
   const trL = trs.filter(t => t.from === 'moi' || t.to === 'moi').map(t => L(t.to === 'moi' ? `Reçu de ${esc(other)}` : `Envoyé à ${esc(other)}`, t.to === 'moi' ? t.a : -t.a, [t.reg === false ? 'hors régularisation' : 'régularisation', t.n ? esc(t.n) : ''].filter(Boolean).join(' · ')));
   // Charges perso et remboursements
   const per = persoOf(k).slice().sort((a, b) => b.a - a.a);
-  const perL = per.map(i => L(esc(i.n), -i.a, i.rb ? 'remboursement' : [i.proj ? `projet ${esc(i.proj)}` : i.r === false ? 'ponctuelle' : 'fixe', i.pt ? 'pointée' : 'non pointée'].join(' · ')));
+  const perL = per.map(i => L(esc(i.n), -i.a, i.rb ? 'remboursement' : [i.proj ? `projet ${esc(i.proj)}` : i.r === false ? 'ponctuelle' : 'fixe', i.pt ? 'pointée' : 'non pointée, pas encore comptée'].join(' · ')));
   dupe(per.filter(i => !i.rb), i => Math.round(i.a * 100)).forEach(([a, b]) => warn.push(`Deux charges perso de ${eur(a.a)} : « ${esc(a.n)} » et « ${esc(b.n)} ». Si c’est la même dépense, elle est comptée deux fois.`));
-  const pFrom = S.pot[k]?.persoFrom, punpt = per.filter(i => !i.rb && !i.pt && i.r !== false);
-  if (pFrom && punpt.length) warn.push(`${plural(punpt.length, 'charge perso reprise', 'charges perso reprises')} ${deM(monthLabel(pFrom))} et non ${punpt.length > 1 ? 'pointées' : 'pointée'} (${punpt.map(i => `${esc(i.n)} ${eur(i.a)}`).join(', ')}) : vérifie qu’elles ont bien été prélevées ce mois-ci, au même montant.`);
   // Épargne, compte par compte
   const accs = S.accounts.filter(a => !isCash(a) && mine(a) && Math.abs(dep(k, a)) >= 0.5);
   const epL = accs.map(a => { const e = entry(k, a), emp = empIn(e), pj = projOut(e);
@@ -2526,8 +2540,8 @@ function controlDetail(k, c, ok) {
     if (Math.abs(cred - inApp) >= 1) warn.push(`Entrées du relevé : ${eur(cred)} ; entrées comptées par l’app : ${eur(inApp)} (différence ${signed(cred - inApp)}). Vérifie ton salaire du mois, tes autres rentrées et les virements reçus.`);
     if (Math.abs(deb - outApp) >= 1) warn.push(`Sorties du relevé : ${eur(deb)} ; sorties comptées par l’app : ${eur(outApp)} (différence ${signed(outApp - deb)}). ${outApp > deb ? 'L’app compte des sorties qui ne sont pas passées par ce compte : charge en double, charge reprise qui n’a pas eu lieu, épargne versée depuis un autre compte…' : 'Des sorties du compte ne sont pas enregistrées dans l’app.'}`);
   }
-  if (ok && !warn.length) return '';
-  return `<details class="ctrl-det"${ok ? '' : ' open'}><summary>Détail ligne par ligne${warn.length ? ` · ${plural(warn.length, 'point à vérifier', 'points à vérifier')}` : ''}</summary>
+  if (ok && !warn.length && !c.nUp) return '';
+  return `<details class="ctrl-det"${ok || c.nUp ? '' : ' open'}><summary>Détail ligne par ligne${warn.length ? ` · ${plural(warn.length, 'point à vérifier', 'points à vérifier')}` : ''}</summary>
     ${warn.length ? `<h4>À vérifier</h4><ul class="ctrl-w">${warn.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
     ${grp('Revenus', inc)}${grp('Charges communes payées par toi', comL)}${grp('Virements entre vous', trL)}${grp('Charges perso', perL)}${grp('Épargne', epL)}${grp('Virement plaisir', plL)}${rel}</details>`;
 }
