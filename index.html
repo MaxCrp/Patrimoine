@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-k5707qsDdwBsyubWBwl5hg2tfKkTF9pthWwbhucvaF0='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-c4FarcHKsCnWcfRX3B4WXMD6wi7Nb1OZ+o850uJmVMQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -547,10 +547,6 @@ const fmtE = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR'
 const MASK = '**** €';
 let masked = false;               // reflète S.settings.masked, lu partout pendant le rendu
 const eur = v => masked ? MASK : fmtE.format(Math.round(v || 0));
-// Au centime près : pour le contrôle du mois, où chaque ligne doit s'additionner exactement au total
-const fmtE2 = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const eur2 = v => masked ? MASK : fmtE2.format(Math.round((v || 0) * 100) / 100);
-const signed2 = v => { if (masked) return MASK; const r = Math.round((v || 0) * 100) / 100; return (r > 0 ? '+' : r < 0 ? '−' : '') + fmtE2.format(Math.abs(r)); };
 const signed = v => masked ? MASK : (v > 0.5 ? '+' : v < -0.5 ? '−' : '') + fmtE.format(Math.abs(Math.round(v || 0)));
 const pct = (v, d = 0) => (v * 100).toLocaleString('fr-FR', { maximumFractionDigits: d, minimumFractionDigits: d }) + ' %';
 const spct = (v, d = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + pct(Math.abs(v), d);
@@ -2473,7 +2469,7 @@ function vBilan(F) {
 }
 function vControl(F) {
   const c = controlOf(F); if (!c.salaire && !c.prime && !c.autres) return '';
-  const row = (l, v, sub = false) => `<li${sub ? ' class="csub"' : ''}><span>${l}</span><span class="num">${sub ? eur2(v) : signed2(v)}</span></li>`;
+  const row = (l, v, sub = false) => `<li${sub ? ' class="csub"' : ''}><span>${l}</span><span class="num">${sub ? eur(v) : signed(v)}</span></li>`;
   const other = c.hh ? mName(members().find(m => m.id !== 'moi')?.id) : '';
   const ok = Math.abs(c.ecart) < 1;
   const prevNames = c.rbPrevFrom.map(m => monthName(m)).join(' et ');
@@ -2492,17 +2488,17 @@ function vControl(F) {
       ${c.rbPrev ? row(`dont pour une charge ${deM(prevNames)}`, c.rbPrev, true) : ''}
       ${c.projEp ? row('Épargne reprise pour des projets', c.projEp) : ''}
       ${row(c.epargne + c.projEp >= 0 ? 'Épargne versée' : 'Épargne reprise', -(c.epargne + c.projEp))}
-      ${c.employeur ? `<li class="csub"><span>hors ${eur2(c.employeur)} versés par l’employeur</span><span></span></li>` : ''}
+      ${c.employeur ? `<li class="csub"><span>hors ${eur(c.employeur)} versés par l’employeur</span><span></span></li>` : ''}
       ${row('Virement plaisir', -c.plaisir)}
       ${c.hh && Math.abs(c.attente) >= 0.5 ? row(c.attente > 0 ? `À recevoir de ${esc(other)} (régularisation en attente)` : `À verser à ${esc(other)} (régularisation en attente)`, c.attente) : ''}
-      <li class="ctot ${ok || c.nUp ? '' : 'warn'}"><span>Écart à expliquer</span><span class="num">${signed2(c.ecart)}</span></li>
-      ${c.nUp ? `<li class="cnext"><span>Charges non pointées, à venir<br><span class="small">${plural(c.nUp, 'charge', 'charges')} · ${[c.venirCom ? `ta part des communes ${eur(c.venirCom)}` : '', c.venirPerso ? `perso ${eur(c.venirPerso)}` : ''].filter(Boolean).join(' · ')}</span></span><span class="num">${signed2(-(c.venirCom + c.venirPerso))}</span></li>
-      <li class="cnext tot ${Math.abs(c.ecartFin) < 1 ? '' : 'warn'}"><span>Écart prévu une fois tout pointé</span><span class="num">${signed2(c.ecartFin)}</span></li>` : ''}
+      <li class="ctot ${ok || c.nUp ? '' : 'warn'}"><span>${ok ? 'Aucun écart' : 'Écart à expliquer'}</span><span class="num">${ok ? '0 €' : signed(c.ecart)}</span></li>
+      ${c.nUp ? `<li class="cnext"><span>Charges non pointées, à venir<br><span class="small">${plural(c.nUp, 'charge', 'charges')} · ${[c.venirCom ? `ta part des communes ${eur(c.venirCom)}` : '', c.venirPerso ? `perso ${eur(c.venirPerso)}` : ''].filter(Boolean).join(' · ')}</span></span><span class="num">${signed(-(c.venirCom + c.venirPerso))}</span></li>
+      <li class="cnext tot ${Math.abs(c.ecartFin) < 1 ? '' : 'warn'}"><span>${Math.abs(c.ecartFin) < 1 ? 'Aucun écart prévu une fois tout pointé' : 'Écart prévu une fois tout pointé'}</span><span class="num">${Math.abs(c.ecartFin) < 1 ? '0 €' : signed(c.ecartFin)}</span></li>` : ''}
     </ul>
     ${controlWhy(F, c)}
     ${controlDetail(F, c, ok)}
-    <p class="small" style="margin:6px 0 0">${!c.plaisirSet ? 'Renseigne ton virement plaisir dans Réglages › Budget de référence pour un contrôle complet. ' : ''}${c.nUp ? `Seules les charges pointées comptent. Tant que les autres ne sont pas pointées, l’écart montre l’argent qui doit encore partir : il rejoint l’écart prévu (${signed2(c.ecartFin)}) à mesure que tu pointes. ${Math.abs(c.ecartFin) < 1 ? 'Une fois tout passé, le mois sera équilibré.' : c.ecartFin < 0 ? 'Une fois tout passé, il sera sorti plus que ce qui est entré.' : 'Une fois tout passé, il restera de l’argent sur ton compte courant.'}` : ok ? 'Tout est enregistré : rien n’est parti ailleurs.' : c.ecart > 0 ? 'Argent resté sur ton compte courant, ou sorti sans être enregistré dans l’app (frais, dépense oubliée…).' : 'Il est sorti plus que ce qui est entré : une rentrée n’est pas enregistrée, ou tu as puisé dans le solde de ton compte courant.'}</p>
-    ${c.hh && Math.abs(c.attente) >= 0.5 ? `<p class="small" style="margin:6px 0 0">Ta part des charges pointées ce mois-ci est de ${eur2(c.du)} ; tu as payé ${eur2(c.paye + (potStats(F).out.moi || 0) - (potStats(F).inn.moi || 0))}, virements de régularisation compris. La différence est comptée comme ${c.attente > 0 ? 'à recevoir' : 'à verser'} : elle disparaît de cette ligne dès que le virement est enregistré, sans changer l’écart.</p>` : ''}`;
+    <p class="small" style="margin:6px 0 0">${!c.plaisirSet ? 'Renseigne ton virement plaisir dans Réglages › Budget de référence pour un contrôle complet. ' : ''}${c.nUp ? `Seules les charges pointées comptent. Tant que les autres ne sont pas pointées, l’écart montre l’argent qui doit encore partir : il rejoint l’écart prévu (${Math.abs(c.ecartFin) < 1 ? '0 €' : signed(c.ecartFin)}) à mesure que tu pointes. ${Math.abs(c.ecartFin) < 1 ? 'Une fois tout passé, le mois sera équilibré.' : c.ecartFin < 0 ? 'Une fois tout passé, il sera sorti plus que ce qui est entré.' : 'Une fois tout passé, il restera de l’argent sur ton compte courant.'}` : ok ? 'Tout est enregistré : rien n’est parti ailleurs.' : c.ecart > 0 ? 'Argent resté sur ton compte courant, ou sorti sans être enregistré dans l’app (frais, dépense oubliée…).' : 'Il est sorti plus que ce qui est entré : une rentrée n’est pas enregistrée, ou tu as puisé dans le solde de ton compte courant.'}</p>
+    ${c.hh && Math.abs(c.attente) >= 0.5 ? `<p class="small" style="margin:6px 0 0">Ta part des charges pointées ce mois-ci est de ${eur(c.du)} ; tu as payé ${eur(c.paye + (potStats(F).out.moi || 0) - (potStats(F).inn.moi || 0))}, virements de régularisation compris. La différence est comptée comme ${c.attente > 0 ? 'à recevoir' : 'à verser'} : elle disparaît de cette ligne dès que le virement est enregistré, sans changer l’écart.</p>` : ''}`;
 }
 /* D'où vient l'écart (prévu une fois tout pointé) : le budget du mois, vu autrement.
    Reste à vivre (revenus − ta part des charges − charges perso − épargne, hors projets) − virement plaisir
@@ -2526,20 +2522,20 @@ function controlWhy(k, c) {
   const trs = st.p.transfers || [];
   const horsReg = trs.filter(t => t.reg === false && t.to === 'moi').reduce((t, x) => t + x.a, 0) - trs.filter(t => t.reg === false && t.from === 'moi').reduce((t, x) => t + x.a, 0);
   const budget = rv.reste - c.plaisir - manque + horsReg, reste = c.ecartFin - budget;
-  const L = (t, v, n = '', cls = '') => `<li${cls ? ` class="${cls}"` : ''}><span>${t}${n ? `<br><span class="small">${n}</span>` : ''}</span><span class="num">${signed2(v)}</span></li>`;
+  const L = (t, v, n = '', cls = '') => `<li${cls ? ` class="${cls}"` : ''}><span>${t}${n ? `<br><span class="small">${n}</span>` : ''}</span><span class="num">${signed(v)}</span></li>`;
   return `<h4 class="why-h">D’où vient l’écart${c.nUp ? ' prévu' : ''}</h4>
     <ul class="kv ctrl">
       ${L('Reste à vivre du mois, hors projets', rv.reste, 'revenus − ta part des charges − charges perso − épargne versée')}
       ${L('Virement plaisir', -c.plaisir)}
-      ${projs.filter(x => Math.abs(x.manque) >= 0.5).map(x => L(`Projet ${esc(x.n)}, non financé par l’épargne`, -x.manque, `ta part ${eur2(x.part)}${x.repris ? ` · ${eur2(x.repris)} repris sur l’épargne` : ' · rien repris sur l’épargne'}`)).join('')}
+      ${projs.filter(x => Math.abs(x.manque) >= 0.5).map(x => L(`Projet ${esc(x.n)}, non financé par l’épargne`, -x.manque, `ta part ${eur(x.part)}${x.repris ? ` · ${eur(x.repris)} repris sur l’épargne` : ' · rien repris sur l’épargne'}`)).join('')}
       ${Math.abs(extra) >= 0.5 ? L('Épargne reprise pour un projet sans dépense ce mois-ci', extra) : ''}
       ${Math.abs(horsReg) >= 0.5 ? L('Virements hors régularisation', horsReg) : ''}
       ${Math.abs(reste) >= 1 ? L('Non expliqué par le budget', reste, 'mouvement absent de l’app, montant saisi différent du réel, ou compte d’épargne alimenté depuis un autre compte : voir le détail ci-dessous', 'warn') : ''}
-      <li class="ctot ${Math.abs(c.ecartFin) < 1 ? '' : 'warn'}"><span>Écart${c.nUp ? ' prévu une fois tout pointé' : ''}</span><span class="num">${signed2(c.ecartFin)}</span></li>
+      <li class="ctot ${Math.abs(c.ecartFin) < 1 ? '' : 'warn'}"><span>Écart${c.nUp ? ' prévu une fois tout pointé' : ''}</span><span class="num">${signed(c.ecartFin)}</span></li>
     </ul>
     <p class="small" style="margin:6px 0 0">${Math.abs(reste) < 1
       ? `Le budget du mois explique tout l’écart.${manque >= 1 ? ` Les projets sont payés depuis ton compte courant sans être entièrement financés par une reprise d’épargne : enregistre une reprise « pour financer un projet » sur un livret pour que le mois s’équilibre, ou garde l’écart en tête s’il est voulu.` : c.ecartFin < 0 ? ' Tes dépenses du mois dépassent ce qui reste après ta part des charges, tes charges perso et ton épargne.' : ''}`
-      : `Le budget explique ${signed2(budget)} ; il reste ${signed2(reste)} à trouver dans le détail ligne par ligne.`}</p>`;
+      : `Le budget explique ${signed(budget)} ; il reste ${signed(reste)} à trouver dans le détail ligne par ligne.`}</p>`;
 }
 /* Détail du contrôle : chaque ligne qui compose l'écart, et les situations qui le faussent le plus souvent.
    Le contrôle ne lit pas le compte courant : il refait le mois à partir des saisies. Une sortie comptée qui n'est
@@ -2547,7 +2543,7 @@ function controlWhy(k, c) {
 function controlDetail(k, c, ok) {
   const hh = c.hh, st = hh ? potStats(k) : null, mine = a => (a.owner || 'moi') === 'moi';
   const other = hh ? mName(members().find(m => m.id !== 'moi')?.id) : '';
-  const L = (t, v, n = '') => `<li><span>${t}${n ? `<br><span class="small">${n}</span>` : ''}</span><span class="num">${signed2(v)}</span></li>`;
+  const L = (t, v, n = '') => `<li><span>${t}${n ? `<br><span class="small">${n}</span>` : ''}</span><span class="num">${signed(v)}</span></li>`;
   const grp = (t, lines) => lines.length ? `<h4>${t}</h4><ul class="kv ctrl-d">${lines.join('')}</ul>` : '';
   const warn = [];
   // Revenus
