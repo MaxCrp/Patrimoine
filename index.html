@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-T+/UotogXLVVFRHggDIOtjjrXwsOHUJx153fVT2SXzw='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-gGE1pJZgL88baGrI2RUq2HXm3CFsZeIbEKSrVIXT7ZE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -1217,8 +1217,11 @@ const autresOf = k => S.pot[k]?.autres || 0;
 const revOf = (k, id) => incomeOf(k, id) + (id === 'moi' ? primeOf(k) + autresOf(k) : 0);
 // Virement plaisir : montant fixe des réglages, remplaçable pour un mois donné
 const plaisirOf = k => S.pot[k]?.plaisir ?? S.settings.plaisir ?? null;
-/* Contrôle du mois : tout ce qui est entré sur ton compte courant moins tout ce qui en est sorti et que l'app connaît.
-   L'écart restant est de l'argent resté sur le compte, ou parti ailleurs sans être enregistré. */
+/* Contrôle du mois : tout ce qui est entré sur ton compte courant moins tout ce qui en est sorti et que l'app connaît,
+   plus la régularisation encore en attente avec l'autre membre du foyer (ce qu'il te doit, ou ce que tu lui dois, pour ce mois).
+   Sans cette ligne, l'écart vaudrait « moins ce que l'autre te doit » tant que le virement n'est pas fait : un budget équilibré
+   prévoit ta part des charges, pas ce que tu as avancé. L'écart restant est de l'argent resté sur le compte,
+   ou parti ailleurs sans être enregistré. */
 function controlOf(k) {
   const hh = S.household.on && members().length > 1, st = hh ? potStats(k) : null;
   const trs = st ? st.p.transfers || [] : [];
@@ -1233,10 +1236,13 @@ function controlOf(k) {
   const epargne = S.accounts.filter(a => !isCash(a) && mine(a)).reduce((t, a) => t + dep(k, a), 0) - employeur;
   const projPaye = myItems.filter(i => i.proj).reduce((t, i) => t + i.a, 0), projPerso = persoOf(k).filter(i => i.proj).reduce((t, i) => t + i.a, 0);
   const plaisir = plaisirOf(k) || 0;
-  const ecart = salaire + prime + autres + recu - paye - envoye - perso - epargne - plaisir;
-  // Écart de répartition du mois : ce que tu as réellement payé pour le foyer, comparé à ta part due
-  const du = st ? st.due.moi || 0 : 0, solde = st ? paye + envoye - recu - du : 0;
-  return { hh, salaire, prime, autres, recu, envoye, paye, commun, perso, epargne, employeur, projEp, projPaye, projPerso, plaisir, ecart, du, solde, plaisirSet: plaisirOf(k) != null };
+  const brut = salaire + prime + autres + recu - paye - envoye - perso - epargne - plaisir;
+  // Régularisation en attente pour ce mois : ce que tu as payé pour le foyer (virements de régularisation compris),
+  // comparé à ta part due. Positif : l'autre te doit ; négatif : tu lui dois. Le report d'un mois précédent n'y entre pas :
+  // une fois réglé, il s'annule avec le virement reçu ou envoyé.
+  const du = st ? st.due.moi || 0 : 0, attente = st ? (st.paid.moi || 0) + (st.out.moi || 0) - (st.inn.moi || 0) - du : 0;
+  const ecart = brut + attente;
+  return { hh, salaire, prime, autres, recu, envoye, paye, commun, perso, epargne, employeur, projEp, projPaye, projPerso, plaisir, brut, attente, ecart, du, solde: attente, plaisirSet: plaisirOf(k) != null };
 }
 const PRIME_TO = { apport: 'l’apport', rente: 'la retraite', moitie: 'moitié apport, moitié retraite' };
 const primeCfg = () => (S.goals.prime ||= { list: [], pct: 100, to: 'apport' });
@@ -1521,8 +1527,8 @@ function summary(F) {
     if (c.salaire || c.prime || c.autres) {
       L.push('', 'Contrôle du mois (entrées moins sorties connues de mon compte courant) :');
       L.push(`- Entrées : ${R(c.salaire + c.prime + c.autres + c.recu)} · charges communes payées et virements au conjoint : ${R(c.paye + c.envoye)} · charges perso : ${R(c.perso)} · épargne : ${SR(c.epargne)} · virement plaisir : ${c.plaisirSet ? R(c.plaisir) : 'non renseigné'}`);
-      L.push(`- Écart non expliqué : ${SR(c.ecart)}`);
-      if (c.hh && Math.abs(c.solde) >= 1) L.push(`- Charges communes payées au-delà de ma part due, non régularisées ce mois-ci : ${SR(c.solde)} (c’est la différence entre mon reste à vivre et ce contrôle)`);
+      if (c.hh && Math.abs(c.attente) >= 1) L.push(`- Régularisation en attente avec mon conjoint (charges communes payées au-delà de ma part due, ou en deçà) : ${SR(c.attente)}`);
+      L.push(`- Écart non expliqué, régularisation en attente comprise : ${SR(c.ecart)}`);
     }
   }
   const comp = active().filter(a => mineF(a) && a.lines?.length && valueAt(a, F) > 0);
@@ -2450,10 +2456,11 @@ function vControl(F) {
       ${row(c.epargne + c.projEp >= 0 ? 'Épargne versée' : 'Épargne reprise', -(c.epargne + c.projEp))}
       ${c.employeur ? `<li class="csub"><span>hors ${eur(c.employeur)} versés par l’employeur</span><span></span></li>` : ''}
       ${row('Virement plaisir', -c.plaisir)}
+      ${c.hh && Math.abs(c.attente) >= 0.5 ? row(c.attente > 0 ? `À recevoir de ${esc(other)} (régularisation en attente)` : `À verser à ${esc(other)} (régularisation en attente)`, c.attente) : ''}
       <li class="ctot ${ok ? '' : 'warn'}"><span>Écart à expliquer</span><span class="num">${signed(c.ecart)}</span></li>
     </ul>
     <p class="small" style="margin:6px 0 0">${!c.plaisirSet ? 'Renseigne ton virement plaisir dans Réglages › Budget de référence pour un contrôle complet. ' : ''}${ok ? 'Tout est enregistré : rien n’est parti ailleurs.' : c.ecart > 0 ? 'Argent resté sur ton compte courant, ou sorti sans être enregistré dans l’app (frais, dépense oubliée…).' : 'Il est sorti plus que ce qui est entré : une rentrée n’est pas enregistrée, ou tu as puisé dans le solde de ton compte courant.'}</p>
-    ${c.hh && Math.abs(c.solde) >= 1 ? `<p class="small" style="margin:6px 0 0">Pour info, ton reste à vivre est calculé sur ta part due des charges (${eur(c.du)}), pas sur ce que tu as payé (${eur(c.paye + c.envoye - c.recu)}, virements compris) : ${c.solde > 0 ? `${esc(other)} te doit ${eur(c.solde)}` : `tu dois ${eur(-c.solde)} à ${esc(other)}`} pour ce mois, ce qui explique l’écart entre ton reste à vivre et ton virement plaisir s’il n’est pas régularisé.</p>` : ''}`;
+    ${c.hh && Math.abs(c.attente) >= 0.5 ? `<p class="small" style="margin:6px 0 0">Ta part des charges ce mois-ci est de ${eur(c.du)} ; tu as payé ${eur(c.paye + (potStats(F).out.moi || 0) - (potStats(F).inn.moi || 0))}, virements de régularisation compris. La différence est comptée comme ${c.attente > 0 ? 'à recevoir' : 'à verser'} : elle disparaît de cette ligne dès que le virement est enregistré, sans changer l’écart.</p>` : ''}`;
 }
 function vResume() {
   const ms = months();
