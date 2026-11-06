@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-lkvokEBr429fdw9yBNZqOrsqzroHqVEyC/jIXUc/3vw='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-zKdzBanmR4qcnE08pgrdqVGGGpGnOpA0RcCGGHxg+FY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -2485,9 +2485,9 @@ function vControl(F) {
       ${c.projPaye ? row('dont projets', c.projPaye, true) : ''}
       ${c.hh ? row(`Virements envoyés à ${esc(other)}`, -c.envoye) : ''}
       ${row(c.nUp ? 'Charges perso pointées' : 'Charges perso', -c.persoCh)}
+      ${c.projPerso ? row('dont projets', c.projPerso, true) : ''}
       ${c.rbCur + c.rbPrev ? row('Remboursements reçus', c.rbCur + c.rbPrev) : ''}
       ${c.rbPrev ? row(`dont pour une charge ${deM(prevNames)}`, c.rbPrev, true) : ''}
-      ${c.projPerso ? row('dont projets', c.projPerso, true) : ''}
       ${c.projEp ? row('Épargne reprise pour des projets', c.projEp) : ''}
       ${row(c.epargne + c.projEp >= 0 ? 'Épargne versée' : 'Épargne reprise', -(c.epargne + c.projEp))}
       ${c.employeur ? `<li class="csub"><span>hors ${eur2(c.employeur)} versés par l’employeur</span><span></span></li>` : ''}
