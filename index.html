@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-QX3M0AX9GYvfYOVIsBA2DFQTPaI9WGqv1xGGm87pYl8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-T+/UotogXLVVFRHggDIOtjjrXwsOHUJx153fVT2SXzw='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -389,9 +389,16 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .paybars{display:grid;gap:14px;margin:4px 0 16px}
 .payb-h{display:flex;justify-content:space-between;gap:10px;font-size:15px;margin-bottom:6px}
 .payb-h span:first-child{font-weight:600}
-.payb-bar{position:relative;height:14px;border-radius:7px;background:var(--line)}
-.payb-bar i{display:block;height:100%;border-radius:7px;background:var(--pine)}
+.payb-bar{position:relative;height:14px}
+.pb-track{display:flex;gap:2px;height:100%;border-radius:7px;overflow:hidden;background:var(--line)}
+.pb-track i{display:block;height:100%}
+.pb-a{background:var(--pine)} .pb-g{background:var(--pos)}
+.pb-r{background:repeating-linear-gradient(135deg,var(--amber) 0 4px,var(--amber-soft) 4px 7px)}
 .payb-bar b{position:absolute;top:-4px;width:3px;height:22px;margin-left:-1.5px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)}
+.pay-leg{display:flex;flex-wrap:wrap;gap:6px 14px;margin:2px 0 12px;font-size:13px;color:var(--muted)}
+.pay-leg span{display:flex;align-items:center;gap:6px}
+.pay-leg i{width:12px;height:12px;border-radius:3px}
+.pl-a{background:var(--pine)} .pl-g{background:var(--pos)} .pl-r{background:repeating-linear-gradient(135deg,var(--amber) 0 3px,var(--amber-soft) 3px 5px)}
 .payb-n{margin:6px 0 0;font-size:14px;font-weight:700;color:var(--muted)}
 .payb-n.up{color:var(--pos)} .payb-n.down{color:var(--red)}
 .rv-leg{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 12px;font-size:13px;color:var(--muted)}
@@ -1293,6 +1300,13 @@ function prevGap(k) {
   return members().some(m => Math.abs(st.net[m.id]) >= 1) ? st : null;
 }
 const carryPending = k => S.household.on && members().length > 1 && !S.pot[k]?.carryDecided && !!prevGap(k);
+// « Qui doit combien à qui », tutoyé quand c'est toi (le membre « moi ») : « Tu dois 5 € à Léa », « Léa te doit 5 € »
+function owes(from, to, amt, { past = false, lower = false } = {}) {
+  const v = past ? 'devait' : 'doit';
+  const t = from === 'moi' ? `Tu ${past ? 'devais' : 'dois'} ${amt} à ${esc(mName(to))}`
+    : to === 'moi' ? `${esc(mName(from))} te ${v} ${amt}` : `${esc(mName(from))} ${v} ${amt} à ${esc(mName(to))}`;
+  return lower && from === 'moi' ? 't' + t.slice(1) : t;
+}
 function settle(st) {
   const pos = members().filter(m => st.net[m.id] > 0.5).sort((a, b) => st.net[b.id] - st.net[a.id]);
   const neg = members().filter(m => st.net[m.id] < -0.5).sort((a, b) => st.net[a.id] - st.net[b.id]);
@@ -1757,7 +1771,7 @@ function vFoyer() {
   const miss = incomeMissing(k) || [];
   const items = st.items.slice().sort((a, b) => b.a - a.a);
   const prevK = addMonths(k, -1), gap = carryPending(k) ? prevGap(k) : null;
-  const gapTxt = gap ? settle(gap).map(d => `${esc(mName(d.from))} devait ${eur(d.a)} à ${esc(mName(d.to))}`).join(', ') : '';
+  const gapTxt = gap ? settle(gap).map(d => owes(d.from, d.to, eur(d.a), { past: true, lower: true })).join(', ') : '';
   const carried = st.p.carry && Object.values(st.p.carry).some(v => Math.abs(v) >= 1);
   const trs = (st.p.transfers || []);
   const nav = `<div class="month-nav"><button data-act="potmonth" data-d="-1" aria-label="Mois précédent">‹</button><strong>${cap(monthLabel(k))}</strong><button data-act="potmonth" data-d="1" aria-label="Mois suivant" ${k >= cur ? 'disabled' : ''}>›</button></div>`;
@@ -1781,7 +1795,7 @@ function vFoyer() {
       <p class="small">${plural(items.length, 'dépense enregistrée', 'dépenses enregistrées')} · répartition : ${SPLIT[H.split.mode]}</p>
       ${st.total || carried ? `<div class="tbl"><table><thead><tr><th></th><th>Part</th><th>Payé</th><th>Dû</th><th>Solde</th></tr></thead><tbody>${rows}</tbody></table></div>` : ''}
       ${carried ? `<p class="small" style="margin-top:8px">Solde incluant le report ${deM(monthName(prevK))} : ${members().map(m => `${esc(m.name)} ${signed(st.p.carry[m.id] || 0)}`).join(', ')}. <button class="inline" data-act="uncarry">Annuler le report</button></p>` : ''}
-      ${dues.length ? `<div class="settle">${dues.map(d => `<p><strong>${esc(mName(d.from))} doit ${eur(d.a)} à ${esc(mName(d.to))}</strong></p>
+      ${dues.length ? `<div class="settle">${dues.map(d => `<p><strong>${owes(d.from, d.to, eur(d.a))}</strong></p>
         <button class="btn wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer un virement</button>`).join('')}</div>`
         : st.total || carried ? '<p class="small" style="margin-top:12px">Comptes équilibrés entre vous.</p>' : ''}
       <p class="small" style="margin-top:12px">Mode de répartition et membres : <button class="inline" data-act="split">réglages du foyer</button>.</p></div></section>`;
@@ -1824,18 +1838,33 @@ function vFoyer() {
   if (foyerSub === 'revenus') return nav + revS;
   if (foyerSub === 'reste' && effort) return nav + resteS;
   // Vue principale : qui doit quoi, puis tout ce qui reste à pointer, puis le détail replié
-  const balMax = Math.max(st.total, ...ms.map(m => st.paid[m.id] || 0)) || 1;
-  const bars = st.total ? `<div class="paybars">${ms.map(m => {
-    const paid = st.paid[m.id] || 0, due = st.due[m.id] || 0, net = st.net[m.id] || 0;
-    return `<div class="payb"><div class="payb-h"><span>${esc(m.name)}</span><span class="num">payé ${eur(paid)} · part ${eur(due)}</span></div>
-      <div class="payb-bar" role="img" aria-label="${esc(m.name)} a payé ${esc(eur(paid))} pour une part de ${esc(eur(due))}"><i style="width:${(paid / balMax * 100).toFixed(1)}%"></i><b style="left:${(due / balMax * 100).toFixed(1)}%"></b></div>
-      ${Math.abs(net) >= 0.5 ? `<p class="payb-n ${net > 0 ? 'up' : 'down'}">${net > 0 ? `${signed(net)} avancés` : `${eur(-net)} à verser`}</p>` : '<p class="payb-n">à l’équilibre</p>'}</div>`;
+  // Chaque barre se lit de gauche à droite : ce que la personne a payé, puis les remboursements déjà faits (vert),
+  // puis ce qui reste à régler (hachuré). Le trait marque sa part des charges.
+  const seg = ms.map(m => {
+    const paid = st.paid[m.id] || 0, due = st.due[m.id] || 0, net = st.net[m.id] || 0, out = st.out[m.id] || 0, inn = st.inn[m.id] || 0;
+    if (paid + out >= due - 0.5 && paid >= due) {   // a avancé de l'argent : l'excédent est remboursé (reçu) ou encore à recevoir
+      const ex = paid - due, got = Math.min(inn, ex), left = Math.min(Math.max(0, net), ex - got);
+      return { m, paid, due, net, cred: true, a: paid - got - left, g: got, r: left };
+    }
+    return { m, paid, due, net, cred: false, a: paid, g: out, r: Math.max(0, -net) };   // doit encore sa part : ce qu'il a remboursé, puis ce qui reste
+  });
+  const balMax = Math.max(st.total, ...seg.map(x => x.a + x.g + x.r), ...seg.map(x => x.due)) || 1;
+  const wd = v => (v / balMax * 100).toFixed(2);
+  const bars = st.total ? `<div class="pay-leg"><span><i class="pl-a"></i>Payé</span><span><i class="pl-g"></i>Remboursé</span><span><i class="pl-r"></i>Reste à rembourser</span></div>
+    <div class="paybars">${seg.map(x => {
+    const me = x.m.id === 'moi', who = esc(x.m.name);
+    const note = x.r >= 0.5 ? `<p class="payb-n ${x.cred ? 'up' : 'down'}">${x.cred ? `${eur(x.r)} à recevoir` : `${eur(x.r)} à rembourser`}${x.g >= 0.5 ? ` · ${eur(x.g)} déjà remboursés` : ''}</p>`
+      : `<p class="payb-n">${x.g >= 0.5 ? `${eur(x.g)} remboursés · ` : ''}à l’équilibre</p>`;
+    return `<div class="payb"><div class="payb-h"><span>${me ? 'Toi' : who}</span><span class="num">payé ${eur(x.paid)} · part ${eur(x.due)}</span></div>
+      <div class="payb-bar" role="img" aria-label="${me ? 'Toi' : who} : payé ${esc(eur(x.a + (x.cred ? x.g + x.r : 0)))}, remboursé ${esc(eur(x.g))}, reste ${esc(eur(x.r))}, part ${esc(eur(x.due))}">
+        <span class="pb-track">${x.a >= 0.5 ? `<i class="pb-a" style="width:${wd(x.a)}%"></i>` : ''}${x.g >= 0.5 ? `<i class="pb-g" style="width:${wd(x.g)}%"></i>` : ''}${x.r >= 0.5 ? `<i class="pb-r" style="width:${wd(x.r)}%"></i>` : ''}</span>
+        <b style="left:${wd(x.due)}%"></b></div>${note}</div>`;
   }).join('')}</div>` : '';
-  const bal = `<section><div class="goal balance">${dues.length ? dues.map(d => `<p class="bal-t">${esc(mName(d.from))} doit ${eur(d.a)} à ${esc(mName(d.to))}</p>`).join('')
+  const bal = `<section><div class="goal balance">${dues.length ? dues.map(d => `<p class="bal-t">${owes(d.from, d.to, eur(d.a))}</p>`).join('')
       : `<p class="bal-t">${st.total || carried ? 'Comptes équilibrés entre vous' : 'Aucune dépense commune ce mois-ci'}</p>`}
     <p class="small">Charges communes ${eur(st.total)} · ${SPLIT[H.split.mode].toLowerCase()}${st.total ? ' · le trait marque la part de chacun' : ''}</p>
     ${bars}
-    ${dues.map(d => `<button class="btn primary wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer le virement${dues.length > 1 ? ` de ${esc(mName(d.from))}` : ''}</button>`).join('')}</div></section>`;
+    ${dues.map(d => `<button class="btn primary wide" data-act="settlenow" data-from="${d.from}" data-to="${d.to}" data-a="${d.a}">Enregistrer le virement${dues.length > 1 ? (d.from === 'moi' ? ' que tu dois' : ` de ${esc(mName(d.from))}`) : ''}</button>`).join('')}</div></section>`;
   const comPt = items.filter(i => !i.src);
   const pts = [...comPt.map(i => ({ i, kind: 'c', d: `commune · payé par ${esc(mName(i.by))}` })), ...perso.map(i => ({ i, kind: 'p', d: `perso${i.proj ? ` · projet ${esc(i.proj)}` : ''}` }))];
   const left = pts.filter(x => !x.i.pt).length;
@@ -3048,7 +3077,7 @@ function sheetTransfer(pre) {
       <div class="row2"><label>De<select id="t-from">${ms.map(m => `<option value="${m.id}" ${m.id === from ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label>
         <label>Vers<select id="t-to">${ms.map(m => `<option value="${m.id}" ${m.id === to ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select></label></div>
       <label>Montant (€)<input id="t-a" inputmode="decimal" value="${pre ? esc(numStr(Math.round(pre.a * 100) / 100)) : ''}" required></label>
-      ${pre?.reg ? `<p class="small" style="margin:-4px 0 0">${esc(mName(from))} doit ${esc(numStr(Math.round(pre.a * 100) / 100))} € à ${esc(mName(to))}. Valide tel quel pour tout régler, ou indique un montant plus faible pour un virement partiel : le reste restera dû.</p>` : ''}
+      ${pre?.reg ? `<p class="small" style="margin:-4px 0 0">${owes(from, to, esc(numStr(Math.round(pre.a * 100) / 100)) + ' €')}. Valide tel quel pour tout régler, ou indique un montant plus faible pour un virement partiel : le reste restera dû.</p>` : ''}
       <label>Motif (facultatif)<input id="t-n" maxlength="40" placeholder="ex. régularisation ${esc(monthName(potMonth))}"></label>
       <button class="btn primary wide" type="submit">Valider le virement</button>
       <button class="link" type="button" data-act="close">Annuler</button></form>`);
