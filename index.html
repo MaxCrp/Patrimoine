@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-VT0SU0TMpuCS8kHfbhz7+zVww7WyblBWsWrK7c2hRtI='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-QX3M0AX9GYvfYOVIsBA2DFQTPaI9WGqv1xGGm87pYl8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -380,6 +380,8 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .list li.done .ptck{background:var(--pine);border-color:var(--pine)}
 .list li.done .ptck svg{opacity:1}
 .h2-sub{font-weight:500;font-size:15px;color:var(--muted)}
+.sub-h{margin:22px 0 8px;font-size:17px}
+.sc-line.cat{stroke-width:2.4}
 .month-nav{justify-content:center;gap:2px;width:fit-content;margin:10px auto 0;padding:2px 4px;border:1px solid var(--line);border-radius:22px;background:var(--surface)}
 .month-nav strong{font-size:16px;padding:0 6px;min-width:9.5em;text-align:center}
 .month-nav button{width:38px;height:38px;border:0;border-radius:50%;background:none}
@@ -414,45 +416,11 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .steps li.ok .stepno{background:var(--pos);color:var(--surface)}
 .stepno svg{width:17px;height:17px;stroke-width:2.6}
 .steps li.cur button{box-shadow:inset 0 0 0 2px var(--pine)}
-.sc-line.ac1,.key.ac1{stroke:#2a78d6;border-top-color:#2a78d6} .sc-dot.ac1{fill:#2a78d6}
-.sc-line.ac2,.key.ac2{stroke:#eb6834;border-top-color:#eb6834} .sc-dot.ac2{fill:#eb6834}
-.sc-line.ac3,.key.ac3{stroke:#1baf7a;border-top-color:#1baf7a} .sc-dot.ac3{fill:#1baf7a}
-.sc-line.ac4,.key.ac4{stroke:#eda100;border-top-color:#eda100} .sc-dot.ac4{fill:#eda100}
-.sc-line.ac5,.key.ac5{stroke:#e87ba4;border-top-color:#e87ba4} .sc-dot.ac5{fill:#e87ba4}
-.sc-line.ac6,.key.ac6{stroke:#008300;border-top-color:#008300} .sc-dot.ac6{fill:#008300}
-.sc-line.ac7,.key.ac7{stroke:#6250d6;border-top-color:#6250d6} .sc-dot.ac7{fill:#6250d6}
-@media (prefers-color-scheme: dark){ :root:not([data-mode="light"]) .sc-line.ac1,:root:not([data-mode="light"]) .key.ac1{stroke:#3987e5;border-top-color:#3987e5} :root:not([data-mode="light"]) .sc-dot.ac1{fill:#3987e5}
-  :root:not([data-mode="light"]) .sc-line.ac2,:root:not([data-mode="light"]) .key.ac2{stroke:#d95926;border-top-color:#d95926} :root:not([data-mode="light"]) .sc-dot.ac2{fill:#d95926}
-  :root:not([data-mode="light"]) .sc-line.ac3,:root:not([data-mode="light"]) .key.ac3{stroke:#199e70;border-top-color:#199e70} :root:not([data-mode="light"]) .sc-dot.ac3{fill:#199e70}
-  :root:not([data-mode="light"]) .sc-line.ac4,:root:not([data-mode="light"]) .key.ac4{stroke:#c98500;border-top-color:#c98500} :root:not([data-mode="light"]) .sc-dot.ac4{fill:#c98500}
-  :root:not([data-mode="light"]) .sc-line.ac5,:root:not([data-mode="light"]) .key.ac5{stroke:#d55181;border-top-color:#d55181} :root:not([data-mode="light"]) .sc-dot.ac5{fill:#d55181}
-  :root:not([data-mode="light"]) .sc-line.ac7,:root:not([data-mode="light"]) .key.ac7{stroke:#9085e9;border-top-color:#9085e9} :root:not([data-mode="light"]) .sc-dot.ac7{fill:#9085e9} }
-:root[data-mode="dark"] .sc-line.ac1,:root[data-mode="dark"] .key.ac1{stroke:#3987e5;border-top-color:#3987e5} :root[data-mode="dark"] .sc-dot.ac1{fill:#3987e5}
-:root[data-mode="dark"] .sc-line.ac2,:root[data-mode="dark"] .key.ac2{stroke:#d95926;border-top-color:#d95926} :root[data-mode="dark"] .sc-dot.ac2{fill:#d95926}
-:root[data-mode="dark"] .sc-line.ac3,:root[data-mode="dark"] .key.ac3{stroke:#199e70;border-top-color:#199e70} :root[data-mode="dark"] .sc-dot.ac3{fill:#199e70}
-:root[data-mode="dark"] .sc-line.ac4,:root[data-mode="dark"] .key.ac4{stroke:#c98500;border-top-color:#c98500} :root[data-mode="dark"] .sc-dot.ac4{fill:#c98500}
-:root[data-mode="dark"] .sc-line.ac5,:root[data-mode="dark"] .key.ac5{stroke:#d55181;border-top-color:#d55181} :root[data-mode="dark"] .sc-dot.ac5{fill:#d55181}
-:root[data-mode="dark"] .sc-line.ac7,:root[data-mode="dark"] .key.ac7{stroke:#9085e9;border-top-color:#9085e9} :root[data-mode="dark"] .sc-dot.ac7{fill:#9085e9}
 .balance .bal-t{margin:0;font-size:19px;font-weight:700}
 .balance .small{margin:4px 0 12px}
 .foyrows li button > span:first-child{flex:1}
 .foyrows .chev{color:var(--muted);font-size:22px}
 .foyrows .warn{color:var(--amber);font-weight:600}
-.todo{margin-top:18px;padding:14px 0 4px;border-radius:20px;background:var(--surface)}
-.todo-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 16px 6px}
-.todo-head h2{margin:0;font-size:18px}
-.todo ul{list-style:none;margin:0;padding:0}
-.todo li button{width:100%;display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 16px;border:0;border-top:1px solid var(--line);background:none;text-align:left;color:inherit}
-.todo li.ok button{color:var(--muted)}
-.todo li.off button{opacity:.55;cursor:default}
-.todo-b{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--pine-soft);color:var(--pine);font:700 13px var(--num)}
-.todo-b svg{width:18px;height:18px;stroke-width:2.2}
-.todo-b.warn{background:var(--amber-soft);color:var(--amber)}
-.todo-b.ok{background:var(--pos);color:var(--surface)}
-.todo-b.ok svg{stroke-width:2.6}
-.todo-m{flex:1;display:flex;flex-direction:column}
-.todo-t{font-weight:600;color:var(--ink)}
-.todo .chev,.rowlink .chev,.qrow .chev{color:var(--muted);font-size:22px}
 .rowlink,.qrow{width:100%;display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);text-align:left;color:inherit}
 .rowlink > span:nth-child(2),.qrow > span:nth-child(2){flex:1;font-weight:600}
 .rowlink .small,.qrow .small{font-weight:400}
@@ -1691,13 +1659,13 @@ function vHome() {
       <p class="hero-total num">${eur(b.total)}</p>
       <p class="hero-delta ${delta >= 0 ? 'up' : 'down'}">${ms[0] === F ? 'Premier mois de suivi' : `${signed(delta)} sur le mois, dont ${signed(b.dep)} versés`}</p>
     </section>
-    ${homeTodo(cur, acc, missing.length)}
     <section><h2>Évolution</h2>${chart(tl)}
       ${tl.length > 1 ? `<div class="legend"><span><i class="key"></i>Valeur</span><span><i class="key inv"></i>Argent versé</span><span>Gains cumulés <b>${signed(last.t - last.inv)}</b></span></div>` : ''}</section>
     ${S.household.on ? `<section><button class="rowlink" data-act="go" data-view="objectifs">${ICON.target}<span>Objectifs<br><span class="small">Apport immobilier, rente future, épargne mensuelle</span></span><span class="chev" aria-hidden="true">›</span></button></section>` : ''}
     <section><h2>Répartition</h2>
       <div class="stack" role="img" aria-label="Répartition par type de placement">${cats.map(x => `<i style="width:${x.v / b.total * 100}%;background:${x.color}"></i>`).join('')}</div>
-      <ul class="rep">${cats.map(x => `<li><span class="dot" style="background:${x.color}"></span><span>${x.label}</span><span class="p">${pct(x.v / b.total)}</span><span class="num">${eur(x.v)}</span></li>`).join('')}</ul></section>
+      <ul class="rep">${cats.map(x => `<li><span class="dot" style="background:${x.color}"></span><span>${x.label}</span><span class="p">${pct(x.v / b.total)}</span><span class="num">${eur(x.v)}</span></li>`).join('')}</ul>
+      ${placEvo(f)}</section>
     <section><h2>Points d’attention${multi() && scope !== 'moi' ? ` · ${esc(scope === 'all' ? 'foyer' : mName(scope))}` : ''}</h2>
       ${al.length ? `<ul class="alerts">${al.map(x => `<li class="${x.l}" data-k="${esc(x.k)}" data-s="${esc(x.s)}">
         <span class="atxt">${esc(x.t)}</span>
@@ -1707,27 +1675,6 @@ function vHome() {
       ${hiddenN ? `<button class="link" data-act="unhide">Réafficher ${plural(hiddenN, 'point masqué', 'points masqués')}</button>` : ''}</section>
     <section class="statsec"><h2>Statistiques</h2>
       ${masked ? '<p class="muted">Masquées tant que les montants le sont.</p><button class="btn" data-act="unmask">Afficher les montants</button>' : vStats()}</section>`;
-}
-
-// Accueil : les tâches du mois, chacune à un geste. Quand tout est fait, on propose le résumé.
-function homeTodo(cur, acc, missN) {
-  const rows = [];
-  if (multi()) {
-    const p = S.pot[cur], pts = [...(p?.items || []).filter(i => !i.src), ...(p?.perso || []).filter(i => !i.rb)], left = pts.filter(i => !i.pt).length;
-    if (!p || pts.length) rows.push({ t: 'pointer', ok: !!p && !left, title: 'Pointer les charges', badge: left || '', warn: left > 0,
-      d: !p ? 'reprendre les charges du mois' : left ? `${plural(left, 'charge', 'charges')} à pointer` : 'tout est pointé' });
-  }
-  const doneN = acc.length - missN;
-  rows.push({ t: 'soldes', ok: !missN, title: 'Soldes des comptes', badge: `${doneN}/${acc.length}`, d: missN ? `${doneN} sur ${acc.length} à jour` : 'tous à jour' });
-  const le = S.settings.lastExport, saved = !!le && monthKey(new Date(le)) >= cur;
-  rows.push({ t: 'backup', ok: saved, off: !!missN && !saved, title: 'Sauvegarder', icon: ICON.download,
-    d: saved ? `faite le ${new Date(le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : missN ? 'dès que les soldes sont à jour' : 'les comptes sont à jour : mets-les à l’abri' });
-  const okN = rows.filter(r => r.ok).length;
-  if (okN === rows.length) return '';
-  return `<section class="todo"><div class="todo-head"><h2>À faire en ${monthName(cur)}</h2><span class="small">${okN} sur ${rows.length} ${okN > 1 ? 'faites' : 'faite'}</span></div>
-    <ul>${rows.map(r => `<li class="${r.ok ? 'ok' : ''}${r.off ? ' off' : ''}"><button data-act="todo" data-t="${r.t}" ${r.off ? 'disabled' : ''}>
-      <span class="todo-b${r.ok ? ' ok' : r.warn ? ' warn' : ''}" aria-hidden="true">${r.ok ? ICON.check : r.icon || r.badge}</span>
-      <span class="todo-m"><span class="todo-t">${r.title}</span><span class="small">${r.d}</span></span><span class="chev" aria-hidden="true">›</span></button></li>`).join('')}</ul></section>`;
 }
 
 function chart(tl) {
@@ -1923,8 +1870,12 @@ function vMois() {
     { k: 'soldes', t: 'Soldes des comptes', d: `${doneN} sur ${accs.length} à jour`, ok: doneN === accs.length, act: 'sub', v: 'soldes' },
     ...(cashDet.length ? [{ k: 'operations', t: 'Opérations du mois', d: !txAll.length ? 'aucun relevé importé' : txTodo ? `${plural(txTodo, 'ligne', 'lignes')} à classer` : `${plural(txAll.length, 'ligne classée', 'lignes classées')}`, ok: txAll.length > 0 && !txTodo, act: 'sub', v: 'operations' }] : []),
     ...(S.household.on && members().length > 1 ? [{ k: 'foyer', t: 'Revenus et charges du foyer',
-      d: (n => n ? `${plural(n, 'charge', 'charges')} à pointer · ` : '')([...(S.pot[m]?.items || []).filter(i => !i.src), ...(S.pot[m]?.perso || []).filter(i => !i.rb)].filter(i => !i.pt).length) + (carryPending(m) ? `écart ${deM(monthName(addMonths(m, -1)))} à reporter ou effacer` : !st.total ? 'aucune dépense enregistrée' : `${eur(st.total)} de charges${incOk ? '' : ', revenus à saisir'}`),
+      d: (carryPending(m) ? `écart ${deM(monthName(addMonths(m, -1)))} à reporter ou effacer` : !st.total ? 'aucune dépense enregistrée' : `${eur(st.total)} de charges${incOk ? '' : ', revenus à saisir'}`),
       ok: st.total > 0 && incOk && !carryPending(m), act: 'foyer' }] : []),
+    // Pointage : toutes les charges du mois (communes et perso), une fois saisies
+    ...((pts => S.household.on && members().length > 1 && pts.length ? [{ k: 'pointer', t: 'Pointer les charges',
+      d: pts.some(i => !i.pt) ? `${plural(pts.filter(i => !i.pt).length, 'charge', 'charges')} à pointer sur ${pts.length}` : `${plural(pts.length, 'charge pointée', 'charges pointées')}`,
+      ok: !pts.some(i => !i.pt), act: 'foyer' }] : [])([...(S.pot[m]?.items || []).filter(i => !i.src), ...(S.pot[m]?.perso || []).filter(i => !i.rb)])),
   ];
   // Dernière étape : la sauvegarde, accessible une fois les soldes à jour
   const le = S.settings.lastExport, soldesOk = steps[0].ok;
@@ -2200,14 +2151,14 @@ function svgChart(cfg) {
     let d = '', started = false;
     pts.forEach(p => { if (!p) { started = false; return; } d += `${started ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`; started = true; });
     if (l.area && pts.every(Boolean)) g += `<path class="sc-area ${l.cls}" d="${d}L${pts[n - 1][0].toFixed(1)},${y(Math.max(lo, 0)).toFixed(1)}L${pts[0][0].toFixed(1)},${y(Math.max(lo, 0)).toFixed(1)}Z"/>`;
-    g += `<path class="sc-line ${l.cls}" d="${d}"/>`;
+    g += `<path class="sc-line ${l.cls}"${l.color ? ` style="stroke:${l.color}"` : ''} d="${d}"/>`;
     if (l.warn) {
       let w = '';
       pts.forEach((p, i) => { if (p && pts[i - 1] && l.warn[i]) w += `M${pts[i - 1][0].toFixed(1)},${pts[i - 1][1].toFixed(1)}L${p[0].toFixed(1)},${p[1].toFixed(1)}`; });
       if (w) g += `<path class="sc-line warn" d="${w}"/>`;
     }
     const last = pts.map((p, i) => [p, i]).filter(([p]) => p).pop();
-    if (last) g += `<circle class="sc-dot ${l.warn?.[last[1]] ? 'warn' : l.cls}" cx="${last[0][0].toFixed(1)}" cy="${last[0][1].toFixed(1)}" r="4"/>`;
+    if (last) g += `<circle class="sc-dot ${l.warn?.[last[1]] ? 'warn' : l.cls}"${l.color ? ` style="fill:${l.color}"` : ''} cx="${last[0][0].toFixed(1)}" cy="${last[0][1].toFixed(1)}" r="4"/>`;
   });
   // Objectif principal en trait plein, libellé à droite ; intermédiaire en pointillé, libellé à gauche,
   // pour que les deux étiquettes ne se chevauchent jamais même quand les lignes sont proches.
@@ -2222,7 +2173,7 @@ function svgChart(cfg) {
   CHARTS[cfg.id] = { cfg, pl, band, W };
   const legend = [cfg.bars && !cfg.bars.solo ? `<span><i class="key bar ${cfg.bars.cls || ''}"></i>${esc(cfg.bars.name)}</span>` : '',
     cfg.bars2 ? `<span><i class="key bar ${cfg.bars2.cls || ''}"></i>${esc(cfg.bars2.name)}</span>` : '',
-    ...(cfg.lines || []).filter(l => !l.solo).map(l => `<span><i class="key ${l.cls}${l.dash ? ' dash' : ''}"></i>${esc(l.name)}</span>`),
+    ...(cfg.lines || []).filter(l => !l.solo).map(l => `<span><i class="key ${l.cls}${l.dash ? ' dash' : ''}"${l.color ? ` style="border-top-color:${l.color}"` : ''}></i>${esc(l.name)}</span>`),
     ...cfg.refs.map(r => `<span><i class="key ref${r === cfg.ref2 ? ' mid' : ''}"></i>${esc(r.name || 'Objectif')}</span>`),
     ...(cfg.lines || []).filter(l => l.warn?.some(Boolean)).map(l => `<span><i class="key warn"></i>${esc(l.warnName)}</span>`)].filter(Boolean);
   const rows = cfg.labels.map((lb, i) => `<tr><td>${esc(cfg.full[i])}</td>${cfg.bars ? `<td class="num">${esc(eur(cfg.bars.vals[i]))}</td>` : ''}${cfg.bars2 ? `<td class="num">${esc(eur(cfg.bars2.vals[i]))}</td>` : ''}${(cfg.lines || []).map(l => `<td class="num">${l.vals[i] == null ? '—' : esc(eur(l.vals[i]))}</td>`).join('')}</tr>`).reverse().join('');
@@ -2241,9 +2192,9 @@ function chartHover(el, clientX) {
   const cross = svg.querySelector('.sc-cross'); cross.style.display = ''; cross.setAttribute('x1', cx); cross.setAttribute('x2', cx);
   svg.querySelectorAll('.sc-bar').forEach(b => b.classList.toggle('hl', +b.dataset.i === i));
   const tip = el.querySelector('.sc-tip'); tip.textContent = '';
-  const add = (val, name, cls) => {
+  const add = (val, name, cls, color) => {
     const r = document.createElement('div'); r.className = 'tr';
-    const k = document.createElement('i'); k.className = 'key ' + cls; r.append(k);
+    const k = document.createElement('i'); k.className = 'key ' + cls; if (color) k.style.borderTopColor = color; r.append(k);
     const b = document.createElement('b'); b.textContent = val; r.append(b);
     const s2 = document.createElement('span'); s2.textContent = ' ' + name; r.append(s2);
     tip.append(r);
@@ -2251,7 +2202,7 @@ function chartHover(el, clientX) {
   const h = document.createElement('div'); h.className = 'th'; h.textContent = C.cfg.full[i]; tip.append(h);
   if (C.cfg.bars) add(eur(C.cfg.bars.vals[i]), C.cfg.bars.name, 'bar ' + (C.cfg.bars.cls || ''));
   if (C.cfg.bars2) add(eur(C.cfg.bars2.vals[i]), C.cfg.bars2.name, 'bar ' + (C.cfg.bars2.cls || ''));
-  (C.cfg.lines || []).forEach(l => { if (l.vals[i] != null) add(eur(l.vals[i]), l.name + (l.note?.[i] ? ' · ' + l.note[i] : ''), l.warn?.[i] ? 'warn' : l.cls); });
+  (C.cfg.lines || []).forEach(l => { if (l.vals[i] != null) add(eur(l.vals[i]), l.name + (l.note?.[i] ? ' · ' + l.note[i] : ''), l.warn?.[i] ? 'warn' : l.cls, l.warn?.[i] ? null : l.color); });
   C.cfg.refs.forEach(r => add(eur(r.v), r.name || 'Objectif', r === C.cfg.ref2 ? 'ref mid' : 'ref'));
   tip.hidden = false;
   const left = (cx / C.W) * rect.width, tw = tip.offsetWidth;
@@ -2266,20 +2217,19 @@ document.addEventListener('pointermove', e => { const el = e.target.closest?.('.
 document.addEventListener('pointerdown', e => { const el = e.target.closest?.('.schart'); if (el) chartHover(el, e.clientX); });
 document.addEventListener('pointerout', e => { const el = e.target.closest?.('.schart'); if (el && !el.contains(e.relatedTarget)) chartLeave(el); });
 
-// Évolution par compte : une courbe par compte (les 6 plus gros), le reste regroupé. Activable, choix mémorisé.
-function accEvo(ks, lbl, full, first, f) {
+// Évolution des placements : une courbe par catégorie de la Répartition, mêmes couleurs. Activable, choix mémorisé.
+function placEvo(f) {
   const on = !!ui.perAcc;
-  const btn = `<button class="btn ${on ? 'ghost' : ''} wide" data-act="peracc" aria-pressed="${on}">${on ? 'Masquer les courbes par compte' : 'Afficher l’évolution par compte'}</button>`;
-  if (!on) return `<section><h2>Évolution par compte</h2>${btn}</section>`;
-  const F = ks[ks.length - 1], accs = active().filter(a => f(a) && !isCash(a)).sort((a, b) => valueAt(b, F) - valueAt(a, F));
-  const top = accs.slice(0, 6), rest = accs.slice(6);
-  const ser = a => ks.map(k => k < first || (a.open && k < a.open) ? null : valueAt(a, k));
-  const lines = top.map((a, i) => ({ vals: ser(a), name: a.name, cls: 'ac' + (i + 1) }));
-  if (rest.length) lines.push({ vals: ks.map(k => k < first ? null : rest.reduce((t, a) => t + valueAt(a, k), 0)), name: `${plural(rest.length, 'autre compte', 'autres comptes')}`, cls: 'ac7' });
-  return `<section><h2>Évolution par compte</h2>
-    <p class="small" style="margin:-6px 0 10px">${accs.length > 6 ? 'Les 6 plus gros comptes, les autres regroupés. ' : ''}Touche le graphique pour lire la valeur de chaque compte.</p>
-    ${lines.length ? svgChart({ id: 'acc', labels: lbl, full, aria: `Valeur de ${plural(lines.length, 'compte', 'comptes')} sur ${plural(ks.length, 'mois', 'mois')}`, lines, fromMin: false }) : '<p class="muted">Aucun compte à afficher.</p>'}
-    <div style="margin-top:12px">${btn}</div></section>`;
+  const btn = `<button class="btn ${on ? 'ghost' : ''} wide" data-act="peracc" aria-pressed="${on}" style="margin-top:14px">${on ? 'Masquer l’évolution des placements' : 'Afficher l’évolution des placements'}</button>`;
+  if (!on) return btn;
+  const ms = months(), F = focusMonth(), first = ms[0], n = Math.min(13, monthDiff(first, F) + 1);
+  if (n < 2) return `<p class="muted" style="margin-top:14px">L’évolution apparaîtra après ta deuxième mise à jour mensuelle.</p>${btn}`;
+  const ks = Array.from({ length: n }, (_, i) => addMonths(F, i - n + 1));
+  const lines = Object.entries(CATS).map(([c, C]) => ({ vals: ks.map(k => totalAt(k, a => f(a) && TYPES[a.type].cat === c)), name: C.label, color: C.color, cls: 'cat' }))
+    .filter(l => l.vals.some(v => v > 0.5));
+  return `<h3 class="sub-h">Évolution des placements</h3>
+    ${svgChart({ id: 'plac', labels: ks.map(k => monthShort(k)), full: ks.map(k => cap(monthLabel(k))), aria: `Valeur de chaque catégorie de placement sur ${plural(n, 'mois', 'mois')}`, lines })}
+    ${btn}`;
 }
 function statTile(label, value, sub, cls = '', alert = false) {
   return `<div class="tile${alert ? ' alert' : ''}"><p class="tl">${label}</p><p class="tv num">${value}</p>${sub ? `<p class="ts ${cls}">${sub}</p>` : ''}</div>`;
@@ -2351,7 +2301,6 @@ function vStats() {
         rev ? `${low ? `sous le seuil de ${pctTxt(seuil)} · ` : ''}${rateReg != null ? `${pctTxt(rateReg)} hors primes · ` : ''}sur ${eur(rev)} de revenus mensuels${esc(scopeName)}${primesRev ? ', primes comprises' : ''}` : `sur ${plural(n, 'mois', 'mois')}`,
         rev ? (low ? 'down' : '') : perfTot >= 0 ? 'up' : 'down', low)}
     </div>
-    ${accEvo(ks, lbl, full, first, f)}
     <section><h2>Argent mis de côté</h2>
       <div class="chips tight" role="group" aria-label="Objectif">${goals.map(([v, l]) => `<button class="${statGoal === v ? 'on' : ''}" data-act="statgoal" data-v="${v}">${l}</button>`).join('')}</div>
       <p class="small" style="margin:8px 0 10px">${mid == null && need != null ? 'Tu peux fixer ton propre objectif mensuel, au-delà du minimum requis, dans l’onglet Objectifs. ' : ''}${split ? 'Primes affichées à part : l’objectif et la moyenne lissée portent sur l’épargne hors primes. ' : ''}${needTxt || (statGoal === 'all' ? 'Renseigne un objectif d’apport ou de rente pour afficher la ligne d’objectif.' : `Renseigne l’objectif ${statGoal === 'apport' ? 'd’apport (montant et échéance)' : 'de rente'} dans l’onglet Objectifs pour afficher la ligne.`)}</p>
@@ -3371,13 +3320,7 @@ const ACT = {
     render(); window.scrollTo(0, 0);
   },
   foyersub: t => { foyerSub = t.dataset.v; render(); window.scrollTo(0, 0); },
-  todo: async t => {
-    const w = t.dataset.t;
-    if (w === 'pointer') { potMonth = monthKey(); return goFoyer(); }
-    if (w === 'soldes') { saisieMonth = monthKey(); view = 'saisie'; return goSub('soldes'); }
-    if (w === 'backup') return exportBackup('mois');
-  },
-  gofoyer: () => goFoyer(),
+  gofoyer: () => { if (view === 'saisie') potMonth = saisieMonth; return goFoyer(); },
   usageview: () => sheetUsage(),
   primeadd: async () => { const P = primeCfg(), used = new Set(P.list.map(e => e.m)); let m = +monthKey().slice(5); for (let i = 0; i < 12 && used.has(m); i++) m = m % 12 + 1; P.list.push({ m, a: null }); P.list.sort((a, b) => a.m - b.m); await save(); render(); primesRefresh(); },
   primedel: async t => { primeCfg().list.splice(+t.dataset.i, 1); await save(); render(); primesRefresh(); },
