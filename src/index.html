@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-c4FarcHKsCnWcfRX3B4WXMD6wi7Nb1OZ+o850uJmVMQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-BUILD'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -391,6 +391,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .list li.done .ptck{background:var(--pine);border-color:var(--pine)}
 .list li.done .ptck svg{opacity:1}
 .h2-sub{font-weight:500;font-size:15px;color:var(--muted)}
+.news{margin-top:14px} .news h3{margin:0 0 2px;font-size:17px} .news ul{margin:0;padding-left:20px;display:grid;gap:4px}
 .sub-h{margin:22px 0 8px;font-size:17px}
 .sc-line.cat{stroke-width:2.4}
 .month-nav{justify-content:center;gap:2px;width:fit-content;margin:10px auto 0;padding:2px 4px;border:1px solid var(--line);border-radius:22px;background:var(--surface)}
@@ -754,6 +755,9 @@ async function setUi(patch) {
    Le service worker sert toujours la version mise en cache : le code ne change
    jamais tout seul. À chaque démarrage, l'app calcule l'empreinte du code servi,
    la compare à celle que tu as approuvée, et te signale toute différence. */
+// Version de l'app et historique des versions : injectés par build.mjs depuis src/changelog.json (le plus récent en premier)
+const CHANGELOG = /*BUILD:CHANGELOG*/[];
+const APP_VERSION = CHANGELOG[0]?.version || 'dev';
 const CACHE_NAME = 'patrimoine-v5';
 const SHELL = ['./', './sw.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 const CODE_FILES = ['./', './sw.js'];
@@ -2634,6 +2638,7 @@ const SET_PAGES = {
   ai:      { t: 'Analyse par IA', d: () => S.settings.ai?.key ? (AI[S.settings.ai.provider] || AI.anthropic).label : 'désactivée, app hors ligne' },
   secu:    { t: 'Sécurité', d: () => slots?.pk ? 'mot de passe et Face ID' : 'mot de passe' },
   backup:  { t: 'Données de l’application', d: () => (S.settings.lastExport ? 'sauvegarde du ' + new Date(S.settings.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : 'aucune sauvegarde') + (S.settings.usage?.on ? ' · suivi actif' : '') },
+  versions: { t: 'Versions', d: () => `version ${APP_VERSION}${CHANGELOG[0] ? ' du ' + fmtDay(CHANGELOG[0].date) : ''}` },
   code:    { t: 'Code de l’app', d: () => code.status === 'ok' ? 'conforme à la version approuvée' : code.status === 'unknown' ? 'vérification indisponible' : 'différence détectée' },
 };
 function sheetSettings() {
@@ -2729,6 +2734,10 @@ function sheetSetPage(k) {
       <p class="small" style="margin:0">L’app se verrouille seule après deux minutes en arrière-plan.</p>
       <button class="btn danger wide" data-act="wipe">Effacer toutes les données de cet iPhone</button>
       ${setBack}</div>`);
+  if (k === 'versions') return openSheet(`${head}
+    <p class="small" style="margin:0 0 6px">Version installée : ${esc(APP_VERSION)}. Les nouveautés s’affichent à la première ouverture après une mise à jour.</p>
+    ${newsHtml(CHANGELOG)}
+    <div class="stack-form" style="margin-top:14px">${setBack}</div>`);
   if (k === 'backup') {
     const le = st.lastExport ? new Date(st.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
     return openSheet(`${head}
@@ -2840,6 +2849,21 @@ function offerPasskey() {
     <button class="link" data-act="close">Plus tard</button>`);
 }
 const sheetMsg = msg => openSheet(`<h2>Face ID</h2><p>${esc(msg)}</p><button class="btn wide" data-act="setpage" data-p="secu">Retour</button>`);
+// Date du changelog (AAAA-MM-JJ) en toutes lettres
+const fmtDay = d => { const [y, m, j] = String(d).split('-').map(Number); return y && m && j ? new Date(y, m - 1, j).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : String(d); };
+const newsHtml = list => list.map(e => `<section class="news"><h3>Version ${esc(e.version)}${e.titre ? ` · ${esc(e.titre)}` : ''}</h3>
+  <p class="small" style="margin:0 0 6px">${esc(fmtDay(e.date))}</p><ul>${(e.nouveautes || []).map(n => `<li>${esc(n)}</li>`).join('')}</ul></section>`).join('');
+// Versions plus récentes que celle déjà vue ; inconnue (première fois) : la version actuelle seulement
+const newsSince = seen => { const i = CHANGELOG.findIndex(e => e.version === seen); return i < 0 ? CHANGELOG.slice(0, 1) : CHANGELOG.slice(0, i); };
+async function checkNews(via) {
+  const seen = ui.seenVersion;
+  if (!CHANGELOG.length || seen === APP_VERSION) return;
+  ui.seenVersion = APP_VERSION;
+  try { await store.set('ui', ui); } catch {}
+  if (via === 'f-setup') return;   // nouveau coffre : rien de « nouveau » à présenter
+  const list = newsSince(seen); if (!list.length) return;
+  openSheet(`<h2>Nouveautés</h2>${newsHtml(list)}<button class="btn primary wide" style="margin-top:14px" data-act="close">J’ai compris</button>`);
+}
 function enterApp() {
   view = 'home'; compteTab = 'detail'; foyerSub = null;
   saisieMonth = monthKey(); potMonth = monthKey(); resumeMonth = null;
@@ -2851,6 +2875,7 @@ function enterApp() {
   // Nouveau mois : reprend tout de suite les charges fixes (communes et perso), pour que le bilan et les
   // statistiques soient justes même si le volet Foyer n'a pas encore été ouvert.
   if (S.household.on && !S.pot[monthKey()]?.seeded) seedMonth(monthKey()).then(() => render()).catch(() => {});
+  checkNews(uPending).catch(() => {});
 }
 // Contrôle d'une sauvegarde avant restauration. Un fichier restauré vient de l'extérieur : identifiants, mois,
 // montants et types sont vérifiés, pour qu'aucune valeur ne puisse injecter du code dans l'app ni la bloquer.
@@ -4469,7 +4494,7 @@ async function usageExport() {
     format: 'patrimoine-usage-v1', exportedAt: new Date().toISOString(),
     trackingSince: new Date(U.since).toISOString(),
     context: { screen: `${screen.width}x${screen.height}`, standalone: matchMedia('(display-mode: standalone)').matches, theme: ui.theme, mode: ui.mode,
-      household: !!S.household.on, members: members().length, accounts: active().length, appFingerprint: code.served ? fpLabel(code.served) : null },
+      household: !!S.household.on, members: members().length, accounts: active().length, appVersion: APP_VERSION, appFingerprint: code.served ? fpLabel(code.served) : null },
     legend: {
       kinds: { start: 'ouverture (nom = méthode, détail = taille d’écran)', end: 'verrouillage', pause: 'app en arrière-plan', resume: 'retour dans l’app',
         screen: 'nouvel écran affiché (nom = écran > fiche ouverte)', tap: 'bouton touché (nom = action, détail = paramètres)', long: 'appui long',

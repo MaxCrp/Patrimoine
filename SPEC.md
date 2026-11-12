@@ -12,10 +12,11 @@ Ce document décrit l'app telle qu'elle est, et range chaque évolution dans une
 
 ## 2. Plateforme et sécurité
 
-- Un seul fichier HTML (HTML, CSS et JavaScript en ligne), servi par Cloudflare Pages depuis la branche `main`.
+- Une page HTML unique (HTML, CSS et JavaScript en ligne) écrite dans `src/`, générée dans `public/` par `node build.mjs`, servie par Cloudflare Pages depuis la branche `main` (dossier `public`).
+- Numéro de version et historique dans `src/changelog.json`, affichés dans Réglages › Versions ; fiche « Nouveautés » à la première ouverture après une mise à jour.
 - Données chiffrées sur l'appareil (AES-GCM, clé dérivée du mot de passe par PBKDF2), stockées dans IndexedDB. Déverrouillage par mot de passe, ou par Face ID via une passkey (extension PRF).
 - Aucune donnée n'est envoyée à un serveur, sauf l'analyse par IA quand l'utilisateur a enregistré sa propre clé (Anthropic ou Mistral).
-- Content-Security-Policy stricte : le script en ligne n'est autorisé que par son empreinte SHA-256. Toute modification du script exige de recalculer cette empreinte, sinon la page reste blanche.
+- Content-Security-Policy stricte : le script en ligne n'est autorisé que par son empreinte SHA-256, recalculée à chaque build (une empreinte fausse laisse la page blanche).
 - Le service worker sert toujours le code installé. Au démarrage, l'app calcule l'empreinte du code (`./` et `./sw.js`) et la compare à celle qu'a approuvée l'utilisateur. Une nouvelle version en ligne est proposée, jamais installée sans confirmation. Un `sw.js` modifié chez l'hébergeur déclenche une alerte : il ne doit changer que pour une raison impérative.
 - En-têtes de sécurité dans `_headers` (interdiction d'affichage en cadre, pas de référent, permissions désactivées).
 
@@ -65,7 +66,7 @@ Ce document décrit l'app telle qu'elle est, et range chaque évolution dans une
 
 ## 9. Réglages et apparence
 
-- Pages : Apparence, Foyer, Budget de référence, Analyse par IA, Sécurité, Données de l'application, Code de l'app.
+- Pages : Apparence, Foyer, Budget de référence, Analyse par IA, Sécurité, Données de l'application, Versions, Code de l'app.
 - Thèmes, chacun en clair et en sombre : Forêt, Banque privée, Salle des marchés, Registre, Atelier, Encre, Graphite, Olivier. Contraste du texte d'au moins 4,5:1.
 
 ## 10. Releases
@@ -153,11 +154,11 @@ Versions reconstituées à partir de l'historique du dépôt (commits entre pare
 #### v1.15.1 — 06/11/2026
 - [x] Affichage du contrôle : remboursements comptés et visibles, ordre des lignes, arrondis, seuil de 1 € (29d0bc2, 22c7abf, 8a8698d, 8b770d8)
 
-### v1.16 — Suivi de version (proposée, à lancer)
-- [ ] Sources dans `src/` (page, `static/sw.js`, manifeste, icônes, `_headers`) ; `node build.mjs` génère `public/`, commité
-- [ ] Le build recalcule l'empreinte CSP du script et vérifie que `sw.js` est inchangé
-- [ ] `src/changelog.json` : toutes les versions ci-dessus, rédigées pour l'utilisateur
-- [ ] Numéro de version affiché dans Réglages, et fiche « Nouveautés » après l'installation d'une mise à jour
-- [ ] `tests/run.sh` : syntaxe, empreinte CSP, parcours en mode démo (onglets, Foyer, bouton +), scénarios du contrôle du mois
-- [ ] README : organisation du dépôt, procédure de livraison, règle du service worker
+### v1.16 — 12/11/2026 — Suivi de version
+- [x] Sources dans `src/` (page, `static/sw.js`, manifeste, icônes, `_headers`) ; `node build.mjs` génère `public/`, commité
+- [x] Le build recalcule l'empreinte CSP du script et vérifie que `sw.js` est inchangé
+- [x] `src/changelog.json` : toutes les versions ci-dessus, rédigées pour l'utilisateur
+- [x] Numéro de version affiché dans Réglages, et fiche « Nouveautés » après l'installation d'une mise à jour
+- [x] `tests/run.sh` : syntaxe, empreinte CSP, parcours en mode démo (onglets, Foyer, bouton +), scénarios du contrôle du mois
+- [x] README : organisation du dépôt, procédure de livraison, règle du service worker
 - [ ] Action utilisateur au moment du lancement : Cloudflare Pages › Build output directory = `public`
