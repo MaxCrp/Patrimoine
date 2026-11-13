@@ -1,6 +1,6 @@
 // Configuration Cloudflare Workers : publie le dossier public/ (généré par « node build.mjs ») en fichiers statiques.
 {
-  "name": "NOM_DU_WORKER",
+  "name": "patrimoine",
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./public",

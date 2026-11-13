@@ -12,7 +12,7 @@ Ce document décrit l'app telle qu'elle est, et range chaque évolution dans une
 
 ## 2. Plateforme et sécurité
 
-- Une page HTML unique (HTML, CSS et JavaScript en ligne) écrite dans `src/`, générée dans `public/` par `node build.mjs`, servie par Cloudflare Pages depuis la branche `main` (dossier `public`).
+- Une page HTML unique (HTML, CSS et JavaScript en ligne) écrite dans `src/`, générée dans `public/` par `node build.mjs`, servie par un Worker Cloudflare (« patrimoine », fichiers statiques) depuis la branche `main` : `wrangler.jsonc` publie le dossier `public`.
 - Numéro de version et historique dans `src/changelog.json`, affichés dans Réglages › Versions ; fiche « Nouveautés » à la première ouverture après une mise à jour.
 - Données chiffrées sur l'appareil (AES-GCM, clé dérivée du mot de passe par PBKDF2), stockées dans IndexedDB. Déverrouillage par mot de passe, ou par Face ID via une passkey (extension PRF).
 - Aucune donnée n'est envoyée à un serveur, sauf l'analyse par IA quand l'utilisateur a enregistré sa propre clé (Anthropic ou Mistral).
@@ -161,4 +161,4 @@ Versions reconstituées à partir de l'historique du dépôt (commits entre pare
 - [x] Numéro de version affiché dans Réglages, et fiche « Nouveautés » après l'installation d'une mise à jour
 - [x] `tests/run.sh` : syntaxe, empreinte CSP, parcours en mode démo (onglets, Foyer, bouton +), scénarios du contrôle du mois
 - [x] README : organisation du dépôt, procédure de livraison, règle du service worker
-- [ ] Action utilisateur au moment du lancement : Cloudflare Pages › Build output directory = `public`
+- [x] Publication Cloudflare : `wrangler.jsonc` (Worker « patrimoine ») publie le dossier `public` en fichiers statiques

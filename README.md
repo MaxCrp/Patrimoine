@@ -9,11 +9,12 @@ src/index.html        la page (HTML, CSS et script en ligne) : c'est ici qu'on m
 src/changelog.json    historique des versions, le plus récent en premier (affiché dans l'app)
 src/static/           fichiers copiés tels quels : sw.js, manifeste, icônes, _headers
 build.mjs             génère public/ à partir de src/
-public/               site publié par Cloudflare Pages : généré, ne jamais le modifier à la main
+public/               site publié par Cloudflare : généré, ne jamais le modifier à la main
+wrangler.jsonc        configuration Cloudflare Workers : nom du Worker, dossier publié
 tests/run.sh          tests à faire passer avant chaque livraison
 ```
 
-Cloudflare Pages publie la branche `main`, dossier de sortie `public`, sans commande de build.
+Cloudflare (Worker « patrimoine », déploiement automatique depuis `main`) publie le dossier `public` en fichiers statiques, selon `wrangler.jsonc`. Pas de commande de build : `public/` est commité.
 
 ## Livrer une version
 
