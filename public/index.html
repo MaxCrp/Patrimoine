@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#E9EEE8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1512" media="(prefers-color-scheme: dark)">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-helDPCQpUqIxJqY7L09+5e68oucEfi9dw5g7SdalqL4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-YPHLNrea1oijy01rWhgUfwayTFLv2OHHTHkgWpkiG5k='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://api.anthropic.com https://api.mistral.ai; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Patrimoine</title>
@@ -391,6 +391,7 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .list li.done .ptck{background:var(--pine);border-color:var(--pine)}
 .list li.done .ptck svg{opacity:1}
 .h2-sub{font-weight:500;font-size:15px;color:var(--muted)}
+.banner#gdnote{margin:12px 0 0}
 .news{margin-top:14px} .news h3{margin:0 0 2px;font-size:17px} .news ul{margin:0;padding-left:20px;display:grid;gap:4px}
 .sub-h{margin:22px 0 8px;font-size:17px}
 .sc-line.cat{stroke-width:2.4}
@@ -660,6 +661,7 @@ async function openVault(vault, { pass, prf }) {
 async function adopt(o) { dekRaw = o.raw; dek = await importDek(o.raw); slots = o.slots; S = normalize(o.data); mode = 'app'; }
 function wipeKeys() {
   dekRaw?.fill(0); dekRaw = null; dek = null; slots = null; S = null;
+  try { gdWipe(); } catch {}
   // Rien ne doit rester lisible après le verrouillage : caches de graphiques, imports en cours, message affiché
   try {
     for (const k of Object.keys(CHARTS)) delete CHARTS[k];
@@ -756,7 +758,7 @@ async function setUi(patch) {
    jamais tout seul. À chaque démarrage, l'app calcule l'empreinte du code servi,
    la compare à celle que tu as approuvée, et te signale toute différence. */
 // Version de l'app et historique des versions : injectés par build.mjs depuis src/changelog.json (le plus récent en premier)
-const CHANGELOG = [{"version":"1.16","date":"2026-11-12","titre":"Suivi des versions","nouveautes":["Le numéro de version de l’app s’affiche dans Réglages › Versions, avec l’historique complet des nouveautés.","Après chaque mise à jour, une fiche « Nouveautés » présente ce qui a changé.","La publication de l’app est vérifiée automatiquement avant chaque mise en ligne, pour éviter qu’une mise à jour n’affiche une page blanche."]},{"version":"1.15.1","date":"2026-11-06","titre":"Contrôle du mois plus lisible","nouveautes":["Les remboursements reçus apparaissent sur leur propre ligne dans le contrôle.","« Écart à expliquer » ne s’affiche qu’au-delà de 1 € ; les montants restent arrondis à l’euro."]},{"version":"1.15","date":"2026-11-06","titre":"Contrôle du mois fiable","nouveautes":["Le contrôle tient compte de ce que ton conjoint te doit, ou de ce que tu lui dois, pour le mois.","Seules les charges pointées comptent ; les charges à venir et l’écart prévu une fois tout pointé sont affichés à part.","« D’où vient l’écart » rapproche l’écart de ton budget : reste à vivre, virement plaisir, projets non financés par l’épargne.","Un détail ligne par ligne signale les erreurs de saisie probables."]},{"version":"1.14","date":"2026-11-06","titre":"Visuels et thèmes","nouveautes":["Foyer : une barre par personne montre ce qui a été payé, remboursé et reste à rembourser.","Reste à vivre en barres, anneau de progression dans Ce mois.","Évolution des placements par catégorie, sous la répartition.","Quatre nouveaux thèmes : Atelier, Encre, Graphite et Olivier."]},{"version":"1.13","date":"2026-11-06","titre":"Nouvelle navigation","nouveautes":["Le Foyer a son propre onglet, avec les charges à pointer en haut.","Le bouton + ouvre directement le bon formulaire, présenté en cartes."]},{"version":"1.12.1","date":"2026-11-05","titre":"Correctif d’installation","nouveautes":["L’app s’ouvre de nouveau correctement dans Safari après une mise à jour."]},{"version":"1.12","date":"2026-10-30","titre":"Contrôle du mois et projets","nouveautes":["Contrôle du mois : les entrées et les sorties connues de ton compte courant.","Les versements de l’employeur sont distingués de ton épargne.","Projets : dépenses exceptionnelles financées par une reprise d’épargne."]},{"version":"1.11.1","date":"2026-10-27","titre":"Correctifs","nouveautes":["Calcul du plafond PER corrigé, et plusieurs petits correctifs."]},{"version":"1.11","date":"2026-10-26","titre":"Primes et retraite","nouveautes":["Primes annuelles prévues, prises en compte dans les objectifs.","Plafond de déduction PER calculé à partir de l’avis d’impôt."]},{"version":"1.10.1","date":"2026-10-25","titre":"Correctif","nouveautes":["Correction mineure."]},{"version":"1.10","date":"2026-10-25","titre":"Suivi d’utilisation et répartition","nouveautes":["Journal d’utilisation facultatif, exportable sans aucun montant.","Nouveaux modes de répartition des charges communes."]},{"version":"1.9","date":"2026-10-12","titre":"Pointage et régularisation","nouveautes":["Pointage des dépenses récurrentes.","Régularisation des charges entre membres du foyer."]},{"version":"1.8.1","date":"2026-10-05","titre":"Correctifs","nouveautes":["Remboursements et bouton + corrigés."]},{"version":"1.8","date":"2026-10-05","titre":"Charges perso","nouveautes":["Charges personnelles et remboursements."]},{"version":"1.7.1","date":"2026-10-04","titre":"Correctif","nouveautes":["Affichage d’un graphique corrigé."]},{"version":"1.7","date":"2026-10-04","titre":"Accueil et thèmes","nouveautes":["Nouvelle page d’accueil et choix du thème.","Taux d’épargne dans les statistiques."]},{"version":"1.6","date":"2026-09-29","titre":"Statistiques","nouveautes":["Page de statistiques et objectif intermédiaire."]},{"version":"1.5.1","date":"2026-09-23","titre":"Correctif","nouveautes":["Fonctions du bouton + corrigées."]},{"version":"1.5","date":"2026-09-18","titre":"Bouton +","nouveautes":["Un raccourci pour saisir rapidement un mouvement ou une dépense."]},{"version":"1.4","date":"2026-09-16","titre":"Simulateur immobilier","nouveautes":["Simulateur d’achat immobilier et capacité d’emprunt."]},{"version":"1.3.1","date":"2026-09-14","titre":"Correctif","nouveautes":["Enregistrement de la clé d’API corrigé."]},{"version":"1.3","date":"2026-09-14","titre":"Refonte de l’interface","nouveautes":["Nouvelle interface.","Le solde se calcule depuis les mouvements saisis.","Les points d’attention se masquent d’un geste."]},{"version":"1.2.1","date":"2026-09-13","titre":"Correctifs de sécurité","nouveautes":["Plusieurs correctifs, dont une faille de sécurité."]},{"version":"1.2","date":"2026-09-13","titre":"Gestion courante et foyer","nouveautes":["Comptes courants, charges communes et virements entre membres du foyer."]},{"version":"1.1.1","date":"2026-09-13","titre":"Correctif","nouveautes":["Mise à jour de l’app corrigée."]},{"version":"1.1","date":"2026-09-13","titre":"Analyse par IA","nouveautes":["Le résumé du mois peut être analysé par une IA, avec ta propre clé."]},{"version":"1.0","date":"2026-09-12","titre":"Première version","nouveautes":["Coffre chiffré sur l’iPhone, suivi des comptes et des soldes mensuels.","Import de relevés et vérification des mises à jour au démarrage."]}];
+const CHANGELOG = [{"version":"1.17","date":"2026-11-15","titre":"Sauvegarde automatique sur Google Drive","nouveautes":["Tes données peuvent se sauvegarder toutes seules dans ton Google Drive, chiffrées avec ton mot de passe : quelques minutes après chaque modification, 30 versions gardées.","Réglages › Données de l’application › Sauvegarde automatique : connecter Google Drive, sauvegarder maintenant, restaurer une version, déconnecter.","Sur un nouvel iPhone, « Restaurer depuis Google Drive » dès l’écran de création du coffre.","Ce mois et les points d’attention tiennent compte de la sauvegarde automatique, et signalent un arrêt.","Disponible une fois la mise en place faite (projet Google et service d’autorisation) : d’ici là, l’app indique « non configurée »."]},{"version":"1.16","date":"2026-11-12","titre":"Suivi des versions","nouveautes":["Le numéro de version de l’app s’affiche dans Réglages › Versions, avec l’historique complet des nouveautés.","Après chaque mise à jour, une fiche « Nouveautés » présente ce qui a changé.","La publication de l’app est vérifiée automatiquement avant chaque mise en ligne, pour éviter qu’une mise à jour n’affiche une page blanche."]},{"version":"1.15.1","date":"2026-11-06","titre":"Contrôle du mois plus lisible","nouveautes":["Les remboursements reçus apparaissent sur leur propre ligne dans le contrôle.","« Écart à expliquer » ne s’affiche qu’au-delà de 1 € ; les montants restent arrondis à l’euro."]},{"version":"1.15","date":"2026-11-06","titre":"Contrôle du mois fiable","nouveautes":["Le contrôle tient compte de ce que ton conjoint te doit, ou de ce que tu lui dois, pour le mois.","Seules les charges pointées comptent ; les charges à venir et l’écart prévu une fois tout pointé sont affichés à part.","« D’où vient l’écart » rapproche l’écart de ton budget : reste à vivre, virement plaisir, projets non financés par l’épargne.","Un détail ligne par ligne signale les erreurs de saisie probables."]},{"version":"1.14","date":"2026-11-06","titre":"Visuels et thèmes","nouveautes":["Foyer : une barre par personne montre ce qui a été payé, remboursé et reste à rembourser.","Reste à vivre en barres, anneau de progression dans Ce mois.","Évolution des placements par catégorie, sous la répartition.","Quatre nouveaux thèmes : Atelier, Encre, Graphite et Olivier."]},{"version":"1.13","date":"2026-11-06","titre":"Nouvelle navigation","nouveautes":["Le Foyer a son propre onglet, avec les charges à pointer en haut.","Le bouton + ouvre directement le bon formulaire, présenté en cartes."]},{"version":"1.12.1","date":"2026-11-05","titre":"Correctif d’installation","nouveautes":["L’app s’ouvre de nouveau correctement dans Safari après une mise à jour."]},{"version":"1.12","date":"2026-10-30","titre":"Contrôle du mois et projets","nouveautes":["Contrôle du mois : les entrées et les sorties connues de ton compte courant.","Les versements de l’employeur sont distingués de ton épargne.","Projets : dépenses exceptionnelles financées par une reprise d’épargne."]},{"version":"1.11.1","date":"2026-10-27","titre":"Correctifs","nouveautes":["Calcul du plafond PER corrigé, et plusieurs petits correctifs."]},{"version":"1.11","date":"2026-10-26","titre":"Primes et retraite","nouveautes":["Primes annuelles prévues, prises en compte dans les objectifs.","Plafond de déduction PER calculé à partir de l’avis d’impôt."]},{"version":"1.10.1","date":"2026-10-25","titre":"Correctif","nouveautes":["Correction mineure."]},{"version":"1.10","date":"2026-10-25","titre":"Suivi d’utilisation et répartition","nouveautes":["Journal d’utilisation facultatif, exportable sans aucun montant.","Nouveaux modes de répartition des charges communes."]},{"version":"1.9","date":"2026-10-12","titre":"Pointage et régularisation","nouveautes":["Pointage des dépenses récurrentes.","Régularisation des charges entre membres du foyer."]},{"version":"1.8.1","date":"2026-10-05","titre":"Correctifs","nouveautes":["Remboursements et bouton + corrigés."]},{"version":"1.8","date":"2026-10-05","titre":"Charges perso","nouveautes":["Charges personnelles et remboursements."]},{"version":"1.7.1","date":"2026-10-04","titre":"Correctif","nouveautes":["Affichage d’un graphique corrigé."]},{"version":"1.7","date":"2026-10-04","titre":"Accueil et thèmes","nouveautes":["Nouvelle page d’accueil et choix du thème.","Taux d’épargne dans les statistiques."]},{"version":"1.6","date":"2026-09-29","titre":"Statistiques","nouveautes":["Page de statistiques et objectif intermédiaire."]},{"version":"1.5.1","date":"2026-09-23","titre":"Correctif","nouveautes":["Fonctions du bouton + corrigées."]},{"version":"1.5","date":"2026-09-18","titre":"Bouton +","nouveautes":["Un raccourci pour saisir rapidement un mouvement ou une dépense."]},{"version":"1.4","date":"2026-09-16","titre":"Simulateur immobilier","nouveautes":["Simulateur d’achat immobilier et capacité d’emprunt."]},{"version":"1.3.1","date":"2026-09-14","titre":"Correctif","nouveautes":["Enregistrement de la clé d’API corrigé."]},{"version":"1.3","date":"2026-09-14","titre":"Refonte de l’interface","nouveautes":["Nouvelle interface.","Le solde se calcule depuis les mouvements saisis.","Les points d’attention se masquent d’un geste."]},{"version":"1.2.1","date":"2026-09-13","titre":"Correctifs de sécurité","nouveautes":["Plusieurs correctifs, dont une faille de sécurité."]},{"version":"1.2","date":"2026-09-13","titre":"Gestion courante et foyer","nouveautes":["Comptes courants, charges communes et virements entre membres du foyer."]},{"version":"1.1.1","date":"2026-09-13","titre":"Correctif","nouveautes":["Mise à jour de l’app corrigée."]},{"version":"1.1","date":"2026-09-13","titre":"Analyse par IA","nouveautes":["Le résumé du mois peut être analysé par une IA, avec ta propre clé."]},{"version":"1.0","date":"2026-09-12","titre":"Première version","nouveautes":["Coffre chiffré sur l’iPhone, suivi des comptes et des soldes mensuels.","Import de relevés et vérification des mises à jour au démarrage."]}];
 const APP_VERSION = CHANGELOG[0]?.version || 'dev';
 const CACHE_NAME = 'patrimoine-v5';
 const SHELL = ['./', './sw.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
@@ -885,6 +887,7 @@ async function save() {
   if (mode !== 'app' || !dek || !slots) return;
   refreshAuto();
   await store.set('vault', await seal());
+  bkTouch();   // sauvegarde automatique : envoi quelques minutes plus tard
 }
 // Soldes calculés (« auto ») : recalculés à partir du solde précédent, pour qu'une correction d'un mois passé se propage
 function refreshAuto() {
@@ -1430,7 +1433,8 @@ function alerts(F, forSummary = false, f = () => true, mine = true) {
   if (mine && S.goals.apport.target && unlockable.length && !forSummary)
     out.push({ l: 'info', k: 'deblocage', s: unlockable.length, t: `${[...new Set(unlockable.map(a => TYPES[a.type].label))].join(', ')} : déblocage anticipé possible pour acheter ta résidence principale. Si c’est ton projet, compte-les dans l’apport depuis les réglages.` });
   if (mode === 'app' && !forSummary && mine) {
-    const le = S.settings.lastExport, days = le ? Math.floor((Date.now() - le) / 864e5) : null;
+    const le = lastSave(), days = le ? Math.floor((Date.now() - le) / 864e5) : null;
+    if (autoBkBroken()) out.push({ l: 'warn', k: 'autobk', s: bkState().reconnect ? 'reco' : 'err', t: bkState().reconnect ? 'Sauvegarde automatique arrêtée : reconnecte Google Drive dans Réglages › Données de l’application.' : `Sauvegarde automatique en échec : ${bkState().err}` });
     if (days == null) out.push({ l: 'warn', k: 'sauvegarde', s: 'none', t: 'Aucune sauvegarde exportée : si tu perds ou changes d’iPhone, tes données seront perdues.' });
     else if (days > 35) out.push({ l: 'warn', k: 'sauvegarde', s: Math.round(days / 7), t: `Dernière sauvegarde il y a ${days} jours. Pense à en exporter une nouvelle.` });
   }
@@ -1624,7 +1628,7 @@ function renderLock(kind, err = '') {
         <label>Confirmation<input type="password" id="p2" autocomplete="new-password" required></label>
         ${e}<button class="btn primary" type="submit">Créer mon coffre</button>
       </form>
-      <div class="lock-links"><button class="link" data-act="demo">Essayer avec des données fictives</button><button class="link" data-act="import">Restaurer une sauvegarde</button></div>`
+      <div class="lock-links"><button class="link" data-act="demo">Essayer avec des données fictives</button><button class="link" data-act="import">Restaurer une sauvegarde</button>${gdConfigured() ? '<button class="link" data-act="gdRestoreStart">Restaurer depuis Google Drive</button>' : ''}</div>`
     : `
       <p class="lock-text">${pk ? 'Déverrouille avec Face ID, ou avec ton mot de passe.' : 'Saisis ton mot de passe pour déchiffrer tes données.'}</p>
       ${e}
@@ -1633,7 +1637,7 @@ function renderLock(kind, err = '') {
         <label>Mot de passe<input type="password" id="p1" autocomplete="current-password" required></label>
         <button class="btn ${pk ? '' : 'primary'}" type="submit">${pk ? 'Utiliser le mot de passe' : 'Déverrouiller'}</button>
       </form>
-      <div class="lock-links"><button class="link" data-act="import">Restaurer une sauvegarde</button></div>`}
+      <div class="lock-links"><button class="link" data-act="import">Restaurer une sauvegarde</button>${gdConfigured() ? '<button class="link" data-act="gdRestoreStart">Restaurer depuis Google Drive</button>' : ''}</div>`}
     ${previewNote()}
   </main>`;
 }
@@ -1948,10 +1952,10 @@ function vMois() {
       ok: !pts.some(i => !i.pt), act: 'foyer' }] : [])([...(S.pot[m]?.items || []).filter(i => !i.src), ...(S.pot[m]?.perso || []).filter(i => !i.rb)])),
   ];
   // Dernière étape : la sauvegarde, accessible une fois les soldes à jour
-  const le = S.settings.lastExport, soldesOk = steps[0].ok;
+  const le = lastSave(), soldesOk = steps[0].ok, auto = autoBkOk() && le === bkState().last;
   const saved = !!le && monthKey(new Date(le)) >= m;
-  steps.push({ k: 'backup', t: 'Exporter une sauvegarde',
-    d: saved ? `faite le ${new Date(le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : soldesOk ? 'les comptes sont à jour : mets-les à l’abri' : 'disponible une fois les soldes à jour',
+  steps.push({ k: 'backup', t: gdOn() ? 'Sauvegarde' : 'Exporter une sauvegarde',
+    d: saved ? `${auto ? 'automatique, dernière le' : 'faite le'} ${new Date(le).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : soldesOk ? 'les comptes sont à jour : mets-les à l’abri' : 'disponible une fois les soldes à jour',
     ok: saved, act: 'backup', off: !soldesOk && !saved });
   const allOk = steps.every(x => x.ok);
   return `
@@ -2637,7 +2641,7 @@ const SET_PAGES = {
   budget:  { t: 'Budget de référence', d: () => S.settings.depenses || S.settings.revenus ? 'dépenses et revenus renseignés' : 'à renseigner' },
   ai:      { t: 'Analyse par IA', d: () => S.settings.ai?.key ? (AI[S.settings.ai.provider] || AI.anthropic).label : 'désactivée, app hors ligne' },
   secu:    { t: 'Sécurité', d: () => slots?.pk ? 'mot de passe et Face ID' : 'mot de passe' },
-  backup:  { t: 'Données de l’application', d: () => (S.settings.lastExport ? 'sauvegarde du ' + new Date(S.settings.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : 'aucune sauvegarde') + (S.settings.usage?.on ? ' · suivi actif' : '') },
+  backup:  { t: 'Données de l’application', d: () => gdOn() && bkState().last ? 'sauvegarde automatique · ' + fmtDT(bkState().last) : (S.settings.lastExport ? 'sauvegarde du ' + new Date(S.settings.lastExport).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : 'aucune sauvegarde') + (S.settings.usage?.on ? ' · suivi actif' : '') },
   versions: { t: 'Versions', d: () => `version ${APP_VERSION}${CHANGELOG[0] ? ' du ' + fmtDay(CHANGELOG[0].date) : ''}` },
   code:    { t: 'Code de l’app', d: () => code.status === 'ok' ? 'conforme à la version approuvée' : code.status === 'unknown' ? 'vérification indisponible' : 'différence détectée' },
 };
@@ -2745,6 +2749,8 @@ function sheetSetPage(k) {
       <p class="small" style="margin:0 0 14px">${le ? `Dernière sauvegarde exportée le ${le}.` : 'Aucune sauvegarde exportée.'} Le fichier reste chiffré avec ton mot de passe : range-le dans iCloud Drive.</p>
       <div class="stack-form"><button class="btn primary wide" data-act="export">Exporter une sauvegarde</button>
         <button class="btn ghost wide" data-act="import">Restaurer une sauvegarde</button></div>
+      <h3>Sauvegarde automatique</h3>
+      <ul class="list menu"><li><button data-act="gdSheet"><span>Google Drive<br><span class="small">${esc(bkSummary())}</span></span><span class="chev">›</span></button></li></ul>
       <h3>Suivi d’utilisation</h3>
       <label class="check"><input type="checkbox" id="u-on" ${st.usage?.on ? 'checked' : ''}>Enregistrer mon utilisation de l’app</label>
       <p class="small">Note les écrans ouverts, le temps passé et les boutons touchés, pour repérer les chemins à raccourcir. Jamais de montant, de nom ni de contenu saisi. Le journal reste chiffré sur cet iPhone ; tu choisis quand l’exporter.</p>
@@ -2876,6 +2882,7 @@ function enterApp() {
   // statistiques soient justes même si le volet Foyer n'a pas encore été ouvert.
   if (S.household.on && !S.pot[monthKey()]?.seeded) seedMonth(monthKey()).then(() => render()).catch(() => {});
   checkNews(uPending).catch(() => {});
+  gdOnEnter().catch(() => {});
 }
 // Contrôle d'une sauvegarde avant restauration. Un fichier restauré vient de l'extérieur : identifiants, mois,
 // montants et types sont vérifiés, pour qu'aucune valeur ne puisse injecter du code dans l'app ni la bloquer.
@@ -2923,7 +2930,8 @@ function validateData(d) {
       && (d.settings.perAvis == null || (obj(d.settings.perAvis) && Number.isInteger(d.settings.perAvis.year) && fin(d.settings.perAvis.cur) && map(d.settings.perAvis.u, k => /^\d{4}$/.test(k), fin)))
       && (d.settings.ai == null || (obj(d.settings.ai) && Object.hasOwn(AI, d.settings.ai.provider) && str(d.settings.ai.key, 400) && str(d.settings.ai.model, 80)))
       && (d.settings.raise == null || (obj(d.settings.raise) && bool(d.settings.raise.on) && fin(d.settings.raise.pct)))
-      && (d.settings.usage == null || (obj(d.settings.usage) && bool(d.settings.usage.on))))],
+      && (d.settings.usage == null || (obj(d.settings.usage) && bool(d.settings.usage.on)))
+      && (d.settings.autoBk == null || obj(d.settings.autoBk)))],
     ['analyses', () => map(d.analyses, mk, a => obj(a) && str(a.t, 50000) && fin(a.at) && (a.n == null || (Number.isInteger(a.n) && a.n >= 0 && a.n < 1000)) && str(a.p, 20) && bool(a.rounded))],
     ['règles', () => map(d.rules, k => k.length <= 200, v => typeof v === 'string' && /^[a-z]{1,12}$/.test(v))],
     ['alertes masquées', () => map(d.dismissed, k => k.length <= 200, v => obj(v) && str(v.s, 40) && (v.m == null || mk(v.m)) && (v.c == null || mk(v.c)))],
@@ -2931,13 +2939,26 @@ function validateData(d) {
   for (const [label, f] of checks) { try { if (!f()) return label; } catch { return label; } }
   return null;
 }
+// Mot de passe d'une sauvegarde à restaurer (fichier importé ou version du Google Drive)
+const importOk = v => v && v.app === 'patrimoine' && v.iv && v.ct && (v.salt || v.slots?.pw);
+function sheetRestore(v) {
+  pendingImport = v;
+  openSheet(`<h2>Restaurer une sauvegarde</h2><form id="f-import" class="stack-form">
+        <p class="small" style="margin:0">Sauvegarde du ${new Date(v.savedAt || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}. Saisis le mot de passe utilisé à ce moment-là.</p>
+        <label>Mot de passe<input type="password" id="pi" autocomplete="current-password" required></label>
+        <p class="err" id="ierr" hidden></p>
+        <button class="btn primary wide" type="submit">Restaurer</button>
+        ${v.slots?.pk && pkAvailable() ? '<button class="btn wide" type="button" data-act="pkimport">Restaurer avec Face ID</button>' : ''}<button class="link" type="button" data-act="close">Annuler</button></form>`);
+}
 async function finishImport(o) {
   const bad = validateData(o.data);
   if (bad) { pendingImport = null; closeSheet(); return toast(`Sauvegarde refusée : contenu inattendu (${bad}). Elle n’a pas été restaurée.`); }
   if (mode === 'app' && !confirm('Remplacer les données actuelles par cette sauvegarde ?')) { closeSheet(); return; }
   // Depuis l'écran de verrouillage aussi : le coffre existant est perdu s'il n'a pas été sauvegardé
   if (mode !== 'app' && await store.get('vault') && !confirm('Un coffre existe déjà sur cet appareil. Le remplacer par cette sauvegarde ? Les données actuelles seront perdues si elles n’ont pas été sauvegardées.')) { closeSheet(); return; }
+  const keepTok = gd.refresh || gdRestoreTok;
   await adopt(o); await save(); navigator.storage?.persist?.(); pendingImport = null; await clearFails();
+  await gdAfterAdopt(keepTok); gdRestoreTok = null;
   closeSheet(); enterApp(); toast('Sauvegarde restaurée');
 }
 const pkDone = after => { if (after === 'close') { closeSheet(); render(); } else sheetSetPage('secu'); toast('Face ID activé'); };
@@ -3778,11 +3799,32 @@ const ACT = {
   },
   demo: () => { wipeKeys(); S = normalize(demoData()); masked = false; mode = 'demo'; view = 'home'; saisieMonth = monthKey(); render(); },
   import: () => { const i = $('#importfile'); i.value = ''; i.click(); },
+  gdSheet: () => sheetAutoBk(),
+  gdConnect: () => gdStart('connect'),
+  gdRestoreStart: () => gdStart('restore'),
+  gdNow: async t => { t.disabled = true; t.textContent = 'Sauvegarde en cours…'; const r = await runBackup({ force: true }); toast(r === 'ok' ? 'Sauvegardé sur Google Drive' : 'Sauvegarde impossible'); sheetAutoBk(); },
+  gdVersions: () => gdOpenVersions(),
+  gdPick: async t => {
+    t.disabled = true;
+    try {
+      const v = JSON.parse(await gdDownload(t.dataset.id));
+      if (!importOk(v)) throw new GdError('Cette version n’est pas une sauvegarde de Patrimoine.');
+      gd.fromDrive = true; sheetRestore(v);
+    } catch (e) { t.disabled = false; gdMsg(e instanceof GdError ? e.message : 'Version illisible.'); }
+  },
+  gdDisconnect: async () => {
+    if (!confirm('Déconnecter Google Drive ? Les sauvegardes déjà faites restent dans ton Drive ; les nouvelles s’arrêtent.')) return;
+    const tok = gd.refresh;
+    gdWipe(); await gdStoreToken(null); await store.del('gdFp'); await store.del('gdDirty');
+    S.settings.autoBk = {}; bkQuiet = true; try { await save(); } finally { bkQuiet = false; }
+    if (tok) fetch('https://oauth2.googleapis.com/revoke', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'token=' + encodeURIComponent(tok) }).catch(() => {});
+    sheetAutoBk(); render(); toast('Google Drive déconnecté');
+  },
   export: () => exportBackup(),
   wipe: async () => {
     if (!confirm('Effacer toutes les données de cet iPhone ? Sans sauvegarde exportée, elles seront perdues définitivement.')) return;
     if (!confirm('Confirmer l’effacement définitif ?')) return;
-    await store.del('vault'); await store.del('fails'); await store.del('usage'); U = null; boot();
+    await store.del('vault'); await store.del('fails'); await store.del('usage'); for (const k of ['gdrive', 'gdFp', 'gdDirty', 'gdPending']) await store.del(k); U = null; boot();
   },
   copyprev: () => {
     const prevM = addMonths(saisieMonth, -1);
@@ -4076,14 +4118,8 @@ document.addEventListener('change', async e => {
   else if (t.id === 'importfile' && t.files[0]) {
     try {
       const v = JSON.parse(await t.files[0].text());
-      if (v.app !== 'patrimoine' || !v.iv || !v.ct || !(v.salt || v.slots?.pw)) throw new Error();
-      pendingImport = v;
-      openSheet(`<h2>Restaurer une sauvegarde</h2><form id="f-import" class="stack-form">
-        <p class="small" style="margin:0">Sauvegarde du ${new Date(v.savedAt || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}. Saisis le mot de passe utilisé à ce moment-là.</p>
-        <label>Mot de passe<input type="password" id="pi" autocomplete="current-password" required></label>
-        <p class="err" id="ierr" hidden></p>
-        <button class="btn primary wide" type="submit">Restaurer</button>
-        ${v.slots?.pk && pkAvailable() ? '<button class="btn wide" type="button" data-act="pkimport">Restaurer avec Face ID</button>' : ''}<button class="link" type="button" data-act="close">Annuler</button></form>`);
+      if (!importOk(v)) throw new Error();
+      sheetRestore(v);
     } catch { toast('Ce fichier n’est pas une sauvegarde de l’app'); }
   }
 });
@@ -4137,6 +4173,7 @@ document.addEventListener('submit', async e => {
     dekRaw?.fill(0); dekRaw = raw; dek = k;
     slots = { pw: await makePwSlot(raw, p1) };
     S.settings.lastExport = null; await save();
+    if (gd.refresh) { await gdStoreToken(gd.refresh); await store.del('gdFp'); bkTouch(); }
     if (U) { uDirty++; await uFlush(); }
     render(); sheetSetPage('secu');
     toast(hadPk ? 'Mot de passe modifié. Réactive Face ID et exporte une nouvelle sauvegarde.' : 'Mot de passe modifié. Exporte une nouvelle sauvegarde.');
@@ -4320,6 +4357,261 @@ async function exportBackup(from) {
   if (!ok) { const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
   S.settings.lastExport = Date.now(); await save(); render(); if (from !== 'mois') sheetSetPage('backup'); toast('Sauvegarde exportée');
 }
+
+/* ---------- Sauvegarde automatique sur Google Drive (v1.17) ----------
+   Les sauvegardes (le même fichier chiffré que la sauvegarde manuelle, sans l'emplacement Face ID) vont directement de
+   l'iPhone vers le dossier caché de Patrimoine dans ton Google Drive (appDataFolder, droit drive.appdata : l'app ne voit
+   rien d'autre du Drive). Le service Cloudflare patrimoine-auth (worker/) ne sert qu'à échanger et renouveler l'autorisation
+   avec le secret du projet Google ; il ne garde rien et ne voit jamais les sauvegardes.
+   L'autorisation de longue durée est chiffrée avec la clé du coffre, à part : elle n'est pas dans les fichiers de sauvegarde.
+   Rythme : quelques minutes après une modification (ou à la mise en arrière-plan), une nouvelle version par heure au plus
+   (sinon la plus récente est mise à jour), 30 versions gardées. Rien n'est envoyé si les données n'ont pas changé. */
+const GDRIVE_CFG = Object.freeze({"clientId":"","workerUrl":""});
+const GD_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+const GD_API = 'https://www.googleapis.com/drive/v3/files', GD_UP = 'https://www.googleapis.com/upload/drive/v3/files';
+const GD_KEEP = 30, GD_HOUR = 3600e3;
+let GD_SIMPLE_MAX = 4.5e6;   // au-delà : envoi en deux temps (abaissé par les tests)
+let BK_DELAY = 120e3;        // attente après une modification avant d'envoyer (raccourcie par les tests)
+const gd = { refresh: null, access: null, exp: 0, busy: false, timer: 0, ret: null, files: null, fromDrive: false };
+let gdRestoreTok = null;     // autorisation obtenue pour restaurer sur un appareil encore sans coffre
+const gdConfigured = () => !!(GDRIVE_CFG.clientId && GDRIVE_CFG.workerUrl);
+const gdOn = () => gdConfigured() && !!gd.refresh;
+const bkState = () => S?.settings?.autoBk || {};
+class GdError extends Error { constructor(msg, kind = 'err') { super(msg); this.kind = kind; } }
+const b64url = u => b64(u).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const gdRedirect = () => location.origin + location.pathname;
+const fmtDT = t => new Date(t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const fmtSize = n => n > 1e6 ? (n / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' Mo' : Math.max(1, Math.round(n / 1e3)) + ' ko';
+const gdMsg = msg => openSheet(`<h2>Google Drive</h2><p>${esc(msg)}</p><button class="btn wide" style="margin-top:14px" data-act="close">Fermer</button>`);
+
+/* Autorisation */
+async function gdStoreToken(refresh) {
+  if (!dek) return;
+  if (!refresh) return store.del('gdrive');
+  await store.set('gdrive', await aesEnc(dek, enc.encode(JSON.stringify({ refresh, at: Date.now() }))));
+}
+async function gdLoadToken() {
+  gd.refresh = null; gd.access = null; gd.exp = 0;
+  try { const e = await store.get('gdrive'); if (e && dek) gd.refresh = JSON.parse(dec.decode(await aesDec(dek, e.iv, e.ct))).refresh || null; } catch { gd.refresh = null; }
+}
+function gdWipe() { gd.refresh = null; gd.access = null; gd.exp = 0; clearTimeout(gd.timer); gd.files = null; gdRestoreTok = null; }
+// Départ vers Google : le vérificateur PKCE et un état aléatoire attendent le retour, le temps de l'aller-retour
+async function gdStart(purpose) {
+  if (!gdConfigured()) return toast('Sauvegarde automatique non configurée');
+  if (navigator.onLine === false) return toast('Pas de réseau');
+  const verifier = b64url(rand(32)), state = b64url(rand(16));
+  const challenge = b64url(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(verifier))));
+  await store.set('gdPending', { verifier, state, purpose, at: Date.now() });
+  const q = new URLSearchParams({ client_id: GDRIVE_CFG.clientId, redirect_uri: gdRedirect(), response_type: 'code', scope: GD_SCOPE,
+    access_type: 'offline', prompt: 'consent', code_challenge: challenge, code_challenge_method: 'S256', state });
+  location.assign('https://accounts.google.com/o/oauth2/v2/auth?' + q);
+}
+// Retour de Google (?code=…&state=… ou ?error=…) : lu au chargement, l'adresse est aussitôt nettoyée
+(function gdReadReturn() {
+  const u = new URLSearchParams(location.search);
+  if (!u.has('state') || (!u.has('code') && !u.has('error'))) return;
+  gd.ret = { code: u.get('code'), state: u.get('state'), error: u.get('error') };
+  history.replaceState({}, '', location.pathname);
+})();
+async function gdTakeReturn(purpose) {
+  const r = gd.ret; if (!r) return null;
+  const p = await store.get('gdPending');
+  if (!p || p.purpose !== purpose) return null;
+  gd.ret = null; await store.del('gdPending');
+  if (r.error) throw new GdError(r.error === 'access_denied' ? 'Connexion annulée : l’accès à Google Drive n’a pas été autorisé.' : 'Google a refusé la connexion (' + r.error.slice(0, 40) + ').');
+  if (r.state !== p.state || Date.now() - p.at > 30 * 60e3) throw new GdError('Retour de Google non reconnu ou trop tardif : recommence la connexion.');
+  const j = await gdWorker('/token', { code: r.code, code_verifier: p.verifier });
+  if (!j.refresh_token) throw new GdError('Google n’a pas donné d’autorisation durable : recommence la connexion.');
+  gd.access = j.access_token; gd.exp = Date.now() + (j.expires_in || 3000) * 1000;
+  return j.refresh_token;
+}
+async function gdWorker(path, body) {
+  let r;
+  try { r = await fetch(GDRIVE_CFG.workerUrl.replace(/\/$/, '') + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); }
+  catch { throw new GdError('Service d’autorisation injoignable. Vérifie ta connexion.', 'net'); }
+  let j = {}; try { j = await r.json(); } catch {}
+  if (r.ok && j.access_token) return j;
+  if (j.error === 'invalid_grant') throw new GdError('L’autorisation Google a expiré ou a été retirée : reconnecte Google Drive.', 'reconnect');
+  throw new GdError(`Service d’autorisation : erreur ${r.status}${j.error ? ' (' + String(j.error).slice(0, 40) + ')' : ''}.`);
+}
+async function gdAccess() {
+  if (gd.access && Date.now() < gd.exp - 60e3) return gd.access;
+  if (!gd.refresh) throw new GdError('Google Drive n’est pas connecté.', 'reconnect');
+  try {
+    const j = await gdWorker('/refresh', { refresh_token: gd.refresh });
+    gd.access = j.access_token; gd.exp = Date.now() + (j.expires_in || 3000) * 1000;
+    return gd.access;
+  } catch (e) {
+    if (e.kind === 'reconnect') { gd.refresh = null; await gdStoreToken(null); }
+    throw e;
+  }
+}
+async function gdFetch(url, opts = {}, retry = true) {
+  if (navigator.onLine === false) throw new GdError('Pas de réseau.', 'net');
+  const tok = await gdAccess();
+  let r;
+  try { r = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), authorization: 'Bearer ' + tok } }); }
+  catch { throw new GdError('Google Drive injoignable. Vérifie ta connexion.', 'net'); }
+  if (r.status === 401 && retry) { gd.access = null; return gdFetch(url, opts, false); }
+  if (!r.ok) {
+    let reason = ''; try { reason = (await r.json()).error?.errors?.[0]?.reason || ''; } catch {}
+    if (reason === 'storageQuotaExceeded') throw new GdError('Ton Google Drive est plein : libère de la place pour reprendre les sauvegardes.');
+    throw new GdError(`Google Drive : erreur ${r.status}${reason ? ' (' + reason.slice(0, 40) + ')' : ''}.`);
+  }
+  return r;
+}
+
+/* Fichiers : uniquement ceux de Patrimoine, dans le dossier caché de l'app */
+async function gdList() {
+  const q = new URLSearchParams({ spaces: 'appDataFolder', fields: 'files(id,name,createdTime,modifiedTime,size)', orderBy: 'createdTime desc', pageSize: '100', q: "name contains 'patrimoine-' and trashed = false" });
+  const j = await (await gdFetch(`${GD_API}?${q}`)).json();
+  return (j.files || []).filter(f => typeof f.id === 'string' && /^[\w-]{10,200}$/.test(f.id));
+}
+async function gdUpload(blob, name, updateId) {
+  const meta = updateId ? {} : { name, parents: ['appDataFolder'], mimeType: 'application/json' };
+  const fields = 'fields=id,name,createdTime,modifiedTime,size';
+  if (blob.size <= GD_SIMPLE_MAX) {
+    const b = 'patrimoine' + b64url(rand(9));
+    const body = new Blob([`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n`, blob, `\r\n--${b}--`]);
+    const url = updateId ? `${GD_UP}/${updateId}?uploadType=multipart&${fields}` : `${GD_UP}?uploadType=multipart&${fields}`;
+    return (await gdFetch(url, { method: updateId ? 'PATCH' : 'POST', headers: { 'content-type': `multipart/related; boundary=${b}` }, body })).json();
+  }
+  // Grosse sauvegarde : envoi en deux temps, toujours comme nouvelle version
+  const start = await gdFetch(`${GD_UP}?uploadType=resumable&${fields}`, { method: 'POST', headers: { 'content-type': 'application/json; charset=UTF-8', 'x-upload-content-type': 'application/json' }, body: JSON.stringify({ name, parents: ['appDataFolder'], mimeType: 'application/json' }) });
+  const loc = start.headers.get('location');
+  if (!loc || !loc.startsWith(GD_UP)) throw new GdError('Google Drive n’a pas accepté l’envoi (adresse d’envoi absente).');
+  return (await gdFetch(loc, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: blob })).json();
+}
+async function gdDelete(id) { await gdFetch(`${GD_API}/${id}`, { method: 'DELETE' }); }
+async function gdDownload(id) { return (await gdFetch(`${GD_API}/${id}?alt=media`)).text(); }
+
+/* Sauvegarde */
+// Empreinte du contenu, hors état de la sauvegarde : rien n'est envoyé si rien n'a changé
+async function bkPrint() {
+  const st = S.settings.autoBk; S.settings.autoBk = undefined;
+  try { return b64(new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(JSON.stringify(S))))); }
+  finally { S.settings.autoBk = st; }
+}
+let bkQuiet = false;   // les enregistrements faits par la sauvegarde elle-même ne déclenchent pas de nouvelle sauvegarde
+function bkTouch() {
+  if (bkQuiet || mode !== 'app' || !gdOn()) return;
+  store.set('gdDirty', Date.now()).catch(() => {});
+  clearTimeout(gd.timer); gd.timer = setTimeout(() => runBackup(), BK_DELAY);
+}
+async function bkSetState(o) { S.settings.autoBk = { ...bkState(), ...o }; bkQuiet = true; try { await save(); } finally { bkQuiet = false; } }
+const bkRefresh = () => { if (mode !== 'app') return; render(); if (setPage === 'backup') sheetSetPage('backup'); else if ($('.sheet [data-gd-sheet]')) sheetAutoBk(); };
+async function runBackup({ force = false } = {}) {
+  if (gd.busy || mode !== 'app' || !gdOn()) return null;
+  gd.busy = true; clearTimeout(gd.timer);
+  try {
+    const fp = await bkPrint();
+    if (!force && fp === await store.get('gdFp')) { await store.del('gdDirty'); await bkSetState({ checked: Date.now(), err: null, errAt: null }); return 'same'; }
+    const { blob, name } = await backupBlob();
+    const files = await gdList(), last = files[0];
+    const recent = last && Date.now() - Date.parse(last.createdTime) < GD_HOUR && blob.size <= GD_SIMPLE_MAX;
+    const f = await gdUpload(blob, name, recent ? last.id : null);
+    // 30 versions au plus : les plus anciennes partent
+    const all = recent ? files : [f, ...files];
+    for (const old of all.slice(GD_KEEP)) await gdDelete(old.id).catch(() => {});
+    await store.set('gdFp', fp); await store.del('gdDirty');
+    await bkSetState({ last: Date.now(), checked: Date.now(), err: null, errAt: null, reconnect: undefined, size: blob.size });
+    bkRefresh();
+    return 'ok';
+  } catch (e) {
+    await bkSetState({ err: e.message || String(e), errAt: Date.now(), reconnect: e.kind === 'reconnect' || undefined });
+    if (e.kind !== 'reconnect') gd.timer = setTimeout(() => runBackup(), 15 * 60e3);   // nouvel essai plus tard
+    bkRefresh();
+    return 'err';
+  } finally { gd.busy = false; }
+}
+// Le même fichier que la sauvegarde manuelle, avec le seul emplacement « mot de passe » (Face ID est propre à l'appareil)
+async function backupBlob() {
+  const v = await seal(); v.slots = { pw: v.slots.pw };
+  const d = new Date(), p2 = n => String(n).padStart(2, '0');
+  const stamp = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}-${p2(d.getHours())}h${p2(d.getMinutes())}`;
+  return { blob: new Blob([JSON.stringify(v)], { type: 'application/json' }), name: `patrimoine-sauvegarde-${stamp}.json` };
+}
+// Après déverrouillage : autorisation relue, retour de Google traité, sauvegarde en attente envoyée
+async function gdOnEnter() {
+  if (mode !== 'app' || !gdConfigured()) return;
+  await gdLoadToken();
+  if (gd.ret) {
+    try {
+      const t = await gdTakeReturn('connect');
+      if (t) { gd.refresh = t; await gdStoreToken(t); await bkSetState({ err: null, errAt: null, reconnect: undefined, since: Date.now() }); toast('Google Drive connecté'); setTimeout(() => runBackup(), 1500); return; }
+    } catch (e) { return gdMsg(e.message || String(e)); }
+  }
+  if (!gd.refresh) return;
+  const st = bkState(), dirty = await store.get('gdDirty');
+  if (dirty || !st.checked || Date.now() - st.checked > 24 * GD_HOUR) gd.timer = setTimeout(() => runBackup(), 5000);
+}
+// Une restauration ou un nouveau mot de passe change la clé du coffre : l'autorisation est rechiffrée avec la nouvelle
+async function gdAfterAdopt(tok) {
+  if (!tok) return;
+  gd.refresh = tok; await gdStoreToken(tok);
+  // Restaurée depuis le Drive : ce contenu y est déjà, inutile de le renvoyer
+  if (gd.fromDrive) await store.set('gdFp', await bkPrint()); else await store.del('gdFp');
+  gd.fromDrive = false;
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'app' && gdOn()) store.get('gdDirty').then(d => { if (d) runBackup(); }).catch(() => {}); });
+// Sauvegarde automatique en état de marche : une réussite il y a moins de 7 jours, pas d'échec en cours
+const autoBkOk = () => gdOn() && !!bkState().last && Date.now() - Math.max(bkState().last, bkState().checked || 0) < 7 * 24 * GD_HOUR && !bkState().err;
+// Dernière sauvegarde, manuelle ou automatique
+const lastSave = () => Math.max(S.settings.lastExport || 0, autoBkOk() ? bkState().last : 0) || null;
+// Sauvegarde automatique arrêtée : reconnexion nécessaire, ou échecs depuis plus de 7 jours
+const autoBkBroken = () => gdConfigured() && (bkState().reconnect || (gdOn() && bkState().err && Date.now() - (bkState().last || bkState().since || 0) > 7 * 24 * GD_HOUR));
+
+/* Écrans */
+function bkSummary() {
+  if (mode !== 'app') return 'indisponible avec les données fictives';
+  if (!gdConfigured()) return 'non configurée';
+  if (!gdOn()) return bkState().reconnect ? 'reconnexion nécessaire' : 'désactivée';
+  const st = bkState();
+  if (st.err) return 'échec du dernier envoi';
+  return st.last ? `Google Drive · dernière : ${fmtDT(st.last)}` : 'Google Drive · première sauvegarde en cours';
+}
+function sheetAutoBk() {
+  const st = bkState(), back = '<button class="link" data-act="setpage" data-p="backup">Retour</button>';
+  const head = '<h2 data-gd-sheet>Sauvegarde automatique</h2>';
+  if (mode !== 'app') return openSheet(`${head}<p>Indisponible avec les données fictives.</p><div class="stack-form">${back}</div>`);
+  if (!gdConfigured()) return openSheet(`${head}<p>La sauvegarde automatique n’est pas encore configurée pour cette installation : le projet Google et le service d’autorisation doivent d’abord être mis en place (docs/sauvegarde-google-drive.md).</p><div class="stack-form">${back}</div>`);
+  if (!gdOn()) return openSheet(`${head}
+    ${st.reconnect ? `<p class="banner">${esc(st.err || 'L’autorisation Google a expiré.')}</p>` : ''}
+    <p>Tes données sont sauvegardées toutes seules dans ton Google Drive, chiffrées avec ton mot de passe : quelques minutes après chaque modification, 30 versions gardées.</p>
+    <p class="small">Les sauvegardes vont dans un dossier caché, propre à Patrimoine : l’app ne voit rien d’autre de ton Drive, et personne ne peut les lire sans ton mot de passe. Tu vas passer par la page de Google, puis revenir dans l’app : déverrouille-la pour terminer.</p>
+    <div class="stack-form"><button class="btn primary wide" data-act="gdConnect">${st.reconnect ? 'Reconnecter Google Drive' : 'Connecter Google Drive'}</button>${back}</div>`);
+  return openSheet(`${head}
+    <div class="goal">${st.err ? `<p style="margin:0 0 6px;color:var(--red)"><b>Dernier essai échoué</b> (${esc(fmtDT(st.errAt))}) : ${esc(st.err)}</p>` : ''}
+      <p style="margin:0"><b>Dernière sauvegarde réussie</b> : ${st.last ? esc(fmtDT(st.last)) + (st.size ? ' · ' + fmtSize(st.size) : '') : 'pas encore'}</p>
+      ${st.checked && st.last && st.checked > st.last ? `<p class="small" style="margin:6px 0 0">Vérifiée le ${esc(fmtDT(st.checked))} : tes données n’ont pas changé depuis.</p>` : ''}</div>
+    <p class="small">Google Drive, dossier caché de Patrimoine. Envoi quelques minutes après une modification ou quand tu quittes l’app ; une nouvelle version par heure au plus, 30 versions gardées.</p>
+    <div class="stack-form"><button class="btn primary wide" data-act="gdNow">Sauvegarder maintenant</button>
+      <button class="btn wide" data-act="gdVersions">Restaurer une version</button>
+      <button class="btn ghost wide" data-act="gdDisconnect">Déconnecter Google Drive</button>${back}</div>`);
+}
+function sheetGdVersions() {
+  const fs = gd.files;
+  if (!fs) return openSheet('<h2>Versions sur Google Drive</h2><p class="muted">Chargement…</p>');
+  openSheet(`<h2>Versions sur Google Drive</h2>
+    <p class="small" style="margin:0 0 10px">${fs.length ? 'Touche une version pour la restaurer. Il faudra le mot de passe du coffre au moment de cette sauvegarde.' : 'Aucune sauvegarde trouvée dans ce Google Drive.'}</p>
+    ${fs.length ? `<ul class="list">${fs.map(f => `<li><button data-act="gdPick" data-id="${esc(f.id)}"><span>${esc(fmtDT(Date.parse(f.modifiedTime || f.createdTime)))}</span><span class="small">${f.size ? fmtSize(+f.size) : ''}</span></button></li>`).join('')}</ul>` : ''}
+    <button class="btn wide" style="margin-top:14px" data-act="close">Fermer</button>`);
+}
+async function gdOpenVersions() {
+  gd.files = null; sheetGdVersions();
+  try { gd.files = await gdList(); sheetGdVersions(); }
+  catch (e) { gdMsg(e.message || String(e)); }
+}
+// Écran de démarrage : retour de Google pour restaurer (appareil sans coffre, ou restauration depuis l'écran de verrouillage)
+async function gdSetupReturn() {
+  if (!gd.ret || !gdConfigured()) return;
+  try {
+    const t = await gdTakeReturn('restore'); if (!t) return;
+    gd.refresh = t; gdRestoreTok = t;
+    await gdOpenVersions();
+  } catch (e) { gdMsg(e.message || String(e)); }
+}
+const gdLockNote = '<p class="banner" id="gdnote">Déverrouille l’app pour terminer la connexion à Google Drive.</p>';
 
 function lockNow() { uStop(hiddenAt && Date.now() - hiddenAt > LOCK_MS ? 'auto' : 'manuel'); masked = false; lockHasPk = !!slots?.pk; wipeKeys(); closeSheet(); renderLock('unlock'); }
 // En arrière-plan, l'écran est voilé : la vignette du sélecteur d'apps d'iOS ne montre aucun montant
@@ -4560,6 +4852,12 @@ async function boot() {
   const vault = await store.get('vault');
   lockHasPk = !!vault?.slots?.pk;
   renderLock(vault ? 'unlock' : 'setup');
+  // Retour de Google : restaurer une version, ou terminer la connexion après le déverrouillage
+  if (gd.ret && gdConfigured()) {
+    const p = await store.get('gdPending');
+    if (p?.purpose === 'restore') gdSetupReturn();
+    else if (vault && p?.purpose === 'connect') $('.lock-text')?.insertAdjacentHTML('afterend', gdLockNote);
+  }
 }
 if (location.search.includes('u=')) history.replaceState({}, '', location.pathname);
 // Le service worker ne doit jamais changer : sw.js reste identique d'une version à l'autre, et une mise à jour approuvée

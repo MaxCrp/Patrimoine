@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.17",
+    "date": "2026-11-15",
+    "titre": "Sauvegarde automatique sur Google Drive",
+    "nouveautes": [
+      "Tes données peuvent se sauvegarder toutes seules dans ton Google Drive, chiffrées avec ton mot de passe : quelques minutes après chaque modification, 30 versions gardées.",
+      "Réglages › Données de l’application › Sauvegarde automatique : connecter Google Drive, sauvegarder maintenant, restaurer une version, déconnecter.",
+      "Sur un nouvel iPhone, « Restaurer depuis Google Drive » dès l’écran de création du coffre.",
+      "Ce mois et les points d’attention tiennent compte de la sauvegarde automatique, et signalent un arrêt.",
+      "Disponible une fois la mise en place faite (projet Google et service d’autorisation) : d’ici là, l’app indique « non configurée »."
+    ]
+  },
+  {
     "version": "1.16",
     "date": "2026-11-12",
     "titre": "Suivi des versions",

@@ -52,6 +52,7 @@ console.log('Démarrage');
 await page.goto(URL); await page.waitForSelector('[data-act="demo"]');
 ok(errors.length === 0, 'page chargée sans erreur (empreinte CSP valide)', errors.join(' | '));
 ok(await page.evaluate(() => typeof APP_VERSION === 'string' && APP_VERSION !== 'dev' && CHANGELOG.length > 0), 'version et historique injectés par le build');
+ok(await page.evaluate(() => !gdConfigured() && !document.querySelector('[data-act=gdRestoreStart]')), 'sauvegarde automatique non configurée : aucun lien Google Drive');
 
 console.log('Service worker et hors ligne');
 await page.evaluate(() => navigator.serviceWorker.ready); await page.waitForTimeout(500);

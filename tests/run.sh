@@ -19,4 +19,7 @@ console.log("  ok syntaxe et empreinte");'
 echo "3. Parcours dans le navigateur"
 node tests/smoke.mjs
 
+echo "4. Sauvegarde automatique sur Google Drive (services simulés)"
+node tests/backup.mjs
+
 echo "Tous les tests passent."

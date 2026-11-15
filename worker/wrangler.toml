@@ -1,0 +1,11 @@
+# Déploiement en ligne de commande (facultatif) : npx wrangler deploy (depuis ce dossier)
+# Le plus simple reste de coller patrimoine-auth.js dans le tableau de bord Cloudflare (voir docs/sauvegarde-google-drive.md).
+name = "patrimoine-auth"
+main = "patrimoine-auth.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://patrimoine.dash-cloudflare-com-4uegc.workers.dev"
+REDIRECT_URI = "https://patrimoine.dash-cloudflare-com-4uegc.workers.dev/"
+CLIENT_ID = ""
+# CLIENT_SECRET : jamais ici. Commande : npx wrangler secret put CLIENT_SECRET

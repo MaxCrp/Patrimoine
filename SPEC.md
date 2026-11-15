@@ -163,7 +163,7 @@ Versions reconstituées à partir de l'historique du dépôt (commits entre pare
 - [x] README : organisation du dépôt, procédure de livraison, règle du service worker
 - [x] Publication Cloudflare : `wrangler.jsonc` (Worker « patrimoine ») publie le dossier `public` en fichiers statiques
 
-### v1.17 — Sauvegarde automatique sur Google Drive (spécifiée le 15/11/2026, à lancer)
+### v1.17 — 15/11/2026 — Sauvegarde automatique sur Google Drive (livrée ; active une fois la mise en place faite)
 
 Sur le modèle de MyCellar (v2.2), avec une API **dédiée** à Patrimoine : un projet Google « Patrimoine » et un Worker Cloudflare `patrimoine-auth`, sans rien partager avec MyCellar (dossier Drive, autorisation et service séparés).
 
@@ -173,20 +173,20 @@ Sur le modèle de MyCellar (v2.2), avec une API **dédiée** à Patrimoine : un 
 - L'autorisation de longue durée est rangée dans l'iPhone, chiffrée avec la clé du coffre. Elle ne figure pas dans les fichiers de sauvegarde.
 
 **Fonctionnement**
-- [ ] Rythme : envoi quelques minutes après une modification, ou quand l'app passe en arrière-plan. Une nouvelle version par heure au plus (sinon la plus récente est mise à jour). Rien n'est envoyé si les données n'ont pas changé. 30 versions gardées. Nouvel essai 15 minutes après un échec.
-- [ ] Réglages › Données de l'application › **Sauvegarde automatique** : connecter Google Drive, état (dernière sauvegarde réussie, dernier échec et sa raison), « Sauvegarder maintenant », « Restaurer une version », « Déconnecter Google Drive » (l'autorisation est révoquée, les sauvegardes déjà faites restent dans le Drive).
-- [ ] Nouvel iPhone : sur l'écran de création du coffre, « Restaurer depuis Google Drive » › compte Google › choix de la version › mot de passe du coffre. La sauvegarde automatique reprend aussitôt.
-- [ ] Une sauvegarde automatique récente compte comme une sauvegarde : l'étape « Exporter une sauvegarde » de Ce mois et le point d'attention « Dernière sauvegarde il y a… » en tiennent compte.
-- [ ] Point d'attention si la sauvegarde automatique échoue depuis plus de 7 jours, ou si une reconnexion est nécessaire.
-- [ ] La sauvegarde manuelle (export d'un fichier) reste disponible.
+- [x] Rythme : envoi quelques minutes après une modification, ou quand l'app passe en arrière-plan. Une nouvelle version par heure au plus (sinon la plus récente est mise à jour). Rien n'est envoyé si les données n'ont pas changé. 30 versions gardées. Nouvel essai 15 minutes après un échec.
+- [x] Réglages › Données de l'application › **Sauvegarde automatique** : connecter Google Drive, état (dernière sauvegarde réussie, dernier échec et sa raison), « Sauvegarder maintenant », « Restaurer une version », « Déconnecter Google Drive » (l'autorisation est révoquée, les sauvegardes déjà faites restent dans le Drive).
+- [x] Nouvel iPhone : sur l'écran de création du coffre, « Restaurer depuis Google Drive » › compte Google › choix de la version › mot de passe du coffre. La sauvegarde automatique reprend aussitôt.
+- [x] Une sauvegarde automatique récente compte comme une sauvegarde : l'étape « Exporter une sauvegarde » de Ce mois et le point d'attention « Dernière sauvegarde il y a… » en tiennent compte.
+- [x] Point d'attention si la sauvegarde automatique échoue depuis plus de 7 jours, ou si une reconnexion est nécessaire.
+- [x] La sauvegarde manuelle (export d'un fichier) reste disponible.
 
 **Technique**
-- [ ] Worker `worker/patrimoine-auth.js` repris de MyCellar : routes `/token` et `/refresh`, PKCE, adresse de retour fixée côté Worker, origine autorisée = adresse de l'app.
-- [ ] `src/backup-config.json` : identifiant OAuth et adresse du Worker (non secrets). Sans eux, l'app affiche « non configurée » et tout le reste fonctionne normalement.
-- [ ] Politique de sécurité (CSP) : autoriser seulement l'API Google Drive, le renouvellement Google et le Worker. `sw.js` inchangé.
-- [ ] Pages publiques `confidentialite` et `conditions`, exigées par Google pour publier l'application OAuth.
-- [ ] `tests/run.sh` : connexion, envoi, mise à jour dans l'heure, rotation des 30 versions, rien envoyé sans changement, reconnexion, restauration, avec Google et le Worker simulés.
-- [ ] Guide pas à pas `docs/sauvegarde-google-drive.md`, adapté à Patrimoine.
+- [x] Worker `worker/patrimoine-auth.js` repris de MyCellar : routes `/token` et `/refresh`, PKCE, adresse de retour fixée côté Worker, origine autorisée = adresse de l'app.
+- [x] `src/backup-config.json` : identifiant OAuth et adresse du Worker (non secrets). Sans eux, l'app affiche « non configurée » et tout le reste fonctionne normalement.
+- [x] Politique de sécurité (CSP) : autoriser seulement l'API Google Drive, le renouvellement Google et le Worker. `sw.js` inchangé.
+- [x] Pages publiques `confidentialite` et `conditions`, exigées par Google pour publier l'application OAuth.
+- [x] `tests/run.sh` : connexion, envoi, mise à jour dans l'heure, rotation des 30 versions, rien envoyé sans changement, reconnexion, restauration, avec Google et le Worker simulés.
+- [x] Guide pas à pas `docs/sauvegarde-google-drive.md`, adapté à Patrimoine.
 
 **Mise en place (à faire par toi, une fois, environ 30 minutes)**
 - [ ] Projet Google Cloud « Patrimoine » : API Google Drive activée, écran de consentement « Externe » publié « En production » (sans logo), droit `drive.appdata`, identifiant OAuth « Application Web » avec l'adresse de l'app.

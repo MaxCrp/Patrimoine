@@ -11,6 +11,9 @@ src/static/           fichiers copiés tels quels : sw.js, manifeste, icônes, _
 build.mjs             génère public/ à partir de src/
 public/               site publié par Cloudflare : généré, ne jamais le modifier à la main
 wrangler.jsonc        configuration Cloudflare Workers : nom du Worker, dossier publié
+src/backup-config.json identifiant OAuth et adresse du service d'autorisation (non secrets) : sauvegarde automatique
+worker/               service d'autorisation Google Drive (Worker « patrimoine-auth », déployé à part)
+docs/                 mise en place de la sauvegarde automatique (docs/sauvegarde-google-drive.md)
 tests/run.sh          tests à faire passer avant chaque livraison
 ```
 
@@ -35,3 +38,7 @@ La politique de sécurité n'autorise le script en ligne que par son empreinte S
 Ne pas le modifier sans raison impérative. Il sert toujours le code installé ; un `sw.js` modifié chez l'hébergeur s'installe de lui-même et déclenche chez l'utilisateur l'alerte « programme remplacé », puis une réinstallation complète. Le build refuse un `sw.js` dont l'empreinte a changé. En cas de changement impératif : `node build.mjs --allow-sw-change`, puis reporter la nouvelle empreinte dans `build.mjs` (`SW_SHA256`).
 
 Contraintes connues : Cloudflare redirige `/index.html` vers `/`, et Safari refuse une page servie par le service worker depuis une réponse redirigée. Le cache ne contient donc que `./`, servi pour toute navigation.
+
+## Sauvegarde automatique (Google Drive)
+
+Projet Google « Patrimoine » et Worker `patrimoine-auth`, dédiés à cette app. Mise en place une fois : `docs/sauvegarde-google-drive.md`. L'identifiant OAuth et l'adresse du Worker vont dans `src/backup-config.json` ; le build n'ouvre la CSP à Google Drive et au Worker que si ces deux valeurs sont renseignées. Le secret Google ne va jamais dans l'app ni dans le dépôt : uniquement dans le Worker.
