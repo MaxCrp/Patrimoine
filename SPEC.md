@@ -192,3 +192,24 @@ Sur le modèle de MyCellar (v2.2), avec une API **dédiée** à Patrimoine : un 
 - [ ] Projet Google Cloud « Patrimoine » : API Google Drive activée, écran de consentement « Externe » publié « En production » (sans logo), droit `drive.appdata`, identifiant OAuth « Application Web » avec l'adresse de l'app.
 - [ ] Worker Cloudflare `patrimoine-auth` avec le code du dépôt et ses variables (`CLIENT_ID`, `CLIENT_SECRET` en secret, `ALLOWED_ORIGIN`, `REDIRECT_URI`).
 - [ ] Me transmettre l'identifiant OAuth et l'adresse du Worker, pour renseigner `src/backup-config.json` (le secret ne quitte jamais Cloudflare).
+
+### v1.18 — Tutoriel de bienvenue et usage partagé (spécifiée le 18/11/2026, à valider puis à lancer)
+
+Patrimoine va être partagée avec des amis : chacun l'installe sur son iPhone, avec son propre coffre. Rien n'est partagé entre utilisateurs.
+
+**Tutoriel de bienvenue**
+- [ ] Affiché à la première ouverture, avant la création du coffre : 6 écrans courts à faire défiler, avec des points de progression, « Suivant » et « Passer ».
+- [ ] Réaffichable à tout moment : Réglages › Aide › « Revoir la présentation ».
+- [ ] Contenu proposé :
+  1. **Bienvenue** : Patrimoine suit ton patrimoine mois par mois (livrets, PEA, assurance-vie, PER, épargne salariale), ce que tu épargnes vraiment, et le budget de ton foyer. Trois minutes par mois suffisent.
+  2. **Chaque mois** : l'onglet Ce mois te guide : soldes des comptes, revenus et charges, pointage, sauvegarde. L'accueil montre ton total, son évolution et sa répartition.
+  3. **À deux** (facultatif) : l'onglet Foyer répartit les charges communes (parts égales ou au prorata des revenus), montre qui doit quoi à qui et ton reste à vivre. Le bouton + ajoute une dépense en un geste.
+  4. **Objectifs et bilan** : apport immobilier, retraite, épargne mensuelle, simulateur d'achat ; le Résumé fait le bilan du mois et vérifie que ton budget tombe juste.
+  5. **Tes données restent à toi** : tout est chiffré sur ton iPhone avec ton mot de passe. Aucun serveur ne reçoit tes données, personne ne peut les lire, pas même la personne qui t'a partagé l'app. Ton mot de passe ne peut pas être récupéré : range-le dans ton gestionnaire de mots de passe. Face ID, verrouillage automatique, masquage des montants.
+  6. **Sauvegardes et options** : exporte une sauvegarde chaque mois, ou active la sauvegarde automatique sur ton propre Google Drive (chiffrée, dans un dossier caché). L'analyse par IA est facultative et n'utilise que ta propre clé. Pas de publicité, pas de suivi. L'app ne se met jamais à jour sans ton accord. Liens vers les règles de confidentialité et les conditions.
+- [ ] Dernier écran : « Créer mon coffre », « Essayer avec des données fictives », « Restaurer une sauvegarde ».
+
+**Usage partagé** (à valider : les textes actuels supposent que l'utilisateur publie lui-même l'app)
+- [ ] Mises à jour : remplacer « Si tu n'en es pas à l'origine, ne l'installe pas » par un texte pour un utilisateur qui reçoit l'app : nouvelle version publiée, avec ses nouveautés, à installer quand il le souhaite.
+- [ ] Alertes de sécurité (« code remplacé », « code modifié ») : expliquer quoi faire sans supposer que l'utilisateur gère l'hébergement (ne pas saisir son mot de passe, prévenir la personne qui partage l'app).
+- [ ] Sauvegarde automatique : chaque ami connecte son propre Google Drive, sans rien à configurer de son côté. Le projet Google reste « non validé » (jusqu'à 100 utilisateurs) : le tutoriel prévient de l'écran « application non validée » et de « Paramètres avancés › Accéder à Patrimoine ».
