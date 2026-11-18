@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.18",
+    "date": "2026-11-18",
+    "titre": "Bienvenue et prise en main",
+    "nouveautes": [
+      "Une présentation en 6 écrans accueille les nouveaux utilisateurs ; elle se revoit dans Réglages › Aide.",
+      "Réglages › Aide : questions fréquentes (installer l’app, mot de passe oublié, changer d’iPhone, mises à jour, sauvegarde) et règles de confidentialité.",
+      "L’accueil propose des « Premiers pas » pour bien démarrer : comptes, soldes, foyer, objectifs, sauvegarde.",
+      "Création du coffre plus claire : la règle des 12 caractères est annoncée, et un bouton permet d’afficher le mot de passe saisi.",
+      "Une mise à jour proposée affiche son numéro et ses nouveautés avant l’installation, et les messages de sécurité sont plus clairs."
+    ]
+  },
+  {
     "version": "1.17",
     "date": "2026-11-15",
     "titre": "Sauvegarde automatique sur Google Drive",

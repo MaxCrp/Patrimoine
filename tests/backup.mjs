@@ -100,15 +100,23 @@ const newPage = async errs => {
   p.on('dialog', d => d.accept()); return p;
 };
 const sheetText = p => p.evaluate(() => document.querySelector('.sheet')?.innerText || '');
+const skipIntro = async p => { if (await p.$('#intro')) await p.click('#intro [data-act=introDone]'); };
 
 /* ---------- Premier appareil : création du coffre, connexion ---------- */
 console.log('Connexion');
 const e1 = [], p = await newPage(e1);
 await p.goto(APP); await p.waitForSelector('#f-setup');
+await skipIntro(p);
 ok(!!(await p.$('[data-act=gdRestoreStart]')), 'écran de création : « Restaurer depuis Google Drive »');
 await p.fill('#p1', PASS); await p.fill('#p2', PASS); await p.click('#f-setup [type=submit]');
 await p.waitForSelector('.tabs', { timeout: 15000 });
+console.log('Premiers pas');
+await p.evaluate(() => closeSheet());
+const fs0 = await p.evaluate(() => [...document.querySelectorAll('.fsteps li')].map(l => l.className.includes('ok')));
+ok(fs0.length === 5 && !fs0.some(Boolean), 'accueil d’un nouveau coffre : « Premiers pas », 5 étapes à faire');
 await p.evaluate(async () => { closeSheet(); const a = { id: uid(), owner: 'moi', name: 'Livret Nuage', type: 'livretA', ...DEFAULTS.livretA }; S.accounts.push(a); (S.entries[monthKey()] ||= {})[a.id] = { value: 12345, deposit: 100 }; await save(); });
+const fs1 = await p.evaluate(() => { go('home'); return [...document.querySelectorAll('.fsteps li')].map(l => l.className.includes('ok')); });
+ok(fs1[0] && fs1[1] && !fs1[4], 'comptes et soldes saisis : étapes 1 et 2 cochées, sauvegarde à faire', JSON.stringify(fs1));
 await p.evaluate(() => sheetSetPage('backup'));
 ok(/Sauvegarde automatique\s*Google Drive\s*désactivée/.test(await sheetText(p)), 'Réglages › Données : « Sauvegarde automatique · désactivée »');
 await p.click('[data-act=gdSheet]');
@@ -209,6 +217,7 @@ console.log('Nouvel appareil');
 G.files = G.files.filter(f => f.content !== '{}');
 const e2 = [], q = await newPage(e2);
 await q.goto(APP); await q.waitForSelector('#f-setup');
+await skipIntro(q);
 await Promise.all([q.waitForURL(u => u.href.startsWith(APP) && !u.href.includes('accounts.google'), { timeout: 10000 }), q.click('[data-act=gdRestoreStart]')]);
 await q.waitForSelector('.sheet [data-act=gdPick]', { timeout: 10000 });
 const n2 = await q.evaluate(() => document.querySelectorAll('.sheet [data-act=gdPick]').length);
@@ -229,7 +238,7 @@ const dc = await q.evaluate(async () => ({ on: gdOn(), tok: !!(await store.get('
 ok(!dc.on && !dc.tok && G.revoked === 1 && /désactivée/.test(dc.sum), 'déconnexion : autorisation retirée chez Google et sur l’appareil', JSON.stringify(dc));
 ok(!e2.length, 'aucune erreur (nouvel appareil)', e2.join(' | '));
 const e3 = [], d = await newPage(e3);
-await d.goto(APP); await d.waitForSelector('[data-act=demo]'); await d.click('[data-act=demo]'); await d.waitForSelector('.tabs');
+await d.goto(APP); await d.waitForSelector('#f-setup'); await skipIntro(d); await d.click('[data-act=demo]'); await d.waitForSelector('.tabs');
 ok(/indisponible avec les données fictives/.test(await d.evaluate(() => bkSummary())), 'données fictives : sauvegarde automatique indisponible');
 
 await browser.close(); server.close(); rmSync(TMP, { recursive: true, force: true });

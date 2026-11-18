@@ -79,6 +79,9 @@ const walk = (dir, rel = '') => {
   }
 };
 walk(STATIC);
+// Historique publié à part : l'app le lit avant d'installer une mise à jour, pour présenter ses nouveautés
+if (files.has('changelog.json')) fail('changelog.json est généré : ne pas le placer dans src/static/');
+files.set('changelog.json', Buffer.from(JSON.stringify(log.map(({ version, date, titre, nouveautes }) => ({ version, date, titre, nouveautes })), null, 1) + '\n', 'utf8'));
 const sw = files.get('sw.js');
 if (!sw) fail('src/static/sw.js manquant');
 if (sha256(sw) !== SW_SHA256) {

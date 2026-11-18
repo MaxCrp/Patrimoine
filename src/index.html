@@ -392,6 +392,27 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .list li.done .ptck svg{opacity:1}
 .h2-sub{font-weight:500;font-size:15px;color:var(--muted)}
 .banner#gdnote{margin:12px 0 0}
+#intro{position:fixed;inset:0;z-index:50;background:var(--paper);color:var(--ink);overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.intro-in{max-width:520px;min-height:100%;margin:0 auto;box-sizing:border-box;padding:calc(16px + var(--safe-t)) 24px calc(20px + var(--safe-b));display:flex;flex-direction:column}
+.intro-top{display:flex;justify-content:flex-end;min-height:44px}
+.intro-ic{width:64px;height:64px;margin:18px 0 12px;border-radius:18px;background:var(--pine-soft);color:var(--pine);display:grid;place-items:center}
+.intro-ic svg{width:36px;height:36px}
+.intro-in h2{font-size:28px;line-height:1.15;margin:0 0 12px;outline:none}
+.intro-in p{font-size:17px;margin:0 0 12px}
+.intro-in .banner{font-size:15px;margin:6px 0 16px}
+.intro-in .stack-form{margin-top:8px}
+.intro-foot{margin-top:auto;padding-top:22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.intro-foot .btn{width:52px;min-height:48px;padding:0;font-size:24px}
+.intro-foot .btn:disabled{opacity:.3}
+.intro-dots{display:flex;gap:8px}
+.intro-dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.intro-dots i.on{background:var(--pine);width:22px;border-radius:4px}
+.lock-note{margin:14px 0 0;color:var(--muted)}
+.pwshow{align-self:flex-start;margin:-4px 0 4px}
+.sheet a{color:var(--pine)}
+details.faq{border-top:1px solid var(--line);padding:10px 0}
+details.faq summary{cursor:pointer;font-weight:600;list-style-position:outside}
+details.faq p{margin:8px 0 0;color:var(--muted);font-size:15px}
 .news{margin-top:14px} .news h3{margin:0 0 2px;font-size:17px} .news ul{margin:0;padding-left:20px;display:grid;gap:4px}
 .sub-h{margin:22px 0 8px;font-size:17px}
 .sc-line.cat{stroke-width:2.4}
@@ -441,6 +462,20 @@ input.bad{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .foyrows li button > span:first-child{flex:1}
 .foyrows .chev{color:var(--muted);font-size:22px}
 .foyrows .warn{color:var(--amber);font-weight:600}
+.todo{margin-top:18px;padding:14px 0 4px;border-radius:20px;background:var(--surface)}
+.todo-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0 16px 6px}
+.todo-head h2{margin:0;font-size:18px}
+.todo ul{list-style:none;margin:0;padding:0}
+.todo li button{width:100%;display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 16px;border:0;border-top:1px solid var(--line);background:none;text-align:left;color:inherit}
+.todo li.ok button{color:var(--muted)}
+.todo li.off button{opacity:.55;cursor:default}
+.todo-b{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--pine-soft);color:var(--pine);font:700 14px var(--num)}
+.todo-b svg{width:18px;height:18px;stroke-width:2.6}
+.todo-b.ok{background:var(--pos);color:var(--surface)}
+.todo-m{flex:1;display:flex;flex-direction:column}
+.todo-t{font-weight:600;color:var(--ink)}
+.todo .chev{color:var(--muted);font-size:22px}
+.fsteps-foot{display:flex;justify-content:space-between;padding:6px 16px 8px;border-top:1px solid var(--line)}
 .rowlink,.qrow{width:100%;display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);text-align:left;color:inherit}
 .rowlink > span:nth-child(2),.qrow > span:nth-child(2){flex:1;font-weight:600}
 .rowlink .small,.qrow .small{font-weight:400}
@@ -763,7 +798,7 @@ const APP_VERSION = CHANGELOG[0]?.version || 'dev';
 const CACHE_NAME = 'patrimoine-v5';
 const SHELL = ['./', './sw.js', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 const CODE_FILES = ['./', './sw.js'];
-let code = { status: 'unknown', served: null, approved: null, net: null, at: null, err: null, checked: null };
+let code = { next: null, status: 'unknown', served: null, approved: null, net: null, at: null, err: null, checked: null };
 const hex = u8 => [...u8].map(b => b.toString(16).padStart(2, '0')).join('');
 const fpLabel = h => h ? hex(unb64(h).slice(0, 8)).toUpperCase().match(/.{4}/g).join(' ') : '—';
 async function fpOf(fresh) {
@@ -796,28 +831,39 @@ async function checkCode() {
   paintCode();
   if (code.status === 'ok') checkNetwork();
 }
+// Nouveautés d'une version pas encore installée : historique publié à part (changelog.json), versions plus récentes que l'installée
+async function loadNext() {
+  try {
+    const r = await fetch('./changelog.json?fresh=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
+    const list = await r.json(); if (!Array.isArray(list)) return;
+    const ok = list.filter(e => e && typeof e.version === 'string' && typeof e.date === 'string' && Array.isArray(e.nouveautes));
+    const i = ok.findIndex(e => e.version === APP_VERSION);
+    code.next = (i < 0 ? ok.slice(0, 1) : ok.slice(0, i)).slice(0, 10);
+    if (code.status === 'update') paintCode();
+  } catch {}
+}
 async function checkNetwork(manual) {
   if (!window.isSecureContext) return false;
   if (navigator.onLine === false) { code.err = 'Pas de connexion réseau.'; return false; }
   try { code.net = await fpOf(true); code.err = null; code.checked = Date.now(); }
   catch (e) { code.err = e.message; return false; }
-  if (code.net !== code.approved && code.status !== 'changed' && code.status !== 'sw') { code.status = 'update'; paintCode(); }
+  if (code.net !== code.approved && code.status !== 'changed' && code.status !== 'sw') { code.status = 'update'; paintCode(); loadNext(); }
   return code.net !== code.approved;
 }
 function paintCode() {
   const el = $('#codebar'); if (!el) return;
-  if (code.status === 'update') el.innerHTML = `<div class="codebar"><p>Une nouvelle version du code de l’app est disponible en ligne. Si tu n’en es pas à l’origine, ne l’installe pas.</p>
-    <div class="row"><button class="btn primary" data-act="codeupdate">Installer la mise à jour</button><button class="btn" data-act="codeinfo">Détails</button><button class="btn" data-act="codelater">Plus tard</button></div></div>`;
-  else if (code.status === 'sw') el.innerHTML = `<div class="codebar bad"><p><strong>Le programme de l’app vient d’être remplacé chez l’hébergeur, sans passer par ta validation.</strong> Au prochain lancement, ce nouveau code s’exécutera et pourrait lire ton mot de passe. Ne rouvre pas l’app et ne saisis pas ton mot de passe avant d’avoir vérifié l’historique de ton dépôt.</p>
+  if (code.status === 'update') el.innerHTML = `<div class="codebar"><p><strong>Nouvelle version disponible${code.next?.[0] ? ` : ${esc(code.next[0].version)} · ${esc(code.next[0].titre || '')}` : ''}.</strong> Installe-la quand tu veux : tes données ne sont pas touchées.</p>
+    <div class="row"><button class="btn primary" data-act="codeupdate">Installer la mise à jour</button><button class="btn" data-act="codeinfo">Nouveautés</button><button class="btn" data-act="codelater">Plus tard</button></div></div>`;
+  else if (code.status === 'sw') el.innerHTML = `<div class="codebar bad"><p><strong>Le programme de l’app a été remplacé en ligne, sans passer par une mise à jour normale.</strong> Par précaution, ne saisis plus ton mot de passe et ne rouvre pas l’app : préviens la personne qui t’a partagé Patrimoine.</p>
     <div class="row"><button class="btn" data-act="codeinfo">Que faire ?</button></div></div>`;
-  else if (code.status === 'changed') el.innerHTML = `<div class="codebar bad"><p><strong>Le code de l’app a changé</strong> sans que tu l’aies approuvé. Ne saisis pas ton mot de passe avant d’avoir vérifié.</p>
+  else if (code.status === 'changed') el.innerHTML = `<div class="codebar bad"><p><strong>Le code de l’app a changé</strong> sans que tu aies installé de mise à jour. Par précaution, ne saisis pas ton mot de passe et préviens la personne qui t’a partagé Patrimoine.</p>
     <div class="row"><button class="btn" data-act="codeinfo">Que faire ?</button></div></div>`;
   else el.innerHTML = '';
 }
 // Remise à zéro du code installé : on supprime le service worker et ses caches,
 // puis on recharge depuis le réseau. Les données du coffre (IndexedDB) ne sont pas touchées.
 async function applyCodeUpdate() {
-  if (!confirm('Installer cette version du code ? À ne faire que si tu viens de mettre les fichiers à jour toi-même.\n\nTes données ne sont pas touchées.')) return;
+  if (!confirm('Installer la nouvelle version ? L’app va redémarrer.\n\nTes données ne sont pas touchées.')) return;
   const btn = $('#codebar .btn.primary'); if (btn) { btn.disabled = true; btn.textContent = 'Installation…'; }
   try {
     await store.set('code', { fp: code.net, at: Date.now(), pending: true });
@@ -831,18 +877,19 @@ async function applyCodeUpdate() {
 }
 function sheetCode() {
   if (code.status === 'sw') return openSheet(`<h2>Code remplacé</h2>
-    <p>Le fichier qui installe l’app sur ton iPhone (sw.js) a changé chez l’hébergeur. Une version légitime de l’app ne le modifie jamais : si tu n’es pas à l’origine de ce changement, ton compte d’hébergement a probablement été compromis.</p>
-    <p>Ne déverrouille plus l’app tant que ce n’est pas résolu : le nouveau code s’exécutera au prochain lancement, et la vérification d’empreinte ne pourra plus t’alerter.</p>
-    <p class="small">À faire depuis un ordinateur : consulte l’historique du dépôt, remets les fichiers d’origine, change le mot de passe du compte et active la double authentification. Ensuite, sur l’iPhone, supprime l’app de l’écran d’accueil, efface les données du site dans Réglages › Safari, réinstalle-la et restaure ta dernière sauvegarde.</p>
+    <p>Le fichier qui installe l’app sur ton iPhone (sw.js) a été remplacé en ligne. Une mise à jour normale ne le modifie jamais : ce changement peut venir d’un piratage de l’hébergement.</p>
+    <p>Ne déverrouille plus l’app et ne saisis pas ton mot de passe : préviens la personne qui t’a partagé Patrimoine. Tes données restent chiffrées sur ton iPhone.</p>
+    <p class="small">Une fois le problème résolu : supprime l’app de l’écran d’accueil, efface les données du site dans Réglages › Safari, réinstalle-la et restaure ta dernière sauvegarde.</p>
+    <p class="small">Pour la personne qui publie l’app, depuis un ordinateur : consulte l’historique du dépôt, remets les fichiers d’origine, change le mot de passe du compte et active la double authentification. Ensuite, sur l’iPhone, supprime l’app de l’écran d’accueil, efface les données du site dans Réglages › Safari, réinstalle-la et restaure ta dernière sauvegarde.</p>
     <button class="btn wide" style="margin-top:10px" data-act="close">Fermer</button>`);
   const changed = code.status === 'changed';
   openSheet(`<h2>${changed ? 'Code modifié' : 'Vérification du code'}</h2>
     <p class="small" style="margin:0 0 14px">L’empreinte est un condensé du code de l’app. Elle ne change que si le code change.</p>
     <p>Approuvée${code.at ? ' le ' + new Date(code.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}<br><span class="fp">${fpLabel(code.approved)}</span></p>
     <p>${changed ? 'Code actuellement servi' : 'Version en ligne'}<br><span class="fp">${fpLabel(changed ? code.served : code.net)}</span></p>
-    ${changed ? `<p>Si tu viens de modifier les fichiers chez ton hébergeur, c’est normal. Sinon, quelqu’un a peut-être pris le contrôle de ton compte : change son mot de passe et vérifie l’historique du dépôt avant d’ouvrir l’app.</p>
+    ${changed ? `<p>Si tu viens d’installer une mise à jour, c’est normal : approuve cette version. Sinon, ne saisis pas ton mot de passe et préviens la personne qui t’a partagé Patrimoine.</p>
       <button class="btn wide" data-act="codeapprove">Approuver cette version</button>`
-      : code.status === 'update' ? '<p>N’installe cette version que si tu viens de mettre les fichiers à jour toi-même.</p><button class="btn primary wide" data-act="codeupdate">Installer la mise à jour</button>'
+      : code.status === 'update' ? `${code.next?.length ? newsHtml(code.next) : '<p>Les nouveautés s’afficheront après l’installation.</p>'}<p class="small">Installe-la quand tu veux : tes données ne sont pas touchées.</p><button class="btn primary wide" data-act="codeupdate">Installer la mise à jour</button>`
       : `<p class="small">${code.err ? 'Dernière vérification en échec : ' + esc(code.err) : code.checked ? 'Vérifié à ' + new Date(code.checked).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + ' : la version en ligne est identique.' : 'Pas encore vérifié en ligne.'}</p>
         <button class="btn primary wide" data-act="codecheck">Vérifier maintenant</button>`}
     <button class="btn wide" style="margin-top:10px" data-act="close">Fermer</button>`);
@@ -1624,11 +1671,13 @@ function renderLock(kind, err = '') {
     ${kind === 'setup' ? `
       <p class="lock-text">Tes données restent sur cet iPhone, chiffrées avec un mot de passe que toi seul connais. Il ne peut pas être récupéré : génère-le et range-le dans ton gestionnaire de mots de passe.</p>
       <form id="f-setup" class="lock-form" autocomplete="on">${USERFIELD}
-        <label>Mot de passe (8 caractères minimum)<input type="password" id="p1" autocomplete="new-password" required></label>
+        <label>Mot de passe (12 caractères minimum)<input type="password" id="p1" autocomplete="new-password" required></label>
         <label>Confirmation<input type="password" id="p2" autocomplete="new-password" required></label>
+        <button class="link pwshow" type="button" data-act="pwshow" aria-pressed="false">Afficher le mot de passe</button>
         ${e}<button class="btn primary" type="submit">Créer mon coffre</button>
       </form>
-      <div class="lock-links"><button class="link" data-act="demo">Essayer avec des données fictives</button><button class="link" data-act="import">Restaurer une sauvegarde</button>${gdConfigured() ? '<button class="link" data-act="gdRestoreStart">Restaurer depuis Google Drive</button>' : ''}</div>`
+      ${isStandalone() ? '' : `<p class="small lock-note">${INSTALL_NOTE}</p>`}
+      <div class="lock-links"><button class="link" data-act="demo">Essayer avec des données fictives</button><button class="link" data-act="import">Restaurer une sauvegarde</button><button class="link" data-act="introReplay">Revoir la présentation</button>${gdConfigured() ? '<button class="link" data-act="gdRestoreStart">Restaurer depuis Google Drive</button>' : ''}</div>`
     : `
       <p class="lock-text">${pk ? 'Déverrouille avec Face ID, ou avec ton mot de passe.' : 'Saisis ton mot de passe pour déchiffrer tes données.'}</p>
       ${e}
@@ -1699,10 +1748,29 @@ function scopeBar() {
   const opts = [...members().map(m => [m.id, m.name]), ['all', 'Foyer']];
   return `<div class="chips">${opts.map(([v, l]) => `<button class="${scope === v ? 'on' : ''}" data-act="scope" data-s="${esc(v)}">${esc(l)}</button>`).join('')}</div>`;
 }
+// Premiers pas : carte de mise en route, tant que l'essentiel n'est pas fait (et qu'elle n'est pas masquée)
+function firstSteps() {
+  if (mode !== 'app' || S.settings.firstSteps === 'hidden') return '';
+  const hasAcc = S.accounts.length > 0, hasSoldes = months().length > 0;
+  const steps = [
+    { ok: hasAcc, t: 'Ajouter tes comptes', d: 'livrets, PEA, assurance-vie, PER, épargne salariale', a: 'data-act="newacc"' },
+    { ok: hasSoldes, t: 'Saisir les soldes du mois', d: 'l’onglet Ce mois te guide, en trois minutes', a: 'data-act="fsgo"', off: !hasAcc },
+    { ok: S.household.on, opt: true, t: 'Gérer à deux', d: 'facultatif : charges communes, qui doit quoi', a: 'data-act="setpage" data-p="foyer"' },
+    { ok: !!(S.goals.apport?.target || S.goals.rente?.monthly), opt: true, t: 'Fixer un objectif', d: 'facultatif : apport immobilier, retraite', a: 'data-act="go" data-view="objectifs"' },
+    { ok: !!lastSave() || gdOn(), t: 'Mettre tes données à l’abri', d: 'une sauvegarde exportée ou automatique', a: 'data-act="setpage" data-p="backup"', off: !hasSoldes },
+  ];
+  if (steps.filter(x => !x.opt).every(x => x.ok)) return '';
+  const n = steps.filter(x => x.ok).length;
+  return `<section class="todo fsteps"><div class="todo-head"><h2>Premiers pas</h2><span class="small">${n} sur ${steps.length}</span></div>
+    <ul>${steps.map((x, i) => `<li class="${x.ok ? 'ok' : ''}${x.off ? ' off' : ''}"><button ${x.a} ${x.off ? 'disabled' : ''}>
+      <span class="todo-b${x.ok ? ' ok' : ''}" aria-hidden="true">${x.ok ? ICON.check : i + 1}</span>
+      <span class="todo-m"><span class="todo-t">${x.t}</span><span class="small">${x.d}</span></span><span class="chev" aria-hidden="true">›</span></button></li>`).join('')}</ul>
+    <div class="fsteps-foot"><button class="link" data-act="introReplay">Revoir la présentation</button><button class="link" data-act="fshide">Masquer</button></div></section>`;
+}
 function vHome() {
-  if (!S.accounts.length) return emptyAccounts();
+  if (!S.accounts.length) return firstSteps() || emptyAccounts();
   const ms = months(), cur = monthKey();
-  if (!ms.length) return `<section class="empty"><h2>Première saisie</h2><p class="muted">Indique le solde actuel de chaque compte pour démarrer le suivi.</p><button class="btn primary" data-act="go" data-view="saisie">Saisir ${monthName(cur)}</button></section>`;
+  if (!ms.length) return firstSteps() || `<section class="empty"><h2>Première saisie</h2><p class="muted">Indique le solde actuel de chaque compte pour démarrer le suivi.</p><button class="btn primary" data-act="go" data-view="saisie">Saisir ${monthName(cur)}</button></section>`;
   const f = scopeF();
   const F = focusMonth(), b = breakdown(F, f), delta = b.total - b.prevTotal;
   const done = a => isSimple(a) ? entry(cur, a)?.dot != null : entry(cur, a)?.value != null;
@@ -1712,7 +1780,7 @@ function vHome() {
   const allAl = alerts(F, false, f, scope === 'moi' || scope === 'all');
   const al = allAl.filter(x => !isHidden(x, F));
   const hiddenN = allAl.length - al.length;
-  return `${scopeBar()}
+  return `${firstSteps()}${scopeBar()}
     <section class="hero">
       <p class="hero-month">Fin ${monthLabel(F)}</p>
       <p class="hero-total num">${eur(b.total)}</p>
@@ -2636,6 +2704,7 @@ function closeSheet() { $('#layer').innerHTML = ''; uSheet = null; uScreenCheck(
 
 // Réglages : un menu, puis une page par domaine. Les comptes se gèrent dans leur onglet.
 const SET_PAGES = {
+  aide:    { t: 'Aide', d: () => 'présentation, questions fréquentes' },
   apparence: { t: 'Apparence', d: () => `${THEMES[ui.theme]?.label || 'Forêt'} · ${{ auto: 'automatique', light: 'clair', dark: 'sombre' }[ui.mode]}` },
   foyer:   { t: 'Foyer', d: () => S.household.on ? members().map(m => m.name).join(', ') : 'non activé' },
   budget:  { t: 'Budget de référence', d: () => S.settings.depenses || S.settings.revenus ? 'dépenses et revenus renseignés' : 'à renseigner' },
@@ -2738,6 +2807,22 @@ function sheetSetPage(k) {
       <p class="small" style="margin:0">L’app se verrouille seule après deux minutes en arrière-plan.</p>
       <button class="btn danger wide" data-act="wipe">Effacer toutes les données de cet iPhone</button>
       ${setBack}</div>`);
+  if (k === 'aide') {
+    const q = (t, b) => `<details class="faq"><summary>${t}</summary><p>${b}</p></details>`;
+    return openSheet(`${head}
+      <div class="stack-form"><button class="btn primary wide" data-act="introReplay">Revoir la présentation</button></div>
+      <h3>Questions fréquentes</h3>
+      ${q('Installer l’app sur l’iPhone', 'Dans Safari, touche Partager puis « Sur l’écran d’accueil », et ouvre toujours Patrimoine depuis cette icône. Les données de Safari et de l’app installée sont séparées : crée ton coffre dans l’app installée.')}
+      ${q('J’ai oublié mon mot de passe', 'Il ne peut pas être récupéré, par personne : c’est ce qui protège tes données. Tu peux restaurer une sauvegarde dont tu connais le mot de passe ; sinon, efface les données (Réglages › Sécurité) et recommence.')}
+      ${q('Je change d’iPhone', 'Exporte une sauvegarde (Réglages › Données de l’application) ou active la sauvegarde automatique sur Google Drive. Sur le nouvel iPhone, installe l’app puis choisis « Restaurer une sauvegarde » ou « Restaurer depuis Google Drive ».')}
+      ${q('Une mise à jour est proposée', 'L’app ne se met jamais à jour toute seule. Le bandeau indique la nouvelle version ; « Nouveautés » liste ce qu’elle apporte. Installe-la quand tu veux : tes données ne sont pas touchées.')}
+      ${q('Gérer à deux', 'Active le foyer dans Réglages › Foyer et indique les revenus de chacun. L’onglet Foyer répartit alors les charges communes et calcule qui doit quoi à qui. Chacun garde ses propres données sur son iPhone : rien n’est synchronisé entre vous.')}
+      ${q('Sauvegarde Google Drive', 'Elle va dans un dossier caché de ton propre Drive, chiffrée avec ton mot de passe. À la connexion, Google peut afficher « Application non validée » : touche « Paramètres avancés », puis « Accéder à Patrimoine ».')}
+      ${q('Qui voit mes données ?', 'Personne d’autre que toi. Elles restent chiffrées sur ton iPhone ; aucun serveur ne les reçoit, pas même la personne qui t’a partagé l’app. L’analyse par IA n’envoie le résumé du mois (montants arrondis) que si tu ajoutes ta clé et la demandes.')}
+      ${q('Effacer mes données', 'Réglages › Sécurité › « Effacer toutes les données de cet iPhone ». Pense d’abord à exporter une sauvegarde si tu veux les retrouver.')}
+      <p class="small" style="margin-top:14px"><a href="./confidentialite" target="_blank" rel="noopener">Règles de confidentialité</a> · <a href="./conditions" target="_blank" rel="noopener">Conditions d’utilisation</a></p>
+      <div class="stack-form">${setBack}</div>`);
+  }
   if (k === 'versions') return openSheet(`${head}
     <p class="small" style="margin:0 0 6px">Version installée : ${esc(APP_VERSION)}. Les nouveautés s’affichent à la première ouverture après une mise à jour.</p>
     ${newsHtml(CHANGELOG)}
@@ -2764,7 +2849,7 @@ function sheetSetPage(k) {
     <p class="small" style="margin:0 0 6px">Empreinte approuvée</p>
     <p class="fp">${fpLabel(code.approved)}</p>
     <p class="small">${code.at ? `Approuvée le ${new Date(code.at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}. ` : ''}${code.status === 'ok' ? 'Le code installé correspond.' : code.status === 'unknown' ? 'Vérification indisponible ici.' : 'Une différence a été détectée.'}</p>
-    <p class="small">L’app te demande de confirmer chaque nouvelle version, et t’alerte si le fichier d’installation est remplacé. Elle ne peut pas empêcher un hébergeur compromis de remplacer le code : protège ton compte d’hébergement (double authentification).</p>
+    <p class="small">L’app te demande de confirmer chaque nouvelle version, et t’alerte si son code est remplacé en ligne sans mise à jour normale. En cas d’alerte, ne saisis pas ton mot de passe et préviens la personne qui t’a partagé Patrimoine.</p>
     <div class="stack-form"><button class="btn wide" data-act="codeinfo">Vérifier le code</button>${setBack}</div>`);
 }
 function sheetAccountInfo(id) {
@@ -2858,7 +2943,7 @@ const sheetMsg = msg => openSheet(`<h2>Face ID</h2><p>${esc(msg)}</p><button cla
 // Date du changelog (AAAA-MM-JJ) en toutes lettres
 const fmtDay = d => { const [y, m, j] = String(d).split('-').map(Number); return y && m && j ? new Date(y, m - 1, j).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : String(d); };
 const newsHtml = list => list.map(e => `<section class="news"><h3>Version ${esc(e.version)}${e.titre ? ` · ${esc(e.titre)}` : ''}</h3>
-  <p class="small" style="margin:0 0 6px">${esc(fmtDay(e.date))}</p><ul>${(e.nouveautes || []).map(n => `<li>${esc(n)}</li>`).join('')}</ul></section>`).join('');
+  <p class="small" style="margin:0 0 6px">${esc(fmtDay(e.date))}</p><ul>${(Array.isArray(e.nouveautes) ? e.nouveautes : []).map(n => `<li>${esc(n)}</li>`).join('')}</ul></section>`).join('');
 // Versions plus récentes que celle déjà vue ; inconnue (première fois) : la version actuelle seulement
 const newsSince = seen => { const i = CHANGELOG.findIndex(e => e.version === seen); return i < 0 ? CHANGELOG.slice(0, 1) : CHANGELOG.slice(0, i); };
 async function checkNews(via) {
@@ -3800,6 +3885,16 @@ const ACT = {
   demo: () => { wipeKeys(); S = normalize(demoData()); masked = false; mode = 'demo'; view = 'home'; saisieMonth = monthKey(); render(); },
   import: () => { const i = $('#importfile'); i.value = ''; i.click(); },
   gdSheet: () => sheetAutoBk(),
+  introNext: () => { if (introI < INTRO.length - 1) { introI++; paintIntro(); } },
+  introPrev: () => { if (introI > 0) { introI--; paintIntro(); } },
+  introDone: () => introDone(),
+  introReplay: () => { closeSheet(); showIntro(mode !== 'app' && mode !== 'demo' && !lockHasPk && !$('#f-unlock')); },
+  introCreate: () => { const done = introDone(); $('#p1')?.focus(); return done; },
+  introDemo: async () => { await introDone(); ACT.demo(); },
+  introImport: async () => { await introDone(); ACT.import(); },
+  pwshow: t => { const on = t.getAttribute('aria-pressed') !== 'true'; for (const i of document.querySelectorAll('#p1, #p2')) i.type = on ? 'text' : 'password'; t.setAttribute('aria-pressed', on); t.textContent = on ? 'Masquer le mot de passe' : 'Afficher le mot de passe'; },
+  fsgo: () => { saisieMonth = monthKey(); view = 'saisie'; goSub('soldes'); },
+  fshide: async () => { S.settings.firstSteps = 'hidden'; await save(); render(); toast('Premiers pas masqués : la présentation reste dans Réglages › Aide'); },
   gdConnect: () => gdStart('connect'),
   gdRestoreStart: () => gdStart('restore'),
   gdNow: async t => { t.disabled = true; t.textContent = 'Sauvegarde en cours…'; const r = await runBackup({ force: true }); toast(r === 'ok' ? 'Sauvegardé sur Google Drive' : 'Sauvegarde impossible'); sheetAutoBk(); },
@@ -4344,6 +4439,75 @@ document.addEventListener('submit', async e => {
   }
 });
 
+/* ---------- Présentation (v1.18) ----------
+   Affichée à la première ouverture, avant la création du coffre ; réaffichable depuis Réglages › Aide.
+   Écrans à faire défiler (boutons ou balayage), points de progression, « Passer ». */
+const isStandalone = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const INSTALL_NOTE = 'Avant de créer ton coffre, ajoute Patrimoine à ton écran d’accueil (bouton Partager de Safari, puis « Sur l’écran d’accueil ») et ouvre-la depuis l’icône : sur iPhone, Safari et l’app installée ne partagent pas leurs données.';
+const INTRO = [
+  { icon: () => LOGO, t: 'Bienvenue dans Patrimoine', p: [
+    'Suis ton patrimoine mois par mois : livrets, PEA, assurance-vie, PER, épargne salariale.',
+    'Vois ce que tu épargnes vraiment, ce que rapportent tes placements, et le budget de ton foyer.',
+    'Trois minutes par mois suffisent.'] },
+  { icon: () => ICON.edit, t: 'Chaque mois', p: [
+    'L’onglet <b>Ce mois</b> te guide pas à pas : soldes de tes comptes, revenus et charges, pointage, sauvegarde.',
+    'L’<b>Accueil</b> montre ton total, son évolution et sa répartition, avec des points d’attention quand quelque chose mérite un coup d’œil.'] },
+  { icon: () => ICON.users, t: 'À deux, si tu veux', p: [
+    'L’onglet <b>Foyer</b> répartit les charges communes, à parts égales ou au prorata des revenus.',
+    'Il montre qui doit quoi à qui, et ton reste à vivre une fois tout payé.',
+    'Le bouton <b>+</b> ajoute une dépense ou un virement en un geste.'] },
+  { icon: () => ICON.target, t: 'Objectifs et bilan', p: [
+    'Fixe un apport immobilier, une rente pour la retraite ou une épargne mensuelle : l’app calcule le rythme à tenir.',
+    'Le <b>Résumé</b> fait le bilan du mois et vérifie que ton budget tombe juste.'] },
+  { icon: () => ICON.lock, t: 'Tes données restent à toi', p: [
+    'Tout est chiffré sur ton iPhone avec ton mot de passe. Aucun serveur ne reçoit tes données : personne ne peut les lire, pas même la personne qui t’a partagé l’app.',
+    'Ton mot de passe <b>ne peut pas être récupéré</b> : range-le dans ton gestionnaire de mots de passe.',
+    'Face ID, verrouillage automatique et masquage des montants (icône œil) protègent l’écran.'] },
+  { icon: () => ICON.download, t: 'Sauvegardes et options', p: [
+    'Exporte une sauvegarde chaque mois, ou active la sauvegarde automatique sur ton propre Google Drive, chiffrée.',
+    'L’analyse par IA est facultative et n’utilise que ta propre clé. Pas de publicité, pas de suivi.',
+    'L’app ne se met jamais à jour sans ton accord : elle te présente chaque nouvelle version.'] },
+];
+let introI = 0, introFirst = false;
+function showIntro(first = false) { introI = 0; introFirst = first; paintIntro(); }
+function paintIntro() {
+  let el = $('#intro');
+  if (!el) { el = document.createElement('div'); el.id = 'intro'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'intro-h'); document.body.append(el); introSwipe(el); }
+  const s = INTRO[introI], last = introI === INTRO.length - 1;
+  const end = introFirst
+    ? `${isStandalone() ? '' : `<p class="banner">${INSTALL_NOTE}</p>`}
+      <div class="stack-form"><button class="btn primary wide" data-act="introCreate">Créer mon coffre</button>
+        <button class="btn wide" data-act="introDemo">Essayer avec des données fictives</button>
+        <button class="btn ghost wide" data-act="introImport">Restaurer une sauvegarde</button></div>`
+    : '<div class="stack-form"><button class="btn primary wide" data-act="introDone">Fermer</button></div>';
+  el.innerHTML = `<div class="intro-in">
+    <div class="intro-top">${last ? '' : '<button class="link" data-act="introDone">Passer</button>'}</div>
+    <div class="intro-ic" aria-hidden="true">${s.icon()}</div>
+    <h2 id="intro-h" tabindex="-1">${s.t}</h2>
+    ${s.p.map(x => `<p>${x}</p>`).join('')}
+    ${introFirst && introI === 0 && !isStandalone() ? `<p class="banner">${INSTALL_NOTE}</p>` : ''}
+    ${last ? end : ''}
+    <div class="intro-foot">
+      <button class="btn" data-act="introPrev" ${introI ? '' : 'disabled'} aria-label="Écran précédent">‹</button>
+      <div class="intro-dots" aria-label="Écran ${introI + 1} sur ${INTRO.length}">${INTRO.map((_, i) => `<i class="${i === introI ? 'on' : ''}"></i>`).join('')}</div>
+      <button class="btn ${last ? '' : 'primary'}" data-act="introNext" ${last ? 'disabled' : ''} aria-label="Écran suivant">›</button>
+    </div></div>`;
+  el.querySelector('#intro-h').focus({ preventScroll: true });
+}
+function introSwipe(el) {
+  let x0 = null;
+  el.addEventListener('pointerdown', e => { x0 = e.clientX; });
+  el.addEventListener('pointerup', e => {
+    if (x0 == null) return; const dx = e.clientX - x0; x0 = null;
+    if (Math.abs(dx) < 60) return;
+    if (dx < 0 && introI < INTRO.length - 1) { introI++; paintIntro(); } else if (dx > 0 && introI > 0) { introI--; paintIntro(); }
+  });
+}
+async function introDone() {
+  $('#intro')?.remove();
+  ui.introSeen = true; try { await store.set('ui', ui); } catch {}
+}
+
 async function exportBackup(from) {
   if (mode !== 'app') { toast('Crée ton coffre pour pouvoir exporter une sauvegarde'); return; }
   const v = await seal();
@@ -4852,6 +5016,7 @@ async function boot() {
   const vault = await store.get('vault');
   lockHasPk = !!vault?.slots?.pk;
   renderLock(vault ? 'unlock' : 'setup');
+  if (!vault && !ui.introSeen && !gd.ret) showIntro(true);
   // Retour de Google : restaurer une version, ou terminer la connexion après le déverrouillage
   if (gd.ret && gdConfigured()) {
     const p = await store.get('gdPending');

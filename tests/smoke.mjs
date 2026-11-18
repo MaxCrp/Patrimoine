@@ -42,15 +42,31 @@ const DEMO_FOYER = () => {
   const c = controlOf(k); S.pot[k].perso[0].a = Math.round((500 + c.ecart) * 100) / 100;
   potMonth = k; render();
 };
+const skipIntro = async () => { if (await page.$('#intro')) await page.click('#intro [data-act="introDone"]'); };
 const fresh = async () => {
-  await page.goto(URL); await page.waitForSelector('[data-act="demo"]');
+  await page.goto(URL); await page.waitForSelector('#f-setup, #f-unlock'); await skipIntro();
   await page.click('[data-act="demo"]'); await page.waitForSelector('.tabs');
   await page.evaluate(DEMO_FOYER);
 };
 
 console.log('Démarrage');
-await page.goto(URL); await page.waitForSelector('[data-act="demo"]');
+await page.goto(URL); await page.waitForSelector('#f-setup');
 ok(errors.length === 0, 'page chargée sans erreur (empreinte CSP valide)', errors.join(' | '));
+
+console.log('Présentation');
+ok(await page.isVisible('#intro') && /Bienvenue/.test(await page.textContent('#intro h2')), 'première ouverture : la présentation s’affiche');
+let screens = 1; while (await page.isEnabled('#intro [data-act="introNext"]')) { await page.click('#intro [data-act="introNext"]'); screens++; }
+ok(screens === 6 && await page.isVisible('#intro [data-act="introCreate"]') && await page.isVisible('#intro [data-act="introDemo"]'), '6 écrans, puis « Créer mon coffre » et « Essayer avec des données fictives »', String(screens));
+ok(/écran d’accueil/.test(await page.textContent('#intro')), 'dans Safari : consigne d’installation sur l’écran d’accueil avant de créer le coffre');
+await page.click('#intro [data-act="introCreate"]');
+ok(!(await page.$('#intro')) && await page.evaluate(() => document.activeElement?.id === 'p1'), '« Créer mon coffre » : présentation fermée, mot de passe prêt à saisir');
+ok(/12 caractères minimum/.test(await page.textContent('#f-setup')), 'création du coffre : la vraie règle (12 caractères)');
+await page.click('[data-act="pwshow"]');
+ok(await page.getAttribute('#p1', 'type') === 'text', '« Afficher le mot de passe »');
+await page.goto(URL); await page.waitForSelector('#f-setup');
+ok(!(await page.$('#intro')), 'présentation vue : elle ne revient pas toute seule');
+await page.click('[data-act="introReplay"]');
+ok(await page.isVisible('#intro'), '« Revoir la présentation » depuis l’écran de création'); await page.click('#intro [data-act="introDone"]');
 ok(await page.evaluate(() => typeof APP_VERSION === 'string' && APP_VERSION !== 'dev' && CHANGELOG.length > 0), 'version et historique injectés par le build');
 ok(await page.evaluate(() => !gdConfigured() && !document.querySelector('[data-act=gdRestoreStart]')), 'sauvegarde automatique non configurée : aucun lien Google Drive');
 
@@ -91,6 +107,22 @@ r = await ctrl(`S.pot[k].items[0].pt = false;`);
 ok(r.f === 0, 'charge commune non pointée : écart prévu nul', JSON.stringify(r));
 r = await ctrl(`S.pot[prev] = { items: [], perso: [{ id: 'c1', n: 'Pharmacie', a: 30, r: false, pt: true }], transfers: [] }; S.pot[k].perso.push({ id: uid(), n: 'Remb.', a: -30, r: false, rb: true, of: { k: prev, id: 'c1', n: 'Pharmacie' } });`);
 ok(r.e === 30, 'remboursement reçu : compté comme une entrée', JSON.stringify(r));
+
+console.log('Aide et mises à jour');
+await fresh();
+await page.click('[data-act="settings"]');
+ok(/Aide/.test(await page.textContent('.sheet .menu li:first-child')), 'Réglages : l’Aide en tête');
+await page.click('[data-act="setpage"][data-p="aide"]');
+ok(await page.evaluate(() => document.querySelectorAll('.sheet details.faq').length) >= 8 && await page.isVisible('.sheet a[href="./confidentialite"]'), 'Aide : questions fréquentes et liens confidentialité, conditions');
+await page.click('.sheet [data-act="introReplay"]');
+ok(await page.isVisible('#intro') && !(await page.$('#intro [data-act="introCreate"]')), 'Aide › Revoir la présentation (sans bouton de création)');
+while (await page.isEnabled('#intro [data-act="introNext"]')) await page.click('#intro [data-act="introNext"]');
+await page.click('#intro [data-act="introDone"]');
+const upd = await page.evaluate(async () => { await loadNext(); const fetched = Array.isArray(code.next); code.status = 'update'; code.next = [{ version: '9.9', date: '2030-01-01', titre: 'Essai', nouveautes: ['Une nouveauté'] }]; paintCode(); const bar = document.querySelector('#codebar')?.innerText || ''; sheetCode(); return { fetched, bar, sheet: document.querySelector('.sheet')?.innerText || '' }; });
+ok(upd.fetched, 'historique publié lu avant une mise à jour (changelog.json)');
+ok(/Nouvelle version disponible : 9\.9 · Essai/.test(upd.bar) && !/ne l’installe pas/.test(upd.bar), 'bandeau de mise à jour : version et titre, sans « ne l’installe pas »', upd.bar);
+ok(/Une nouveauté/.test(upd.sheet), '« Nouveautés » : ce qu’apporte la version proposée');
+await page.evaluate(() => { closeSheet(); code.status = 'ok'; paintCode(); });
 
 console.log('Versions');
 await fresh();

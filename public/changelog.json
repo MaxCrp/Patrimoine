@@ -1,0 +1,261 @@
+[
+ {
+  "version": "1.18",
+  "date": "2026-11-18",
+  "titre": "Bienvenue et prise en main",
+  "nouveautes": [
+   "Une présentation en 6 écrans accueille les nouveaux utilisateurs ; elle se revoit dans Réglages › Aide.",
+   "Réglages › Aide : questions fréquentes (installer l’app, mot de passe oublié, changer d’iPhone, mises à jour, sauvegarde) et règles de confidentialité.",
+   "L’accueil propose des « Premiers pas » pour bien démarrer : comptes, soldes, foyer, objectifs, sauvegarde.",
+   "Création du coffre plus claire : la règle des 12 caractères est annoncée, et un bouton permet d’afficher le mot de passe saisi.",
+   "Une mise à jour proposée affiche son numéro et ses nouveautés avant l’installation, et les messages de sécurité sont plus clairs."
+  ]
+ },
+ {
+  "version": "1.17",
+  "date": "2026-11-15",
+  "titre": "Sauvegarde automatique sur Google Drive",
+  "nouveautes": [
+   "Tes données peuvent se sauvegarder toutes seules dans ton Google Drive, chiffrées avec ton mot de passe : quelques minutes après chaque modification, 30 versions gardées.",
+   "Réglages › Données de l’application › Sauvegarde automatique : connecter Google Drive, sauvegarder maintenant, restaurer une version, déconnecter.",
+   "Sur un nouvel iPhone, « Restaurer depuis Google Drive » dès l’écran de création du coffre.",
+   "Ce mois et les points d’attention tiennent compte de la sauvegarde automatique, et signalent un arrêt.",
+   "Disponible une fois la mise en place faite (projet Google et service d’autorisation) : d’ici là, l’app indique « non configurée »."
+  ]
+ },
+ {
+  "version": "1.16",
+  "date": "2026-11-12",
+  "titre": "Suivi des versions",
+  "nouveautes": [
+   "Le numéro de version de l’app s’affiche dans Réglages › Versions, avec l’historique complet des nouveautés.",
+   "Après chaque mise à jour, une fiche « Nouveautés » présente ce qui a changé.",
+   "La publication de l’app est vérifiée automatiquement avant chaque mise en ligne, pour éviter qu’une mise à jour n’affiche une page blanche."
+  ]
+ },
+ {
+  "version": "1.15.1",
+  "date": "2026-11-06",
+  "titre": "Contrôle du mois plus lisible",
+  "nouveautes": [
+   "Les remboursements reçus apparaissent sur leur propre ligne dans le contrôle.",
+   "« Écart à expliquer » ne s’affiche qu’au-delà de 1 € ; les montants restent arrondis à l’euro."
+  ]
+ },
+ {
+  "version": "1.15",
+  "date": "2026-11-06",
+  "titre": "Contrôle du mois fiable",
+  "nouveautes": [
+   "Le contrôle tient compte de ce que ton conjoint te doit, ou de ce que tu lui dois, pour le mois.",
+   "Seules les charges pointées comptent ; les charges à venir et l’écart prévu une fois tout pointé sont affichés à part.",
+   "« D’où vient l’écart » rapproche l’écart de ton budget : reste à vivre, virement plaisir, projets non financés par l’épargne.",
+   "Un détail ligne par ligne signale les erreurs de saisie probables."
+  ]
+ },
+ {
+  "version": "1.14",
+  "date": "2026-11-06",
+  "titre": "Visuels et thèmes",
+  "nouveautes": [
+   "Foyer : une barre par personne montre ce qui a été payé, remboursé et reste à rembourser.",
+   "Reste à vivre en barres, anneau de progression dans Ce mois.",
+   "Évolution des placements par catégorie, sous la répartition.",
+   "Quatre nouveaux thèmes : Atelier, Encre, Graphite et Olivier."
+  ]
+ },
+ {
+  "version": "1.13",
+  "date": "2026-11-06",
+  "titre": "Nouvelle navigation",
+  "nouveautes": [
+   "Le Foyer a son propre onglet, avec les charges à pointer en haut.",
+   "Le bouton + ouvre directement le bon formulaire, présenté en cartes."
+  ]
+ },
+ {
+  "version": "1.12.1",
+  "date": "2026-11-05",
+  "titre": "Correctif d’installation",
+  "nouveautes": [
+   "L’app s’ouvre de nouveau correctement dans Safari après une mise à jour."
+  ]
+ },
+ {
+  "version": "1.12",
+  "date": "2026-10-30",
+  "titre": "Contrôle du mois et projets",
+  "nouveautes": [
+   "Contrôle du mois : les entrées et les sorties connues de ton compte courant.",
+   "Les versements de l’employeur sont distingués de ton épargne.",
+   "Projets : dépenses exceptionnelles financées par une reprise d’épargne."
+  ]
+ },
+ {
+  "version": "1.11.1",
+  "date": "2026-10-27",
+  "titre": "Correctifs",
+  "nouveautes": [
+   "Calcul du plafond PER corrigé, et plusieurs petits correctifs."
+  ]
+ },
+ {
+  "version": "1.11",
+  "date": "2026-10-26",
+  "titre": "Primes et retraite",
+  "nouveautes": [
+   "Primes annuelles prévues, prises en compte dans les objectifs.",
+   "Plafond de déduction PER calculé à partir de l’avis d’impôt."
+  ]
+ },
+ {
+  "version": "1.10.1",
+  "date": "2026-10-25",
+  "titre": "Correctif",
+  "nouveautes": [
+   "Correction mineure."
+  ]
+ },
+ {
+  "version": "1.10",
+  "date": "2026-10-25",
+  "titre": "Suivi d’utilisation et répartition",
+  "nouveautes": [
+   "Journal d’utilisation facultatif, exportable sans aucun montant.",
+   "Nouveaux modes de répartition des charges communes."
+  ]
+ },
+ {
+  "version": "1.9",
+  "date": "2026-10-12",
+  "titre": "Pointage et régularisation",
+  "nouveautes": [
+   "Pointage des dépenses récurrentes.",
+   "Régularisation des charges entre membres du foyer."
+  ]
+ },
+ {
+  "version": "1.8.1",
+  "date": "2026-10-05",
+  "titre": "Correctifs",
+  "nouveautes": [
+   "Remboursements et bouton + corrigés."
+  ]
+ },
+ {
+  "version": "1.8",
+  "date": "2026-10-05",
+  "titre": "Charges perso",
+  "nouveautes": [
+   "Charges personnelles et remboursements."
+  ]
+ },
+ {
+  "version": "1.7.1",
+  "date": "2026-10-04",
+  "titre": "Correctif",
+  "nouveautes": [
+   "Affichage d’un graphique corrigé."
+  ]
+ },
+ {
+  "version": "1.7",
+  "date": "2026-10-04",
+  "titre": "Accueil et thèmes",
+  "nouveautes": [
+   "Nouvelle page d’accueil et choix du thème.",
+   "Taux d’épargne dans les statistiques."
+  ]
+ },
+ {
+  "version": "1.6",
+  "date": "2026-09-29",
+  "titre": "Statistiques",
+  "nouveautes": [
+   "Page de statistiques et objectif intermédiaire."
+  ]
+ },
+ {
+  "version": "1.5.1",
+  "date": "2026-09-23",
+  "titre": "Correctif",
+  "nouveautes": [
+   "Fonctions du bouton + corrigées."
+  ]
+ },
+ {
+  "version": "1.5",
+  "date": "2026-09-18",
+  "titre": "Bouton +",
+  "nouveautes": [
+   "Un raccourci pour saisir rapidement un mouvement ou une dépense."
+  ]
+ },
+ {
+  "version": "1.4",
+  "date": "2026-09-16",
+  "titre": "Simulateur immobilier",
+  "nouveautes": [
+   "Simulateur d’achat immobilier et capacité d’emprunt."
+  ]
+ },
+ {
+  "version": "1.3.1",
+  "date": "2026-09-14",
+  "titre": "Correctif",
+  "nouveautes": [
+   "Enregistrement de la clé d’API corrigé."
+  ]
+ },
+ {
+  "version": "1.3",
+  "date": "2026-09-14",
+  "titre": "Refonte de l’interface",
+  "nouveautes": [
+   "Nouvelle interface.",
+   "Le solde se calcule depuis les mouvements saisis.",
+   "Les points d’attention se masquent d’un geste."
+  ]
+ },
+ {
+  "version": "1.2.1",
+  "date": "2026-09-13",
+  "titre": "Correctifs de sécurité",
+  "nouveautes": [
+   "Plusieurs correctifs, dont une faille de sécurité."
+  ]
+ },
+ {
+  "version": "1.2",
+  "date": "2026-09-13",
+  "titre": "Gestion courante et foyer",
+  "nouveautes": [
+   "Comptes courants, charges communes et virements entre membres du foyer."
+  ]
+ },
+ {
+  "version": "1.1.1",
+  "date": "2026-09-13",
+  "titre": "Correctif",
+  "nouveautes": [
+   "Mise à jour de l’app corrigée."
+  ]
+ },
+ {
+  "version": "1.1",
+  "date": "2026-09-13",
+  "titre": "Analyse par IA",
+  "nouveautes": [
+   "Le résumé du mois peut être analysé par une IA, avec ta propre clé."
+  ]
+ },
+ {
+  "version": "1.0",
+  "date": "2026-09-12",
+  "titre": "Première version",
+  "nouveautes": [
+   "Coffre chiffré sur l’iPhone, suivi des comptes et des soldes mensuels.",
+   "Import de relevés et vérification des mises à jour au démarrage."
+  ]
+ }
+]
