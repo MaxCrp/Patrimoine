@@ -220,3 +220,8 @@ Patrimoine va être partagée avec des amis : chacun l'installe sur son iPhone, 
 - [x] Mises à jour : remplacer « Si tu n'en es pas à l'origine, ne l'installe pas » par un texte pour un utilisateur qui reçoit l'app : nouvelle version publiée, avec ses nouveautés, à installer quand il le souhaite.
 - [x] Alertes de sécurité (« code remplacé », « code modifié ») : expliquer quoi faire sans supposer que l'utilisateur gère l'hébergement (ne pas saisir son mot de passe, prévenir la personne qui partage l'app).
 - [x] Sauvegarde automatique : chaque ami connecte son propre Google Drive, sans rien à configurer de son côté. Le projet Google reste « non validé » (jusqu'à 100 utilisateurs) : le tutoriel prévient de l'écran « application non validée » et de « Paramètres avancés › Accéder à Patrimoine ».
+
+#### v1.18.1 — Correctif d'affichage du solde (signalé le 20/11/2026, à lancer)
+- [ ] Solde calculé depuis les mouvements (solde du mois précédent + mouvements) : arrondi au centime à l'enregistrement. Le calcul en virgule flottante donnait par exemple 1715,2800000000002 €, affiché tel quel dans « Soldes des comptes ».
+- [ ] Champs de saisie : tout montant affiché arrondi au centime, y compris pour les soldes déjà enregistrés avec ce défaut (corrigés à la prochaine ouverture).
+- [ ] Test : solde calculé avec des montants à virgule, affichage sans décimales parasites.
